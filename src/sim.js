@@ -9,8 +9,9 @@
 
 const DEG = Math.PI / 180;
 const KN = 1.94384; // m/s -> knots
-const THRUST_N = 340;  // sail thrust scale, N at power01=1
-const K_WALL = 1.4;    // displacement-hull wave-drag wall strength
+const THRUST_N = 340;      // sail thrust scale, N at drive01=1
+const THRUST_CLAMP = 2.05; // thrust saturates later than the UI power meter's 1.35
+const K_WALL = 1.4;        // displacement-hull wave-drag wall strength
 
 function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
 function smoothstep(a, b, x) {
@@ -222,7 +223,11 @@ export class WindsurfSim {
     const bAdeg = absBetaAppDeg;
     const q = (awSpeed / 10) ** 2;           // normalized dynamic pressure
     // Lift needs attached flow: dies approaching head-to-wind AND approaching dead run.
-    const CL = 1.85 * effDrive * smoothstep(14, 42, bAdeg) * smoothstep(180, 150, bAdeg);
+    // The forward fade is deliberately wide (out to ~55deg apparent): as the board
+    // accelerates the apparent wind swings toward the bow, lift collapses and the
+    // boat self-limits — which is exactly why a beam reach tops out below a broad
+    // reach despite seeing MORE apparent wind.
+    const CL = 1.85 * effDrive * smoothstep(24, 55, bAdeg) * smoothstep(180, 150, bAdeg);
     // A well-trimmed sail squared off to the apparent wind pushes like a barn door downwind.
     // Onset starts near apparent-beam (cos~0, drag neither helps nor hurts there)
     // so it never fights the lift term forward of the beam.
@@ -280,7 +285,10 @@ export class WindsurfSim {
     // ------- drag -------
     let drag;
     if (this.planing) {
-      drag = 2.3 * this.v * Math.abs(this.v);
+      // Semi-planing ramp: a freshly-released hull still drags its tail through
+      // the water; only at speed does it skim on the clean 2.4-ish coefficient.
+      const cPlane = 4.0 - 1.6 * smoothstep(4, 7, this.v);
+      drag = cPlane * this.v * Math.abs(this.v);
       if (inputs.stance === 'mid') drag *= 1.4;           // not in the straps
       if (inputs.dagger) drag *= 1.5;                     // board wants to rail over
     } else {
@@ -298,7 +306,10 @@ export class WindsurfSim {
     drag += 14 * this.u * this.u;              // slip (sideways flow) drag
 
     // ------- thrust & integrate speed -------
-    const thrust = power01 * THRUST_N;
+    // Thrust keeps scaling past the UI meter's 1.35 clamp (power01 stays 0..1.35
+    // for the display, steering authority and planing thresholds) so stronger
+    // wind keeps making a faster board instead of flat-lining the polar.
+    const thrust = clamp(drive01, 0, THRUST_CLAMP) * THRUST_N;
     const mass = 97; // rider + board + rig
     this.v += ((thrust - drag) / mass) * dt;
 

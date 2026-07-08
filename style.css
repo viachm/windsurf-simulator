@@ -14,7 +14,7 @@
 
 html, body { height: 100%; overflow: hidden; background: #06121e; }
 
-#app { position: relative; width: 100vw; height: 100vh; }
+#app { position: relative; width: 100vw; height: 100vh; height: 100dvh; }
 #scene { position: absolute; inset: 0; display: block; }
 
 /* ---------- top HUD ---------- */
@@ -216,14 +216,15 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
 @media (max-width: 768px) {
 
   /* ---- control panel becomes a collapsible bottom sheet ----
-     position: fixed pins it to the visual-viewport bottom, so the header (and
-     its toggle) is never swallowed by the browser's URL bar the way an
-     absolutely-positioned 100vh child can be. */
+     Anchored to the bottom of #app, which is sized with 100dvh (dynamic
+     viewport height). dvh excludes the iOS Safari bottom toolbar, so the
+     bar — and its toggle — sit ABOVE the browser chrome instead of behind
+     it (position:fixed / 100vh both hide it under the toolbar). */
   #panel {
-    position: fixed;
+    position: absolute;
     left: 0; right: 0; top: auto; bottom: 0;
     width: 100%; max-width: 100%;
-    max-height: 38vh;                 /* open sheet stays ~1/3 of the screen; body scrolls */
+    max-height: 38vh; max-height: 38dvh;   /* open sheet ~1/3 of the screen; body scrolls */
     border-radius: 16px 16px 0 0;
     border-left: 0; border-right: 0; border-bottom: 0;
     box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.45);
@@ -233,7 +234,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   /* the tappable / swipeable bar (also the whole collapsed state) */
   .panel-header {
     position: relative;
-    padding: 15px 14px 11px;
+    align-items: center;
+    padding: 13px 14px 11px;
     padding-bottom: calc(11px + env(safe-area-inset-bottom)); /* clear the home bar */
     border-radius: 16px 16px 0 0;
     cursor: pointer;
