@@ -1,10 +1,16 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
 import { t, setLang, getLang, onLangChange } from './i18n.js';
+import { DemoDirector } from './demo.js';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
 const KMH = 1.852; // knots -> km/h
+// keys that count as "taking the controls" (they end a running demo)
+const GAME_KEYS = new Set([
+  'Digit1', 'Digit2', 'Digit3', 'KeyW', 'KeyS', 'KeyQ', 'KeyE',
+  'KeyD', 'KeyH', 'KeyT', 'KeyG', 'KeyR', 'ArrowLeft', 'ArrowRight',
+]);
 
 function loadUnits() {
   try { const u = localStorage.getItem('ws_units'); if (u === 'kn' || u === 'kmh') return u; } catch { /* ignore */ }
@@ -27,8 +33,15 @@ export class UI {
     this.units = loadUnits();
     this.keysHeld = new Set();
     this.flash = { msg: '', until: 0 };
+
+    // guided demo: an auto-tour director that steers while autotrim flies the rig
+    this.demo = new DemoDirector(sim, this);
+    this.demo.onCaption = (text) => this.#showCaption(text);
+    this.demo.onState = (mode) => this.#setDemoState(mode);
+
     this.#bindPanel();
     this.#bindSettings();
+    this.#bindDemo();
     this.#bindKeys();
     this.#bindCrashHold();
     this.compassCtx = $('compass').getContext('2d');
@@ -41,6 +54,7 @@ export class UI {
     onLangChange(() => {
       this.#refreshWindReadout();
       this.#syncLangButtons();
+      this.demo.refresh();   // re-render the live caption in the new language
     });
   }
 
@@ -157,6 +171,69 @@ export class UI {
     this.units = (u === 'kn') ? 'kn' : 'kmh';
     try { localStorage.setItem('ws_units', this.units); } catch { /* ignore */ }
     for (const b of $('units-seg').children) b.classList.toggle('active', b.dataset.units === this.units);
+    this.#refreshWindReadout();
+  }
+
+  // ---------------- guided demo ----------------
+  #bindDemo() {
+    const panel = $('demo-panel');
+    const btn = $('demo-toggle');
+    const open = () => {
+      panel.classList.remove('off'); btn.classList.add('open');
+      $('settings-panel').classList.add('off'); $('settings-toggle').classList.remove('open');
+    };
+    const close = () => { panel.classList.add('off'); btn.classList.remove('open'); };
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      panel.classList.contains('off') ? open() : close();
+    });
+    $('demo-close').addEventListener('click', close);
+    // tap outside the popover closes it
+    addEventListener('click', (e) => {
+      if (!panel.classList.contains('off') && !panel.contains(e.target) && !btn.contains(e.target)) close();
+    });
+
+    for (const b of panel.querySelectorAll('.demo-mode')) {
+      b.addEventListener('click', () => { this.demo.start(b.dataset.mode); close(); });
+    }
+    $('demo-stop').addEventListener('click', () => { this.demo.stop(); close(); });
+
+    // Any hands-on control ends the demo — like touching the wheel on cruise
+    // control. Capture phase so it fires before the control's own handler. The
+    // wind slider is exempt: the user may retune the (stable) wind mid-demo.
+    $('panel').addEventListener('pointerdown', (e) => {
+      if (e.target.closest('#windset')) return;
+      this.demo.stop();
+    }, true);
+  }
+
+  // Reflect the demo's live state on the button, popover and caption banner.
+  #setDemoState(mode) {
+    $('demo-toggle').classList.toggle('active', !!mode);
+    $('demo-panel').classList.toggle('running', !!mode);
+    for (const b of $('demo-panel').querySelectorAll('.demo-mode')) {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    }
+    $('demo-tag').textContent = mode ? t(`demo.mode.${mode}`) : '';
+  }
+
+  #showCaption(text) {
+    const el = $('demo-caption');
+    if (text) { $('demo-cap').textContent = text; el.classList.remove('off'); }
+    else { el.classList.add('off'); }
+  }
+
+  // Turn the beginner autopilot on/off (used by the demo director).
+  setAutotrim(on) {
+    this.inputs.autotrim = !!on;
+    $('autotrim').checked = this.inputs.autotrim;
+  }
+
+  // Keep the wind slider + readout in step with a scripted wind change.
+  syncWindControl() {
+    const kn = this.sim.baseWind * 1.94384;
+    $('windset').value = Math.round(kn);
     this.#refreshWindReadout();
   }
 
@@ -348,6 +425,8 @@ export class UI {
       if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
       if (e.repeat) return;
       this.keysHeld.add(e.code);
+      // any gameplay key hands control back to the player and ends the demo
+      if (this.demo.running && GAME_KEYS.has(e.code)) this.demo.stop();
       switch (e.code) {
         case 'Digit1': this.setStance('front', true); break;
         case 'Digit2': this.setStance('mid', true); break;
@@ -371,6 +450,8 @@ export class UI {
 
   /** continuous key handling + auto-trim; call every frame before sim.update */
   tickInputs(dt, lastState) {
+    // guided demo drives the steering + wind while autotrim flies the rig
+    if (this.demo.running) this.demo.tick(dt, lastState);
     const held = this.keysHeld;
     // touching the sheet/lean keys takes over from the autopilot (arrows just steer)
     if (this.inputs.autotrim

@@ -142,6 +142,38 @@ export const STRINGS = {
     'crash.spinout.lesson': 'At planing speed the daggerboard generates so much lift the board flips onto its rail. Retract the daggerboard[[ (D)]] as soon as you start planing.',
     'crash.pearl.reason': 'PEARLED — nose buried underwater!',
     'crash.pearl.lesson': 'Standing by the mast at speed pushes the nose down until it submarines. Move back to the straps[[ (2, then 3)]] as the board accelerates.',
+
+    // --- guided demo ---
+    'demo.btn': 'DEMO',
+    'demo.title': 'GUIDED DEMO',
+    'demo.intro': 'Sit back — the board sails a teaching route on its own, working every control. Touch anything to take over.',
+    'demo.mode.beginner': 'Beginner lesson',
+    'demo.mode.beginner.d': 'Every point of sail, a tack and a gybe, narrated step by step.',
+    'demo.mode.freeride': 'Freeride',
+    'demo.mode.freeride.d': 'Strong wind, planing, footstraps and fast transitions.',
+    'demo.mode.chill': 'Chill cruise',
+    'demo.mode.chill.d': 'A calm, endless cruise — like a screensaver.',
+    'demo.stop': '■ STOP DEMO',
+    // beginner tour captions
+    'demo.b.beam': 'Beam reach — the wind is straight off your side. The easiest, steadiest course; the board just cruises.',
+    'demo.b.headup': 'Heading up — steering the nose closer to the wind. Watch the shaded no-go zone we must stay out of.',
+    'demo.b.tack': 'As close to the wind as we can point — time to cross it. Tacking: the nose swings through the eye of the wind.',
+    'demo.b.bear': 'New tack. Now we bear away — turning away from the wind onto a broad reach.',
+    'demo.b.broad': 'Broad reach — wind from behind the side. The fastest easy course; the board picks up speed.',
+    'demo.b.gybe': 'To turn back downwind we swing the tail through the wind — a gybe.',
+    'demo.b.settle': 'Back on a beam reach. That is the full loop — every point of sail, both turns.',
+    // freeride captions
+    'demo.f.power': 'Fresh breeze. Bearing away to load the sail and get the board moving.',
+    'demo.f.plane': 'Planing! Feet in the straps, daggerboard up — skimming across the surface.',
+    'demo.f.gybe': 'Carving a fast gybe without dropping off the plane.',
+    'demo.f.blast': 'Blasting on the broad reach — top speed, fully hooked in.',
+    'demo.f.upwind': 'Hard on the wind now — driving upwind on a close reach.',
+    'demo.f.tack': 'Snapping a quick tack through the wind.',
+    'demo.f.back': 'And straight back onto the plane.',
+    // chill captions
+    'demo.c.cruise': 'Easy cruise. Sit back and watch the board sail itself.',
+    'demo.c.up': 'Drifting gently up toward the wind…',
+    'demo.c.down': '…and easing back down off the wind.',
   },
 
   uk: {
@@ -278,6 +310,38 @@ export const STRINGS = {
     'crash.spinout.lesson': 'На швидкості глісування шверт створює стільки підйомної сили, що дошку перекидає на кант. Прибирайте шверт[[ (D)]], щойно починаєте глісувати.',
     'crash.pearl.reason': 'НІС ПІРНУВ під воду!',
     'crash.pearl.lesson': 'Стійка біля щогли на швидкості вдавлює ніс, доки він не занурюється. Переміщуйтеся назад у петлі[[ (2, потім 3)]], коли дошка розганяється.',
+
+    // --- guided demo ---
+    'demo.btn': 'ДЕМО',
+    'demo.title': 'ДЕМО-ТУР',
+    'demo.intro': 'Відкиньтеся — дошка сама пройде навчальний маршрут і покаже роботу всіх керувань. Торкніться будь-чого, щоб перехопити.',
+    'demo.mode.beginner': 'Урок для новачка',
+    'demo.mode.beginner.d': 'Усі курси відносно вітру, поворот оверштаг і фордевінд — крок за кроком з поясненнями.',
+    'demo.mode.freeride': 'Фрірайд',
+    'demo.mode.freeride.d': 'Сильний вітер, глісування, петлі та швидкі повороти.',
+    'demo.mode.chill': 'Спокійний круїз',
+    'demo.mode.chill.d': 'Спокійне нескінченне катання — наче заставка.',
+    'demo.stop': '■ ЗУПИНИТИ ДЕМО',
+    // beginner tour captions
+    'demo.b.beam': 'Галфвінд — вітер точно збоку. Найлегший і найстабільніший курс; дошка спокійно йде.',
+    'demo.b.headup': 'Приводимося — скеровуємо ніс ближче до вітру. Дивіться на затінений сектор левентика, куди йти не можна.',
+    'demo.b.tack': 'Гостріше до вітру вже не піти — час перетнути його. Поворот оверштаг: ніс проходить крізь лінію вітру.',
+    'demo.b.bear': 'Новий галс. Тепер увалюємося — відвертаємо від вітру на бакштаг.',
+    'demo.b.broad': 'Бакштаг — вітер ззаду збоку. Найшвидший простий курс; дошка набирає ходу.',
+    'demo.b.gybe': 'Щоб повернути під вітер, проводимо корму крізь вітер — поворот фордевінд.',
+    'demo.b.settle': 'Знову галфвінд. Ось і повне коло — усі курси й обидва повороти.',
+    // freeride captions
+    'demo.f.power': 'Свіжий вітер. Увалюємося, щоб завантажити вітрило й розігнати дошку.',
+    'demo.f.plane': 'Глісування! Ноги в петлях, шверт піднято — ковзаємо по поверхні.',
+    'demo.f.gybe': 'Ріжемо швидкий фордевінд, не зриваючись із глісування.',
+    'demo.f.blast': 'Мчимо на бакштазі — максимальна швидкість, у трапеції.',
+    'demo.f.upwind': 'Тепер круто до вітру — рубимося вгору гострим бейдевіндом.',
+    'demo.f.tack': 'Різкий поворот оверштаг через вітер.',
+    'demo.f.back': 'І одразу знову в глісування.',
+    // chill captions
+    'demo.c.cruise': 'Спокійне катання. Відкиньтеся й дивіться, як дошка йде сама.',
+    'demo.c.up': 'Легко приводимося до вітру…',
+    'demo.c.down': '…і плавно увалюємося від вітру.',
   },
 };
 

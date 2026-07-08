@@ -157,6 +157,63 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #settings-toggle svg { display: block; }
 #settings-toggle:hover, #settings-toggle.open { border-color: var(--accent); color: var(--accent); }
 
+/* ---------- guided-demo button ---------- */
+#demo-toggle {
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 8px; color: var(--text); backdrop-filter: blur(6px);
+  cursor: pointer; font-family: inherit; font-weight: 700; letter-spacing: 1.5px;
+  font-size: 11px; padding: 6px 11px; display: flex; align-items: center; gap: 6px;
+}
+#demo-toggle svg { display: block; }
+#demo-toggle:hover, #demo-toggle.open { border-color: var(--accent); color: var(--accent); }
+#demo-toggle.active {
+  border-color: var(--good); color: var(--good);
+  box-shadow: 0 0 10px rgba(102, 187, 106, 0.35);
+}
+#demo-toggle.active svg { animation: pulse 0.9s infinite alternate; }
+
+/* ---------- demo popover ---------- */
+#demo-panel {
+  position: absolute; right: 14px; top: 52px; width: 280px; z-index: 30;
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 12px; color: var(--text); backdrop-filter: blur(8px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4); overflow: hidden;
+}
+#demo-panel.off { display: none; }
+#demo-close {
+  background: none; border: 1px solid var(--panel-border); color: var(--text);
+  border-radius: 6px; width: 22px; height: 22px; cursor: pointer; font-size: 15px; line-height: 1;
+}
+.demo-intro { font-size: 11px; line-height: 1.5; color: var(--text-dim); margin-bottom: 12px; }
+.demo-mode {
+  display: block; width: 100%; text-align: left; margin-bottom: 8px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--panel-border);
+  border-radius: 8px; padding: 9px 12px; color: var(--text); cursor: pointer; font-family: inherit;
+}
+.demo-mode:hover { border-color: var(--accent); }
+.demo-mode.active { border-color: var(--good); background: rgba(102, 187, 106, 0.14); }
+.demo-mode-name { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+.demo-mode-desc { display: block; font-size: 10px; line-height: 1.4; color: var(--text-dim); margin-top: 2px; }
+#demo-stop { display: none; margin-top: 4px; border-color: var(--danger); color: var(--danger); }
+#demo-stop:hover { border-color: var(--danger); background: rgba(255, 112, 67, 0.14); color: var(--danger); }
+#demo-panel.running #demo-stop { display: flex; }
+
+/* ---------- demo narration banner ---------- */
+#demo-caption {
+  position: absolute; top: 96px; left: 50%; transform: translateX(-50%);
+  z-index: 16; max-width: 520px; pointer-events: none; text-align: center;
+  background: var(--panel-bg); border: 1px solid var(--good); border-radius: 10px;
+  padding: 8px 16px; backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  transition: opacity 0.35s ease;
+}
+#demo-caption.off { opacity: 0; }
+#demo-tag {
+  display: block; font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--good); font-weight: 700; margin-bottom: 3px;
+}
+#demo-cap { font-size: 13px; line-height: 1.4; color: var(--text); }
+
 /* ---------- settings popover ---------- */
 #settings-panel {
   position: absolute; right: 14px; top: 52px; width: 260px; z-index: 30;
@@ -325,7 +382,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
      the three boxes wide, which also lets the labels sit on one line (flatter). */
   #hud-top {
     top: calc(6px + env(safe-area-inset-top));
-    left: 8px; right: 86px; transform: none; max-width: none;
+    left: 8px; right: 100px; transform: none; max-width: none;   /* clear the demo + gear cluster */
     gap: 6px; padding: 0; justify-content: flex-start;
   }
   .hud-box { flex: 1; min-width: 0; max-width: none; padding: 3px 8px; border-radius: 8px; }
@@ -368,6 +425,24 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
     right: 8px; top: calc(50px + env(safe-area-inset-top));
     width: min(240px, calc(100vw - 16px));
   }
+
+  /* demo button: icon-only to fit the tight top-right cluster */
+  #demo-toggle { padding: 0 11px; height: 38px; border-radius: 10px; gap: 0; }
+  #demo-toggle svg { width: 16px; height: 16px; }
+  .demo-btn-label { display: none; }
+  #demo-panel {
+    right: 8px; top: calc(50px + env(safe-area-inset-top));
+    width: min(260px, calc(100vw - 16px));
+  }
+
+  /* narration banner sits beside the compass, under the meters row */
+  #demo-caption {
+    top: calc(90px + env(safe-area-inset-top));
+    left: 104px; right: 8px; transform: none;
+    max-width: none; text-align: left; padding: 6px 11px; border-radius: 9px;
+  }
+  #demo-tag { font-size: 8px; letter-spacing: 1.4px; margin-bottom: 2px; }
+  #demo-cap { font-size: 10.5px; line-height: 1.32; }
 
   /* ---- coaching hint lifts above the collapsed bar ---- */
   #hint-bar { bottom: calc(64px + env(safe-area-inset-bottom)); max-width: 92%; }

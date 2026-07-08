@@ -19,8 +19,14 @@
   <div id="app">
     <canvas id="scene"></canvas>
 
-    <!-- Top-right button: settings (units, language, how-to) -->
+    <!-- Top-right buttons: guided demo + settings (units, language, how-to) -->
     <div id="top-buttons">
+      <button id="demo-toggle" title="guided demo / демо-тур" aria-label="guided demo">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="none" aria-hidden="true">
+          <path d="M8 5v14l11-7z" />
+        </svg>
+        <span class="demo-btn-label" data-i18n="demo.btn">DEMO</span>
+      </button>
       <button id="settings-toggle" title="settings / налаштування" aria-label="settings">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -59,6 +65,36 @@
           <span data-i18n="settings.howto">HOW TO PLAY</span>
         </button>
       </div>
+    </div>
+
+    <!-- Guided-demo popover (pick a tour) -->
+    <div id="demo-panel" class="off">
+      <div class="settings-header">
+        <span data-i18n="demo.title">GUIDED DEMO</span>
+        <button id="demo-close" aria-label="close">×</button>
+      </div>
+      <div class="settings-body">
+        <div class="demo-intro" data-i18n="demo.intro">Sit back — the board sails a teaching route on its own. Touch any control to take over.</div>
+        <button class="demo-mode" data-mode="beginner">
+          <span class="demo-mode-name" data-i18n="demo.mode.beginner">Beginner lesson</span>
+          <span class="demo-mode-desc" data-i18n="demo.mode.beginner.d">Every point of sail, a tack and a gybe, narrated step by step.</span>
+        </button>
+        <button class="demo-mode" data-mode="freeride">
+          <span class="demo-mode-name" data-i18n="demo.mode.freeride">Freeride</span>
+          <span class="demo-mode-desc" data-i18n="demo.mode.freeride.d">Strong wind, planing, footstraps and fast transitions.</span>
+        </button>
+        <button class="demo-mode" data-mode="chill">
+          <span class="demo-mode-name" data-i18n="demo.mode.chill">Chill cruise</span>
+          <span class="demo-mode-desc" data-i18n="demo.mode.chill.d">A calm, endless cruise — like a screensaver.</span>
+        </button>
+        <button id="demo-stop" class="settings-action" data-i18n="demo.stop">■ STOP DEMO</button>
+      </div>
+    </div>
+
+    <!-- Demo narration banner (what the board is demonstrating right now) -->
+    <div id="demo-caption" class="off">
+      <span id="demo-tag"></span>
+      <span id="demo-cap"></span>
     </div>
 
     <!-- Top HUD -->
