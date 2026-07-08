@@ -25,6 +25,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Stamp build id for cache-busting
+        run: |
+          BUILD="${GITHUB_SHA::7}"
+          printf '%s' "$BUILD" > version.txt
+          grep -rl '__BUILD__' index.html src | xargs sed -i "s/__BUILD__/$BUILD/g"
+          echo "Stamped build id: $BUILD"
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:

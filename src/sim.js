@@ -222,9 +222,11 @@ export class WindsurfSim {
     const bAdeg = absBetaAppDeg;
     const q = (awSpeed / 10) ** 2;           // normalized dynamic pressure
     // Lift needs attached flow: dies approaching head-to-wind AND approaching dead run.
-    const CL = 1.05 * effDrive * smoothstep(14, 30, bAdeg) * smoothstep(180, 150, bAdeg);
+    const CL = 1.3 * effDrive * smoothstep(14, 30, bAdeg) * smoothstep(180, 150, bAdeg);
     // A well-trimmed sail squared off to the apparent wind pushes like a barn door downwind.
-    const CD = 0.10 + 3.2 * effDrive * smoothstep(50, 135, bAdeg);
+    // Onset starts near apparent-beam (cos~0, drag neither helps nor hurts there)
+    // so it never fights the lift term forward of the beam.
+    const CD = 0.10 + 4.0 * effDrive * smoothstep(90, 150, bAdeg);
     // Oversheeted stalled sail: lots of sideways heel, little drive.
     const sideStall = 0.55 * smoothstep(18, 45, -diff);
     const drive01 = q * (CL * Math.sin(bA) - CD * Math.cos(bA));  // cos<0 aft of beam -> drag drives you
@@ -270,15 +272,15 @@ export class WindsurfSim {
 
     // ------- planing state -------
     if (!this.planing) {
-      if (this.v > 3.8 && power01 > 0.3 && absBetaDeg > 70 && trim === 'good') this.planing = true;
-    } else if (this.v < 3.6 || power01 < 0.28) {
+      if (this.v > 3.8 && power01 > 0.26 && absBetaDeg > 70 && absBetaDeg < 162 && trim === 'good') this.planing = true;
+    } else if (this.v < 3.6 || power01 < 0.20) {
       this.planing = false;
     }
 
     // ------- drag -------
     let drag;
     if (this.planing) {
-      drag = 2.5 * this.v * Math.abs(this.v);
+      drag = 2.3 * this.v * Math.abs(this.v);
       if (inputs.stance === 'mid') drag *= 1.4;           // not in the straps
       if (inputs.dagger) drag *= 1.5;                     // board wants to rail over
     } else {

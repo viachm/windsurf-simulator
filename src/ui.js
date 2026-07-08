@@ -1,6 +1,6 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, toggleLang, onLangChange } from './i18n.js';
+import { t, toggleLang, onLangChange } from './i18n.js?v=__BUILD__';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
