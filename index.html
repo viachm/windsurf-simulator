@@ -3,28 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
-  <meta name="build" content="__BUILD__" />
   <title>Windsurf Simulator</title>
-  <!-- Auto-update: GitHub Pages caches files for 10 min, so a plain refresh can
-       serve a stale version. This fetches the deployed build id (bypassing the
-       HTTP cache) and, if it differs from the one baked into this page, reloads
-       to a cache-busted URL so you always land on the latest deploy. -->
-  <script>
-    (function () {
-      var running = document.querySelector('meta[name=build]').content;
-      if (running === '__' + 'BUILD__') return;              // local dev / not deployed
-      if (new URLSearchParams(location.search).get('v') === running) return; // just reloaded
-      fetch('version.txt', { cache: 'no-store' })
-        .then(function (r) { return r.ok ? r.text() : null; })
-        .then(function (latest) {
-          latest = latest && latest.trim();
-          if (latest && latest !== running) location.replace(location.pathname + '?v=' + latest);
-        })
-        .catch(function () {});
-    })();
-  </script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏄</text></svg>" />
-  <link rel="stylesheet" href="style.css?v=__BUILD__" />
+  <link rel="stylesheet" href="style.css" />
   <script type="importmap">
     {
       "imports": {
@@ -190,6 +171,6 @@
     <div id="help-note" data-i18n="help.note">drag to orbit the camera · scroll to zoom</div>
   </div>
 
-  <script type="module" src="src/main.js?v=__BUILD__"></script>
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>

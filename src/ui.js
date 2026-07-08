@@ -1,6 +1,6 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, toggleLang, onLangChange } from './i18n.js?v=__BUILD__';
+import { t, toggleLang, onLangChange } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -257,9 +257,36 @@ export class UI {
     if (held.has('KeyE')) this.setLean(this.inputs.lean + 55 * dt);
 
     if (this.inputs.autotrim && lastState && !lastState.crashed) {
+      // Full beginner autopilot: keep the rig, the rider's weight, the
+      // daggerboard and the stance all managed so a passive sailor cruises (and
+      // even planes) without ever being flung off. You just steer with the
+      // arrows; turn it off to practise real balance yourself.
+      const clamp01 = (v, a, b) => Math.max(a, Math.min(b, v));
+
+      // 1) sheet -> the optimal boom angle for clean, maximum drive.
       const target = lastState.sheetOpt ?? 45;
       this.inputs.sheetDeg += (target - this.inputs.sheetDeg) * Math.min(dt * 3, 1);
       $('sheet').value = this.inputs.sheetDeg;
+
+      // 2) lean -> hang exactly as hard as the sail pulls, a touch over, to sit
+      //    in the safe band between catapult (sail wins) and back-fall (you win).
+      const boost = this.inputs.harness ? 1.38 : 1.0;
+      const wantLean = clamp01(((lastState.required01 ?? 0) + 0.12) / boost * 100, 0, 100);
+      this.inputs.lean += (wantLean - this.inputs.lean) * Math.min(dt * 5, 1);
+      this.inputs.lean = clamp01(this.inputs.lean, 0, 100);
+      $('lean').value = Math.round(this.inputs.lean);
+
+      // 3) daggerboard -> down for grip while displacing, retracted the instant
+      //    you plane (a lowered board rails over and spins out at speed).
+      this.inputs.dagger = !lastState.planing;
+      $('dagger').checked = this.inputs.dagger;
+
+      // 4) stance -> into the back straps once planing (less drag, no nose-dive),
+      //    neutral otherwise.
+      this.inputs.stance = lastState.planing ? 'back' : 'mid';
+      for (const b of $('stance-seg').children) {
+        b.classList.toggle('active', b.dataset.stance === this.inputs.stance);
+      }
     }
     return this.inputs;
   }
