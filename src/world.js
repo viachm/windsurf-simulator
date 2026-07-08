@@ -28,6 +28,18 @@ function cylinderBetween(mesh, a, b, radius) {
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
 }
 
+// Like cylinderBetween but for a pre-tapered geometry (baked height 1, centred):
+// scales radius (X/Z) uniformly and stretches length along Y from a -> b so the
+// baked taper is preserved. -Y end sits at `a` (proximal), +Y end at `b`.
+const _BONE_UP = new THREE.Vector3(0, 1, 0);
+function boneBetween(mesh, a, b, radScale = 1) {
+  const dir = new THREE.Vector3().subVectors(b, a);
+  const len = dir.length();
+  mesh.scale.set(radScale, Math.max(len, 0.001), radScale);
+  mesh.position.copy(a).addScaledVector(dir, 0.5);
+  mesh.quaternion.setFromUnitVectors(_BONE_UP, dir.normalize());
+}
+
 export class World {
   constructor(canvas) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -273,6 +285,20 @@ export class World {
     fin.position.set(0, -0.12, -1.15);
     this.board.add(fin);
 
+    // nose accent stripe (two-tone deck graphic)
+    const nose = new THREE.Mesh(
+      new THREE.BoxGeometry(0.42, 0.015, 0.55),
+      new THREE.MeshStandardMaterial({ color: 0x1266b5, roughness: 0.55 }));
+    nose.position.set(0, 0.255, 0.82);
+    this.board.add(nose);
+
+    // mast base fitting where the rig meets the deck
+    const mastBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.075, 0.1, 10),
+      new THREE.MeshStandardMaterial({ color: 0x2b333b, roughness: 0.6, metalness: 0.3 }));
+    mastBase.position.set(0, 0.28, 0.45);
+    this.board.add(mastBase);
+
     // ---- rig (mast + boom + sail) ----
     this.rig = new THREE.Group();
     this.rig.position.set(0, 0.28, 0.45);     // mast foot
@@ -335,20 +361,52 @@ export class World {
   }
 
   #sailor() {
-    const skin = new THREE.MeshStandardMaterial({ color: 0xd9a184, roughness: 0.7 });
-    const suit = new THREE.MeshStandardMaterial({ color: 0x1c2e4a, roughness: 0.8 });
-    const suit2 = new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.8 });
-    const unit = new THREE.CylinderGeometry(1, 1, 1, 8); // unit cylinder, scaled per-frame
+    const skin = new THREE.MeshStandardMaterial({ color: 0xd9a184, roughness: 0.65 });
+    const suit = new THREE.MeshStandardMaterial({ color: 0x1c2e4a, roughness: 0.85 }); // wetsuit navy
+    const suit2 = new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.8 });  // vest/rash top
+    const dark = new THREE.MeshStandardMaterial({ color: 0x222b36, roughness: 0.9 });   // cap / booties
+    const harnessMat = new THREE.MeshStandardMaterial({ color: 0x11161d, roughness: 0.7, metalness: 0.2 });
 
-    this.sailorParts = {
-      torso: new THREE.Mesh(unit.clone(), suit2),
-      legL: new THREE.Mesh(unit.clone(), suit),
-      legR: new THREE.Mesh(unit.clone(), suit),
-      armF: new THREE.Mesh(unit.clone(), skin),
-      armB: new THREE.Mesh(unit.clone(), skin),
-      head: new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), skin),
-    };
-    for (const m of Object.values(this.sailorParts)) this.board.add(m);
+    // Tapered bone geometries (baked height 1, centred). Radius args: (top, bottom)
+    // — bottom is the proximal (-Y) end used by boneBetween.
+    const bone = (rTop, rBot) => new THREE.CylinderGeometry(rTop, rBot, 1, 10);
+    const ball = new THREE.SphereGeometry(1, 12, 8); // unit sphere, scaled per joint
+
+    const P = this.sailorParts = {};
+    // torso: waist -> chest, broader at the shoulders (rash vest)
+    P.torso = new THREE.Mesh(bone(0.155, 0.115), suit2);
+    // a harness band around the waist for a windsurfing look (horizontal belt)
+    P.harness = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.038, 8, 18), harnessMat);
+    P.harness.rotation.x = Math.PI / 2;
+    P.neck = new THREE.Mesh(bone(0.05, 0.06), skin);
+    P.head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 12), skin);
+    P.cap = new THREE.Mesh(new THREE.SphereGeometry(0.128, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), dark);
+
+    // limbs: upper + lower segment per arm/leg, with joint caps to hide seams
+    P.thighL = new THREE.Mesh(bone(0.062, 0.082), suit);
+    P.thighR = new THREE.Mesh(bone(0.062, 0.082), suit);
+    P.shinL = new THREE.Mesh(bone(0.045, 0.06), suit);
+    P.shinR = new THREE.Mesh(bone(0.045, 0.06), suit);
+    P.upperArmF = new THREE.Mesh(bone(0.04, 0.055), suit2);
+    P.upperArmB = new THREE.Mesh(bone(0.04, 0.055), suit2);
+    P.foreArmF = new THREE.Mesh(bone(0.032, 0.045), skin);
+    P.foreArmB = new THREE.Mesh(bone(0.032, 0.045), skin);
+
+    // joint caps (spheres) — pelvis, knees, shoulders, elbows, hands
+    P.pelvis = new THREE.Mesh(ball, suit);
+    P.kneeL = new THREE.Mesh(ball, suit);
+    P.kneeR = new THREE.Mesh(ball, suit);
+    P.shoulderF = new THREE.Mesh(ball, suit2);
+    P.shoulderB = new THREE.Mesh(ball, suit2);
+    P.elbowF = new THREE.Mesh(ball, skin);
+    P.elbowB = new THREE.Mesh(ball, skin);
+    P.handF = new THREE.Mesh(ball, skin);
+    P.handB = new THREE.Mesh(ball, skin);
+    // booties (feet)
+    P.footL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 0.26), dark);
+    P.footR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 0.26), dark);
+
+    for (const m of Object.values(P)) this.board.add(m);
   }
 
   #buoys() {
@@ -569,27 +627,60 @@ export class World {
       chest.set(side * 1.5, 0.05, stanceZ + 0.1);
     }
 
-    cylinderBetween(P.legL, fFront, pelvis, 0.055);
-    cylinderBetween(P.legR, fBack, pelvis, 0.055);
-    cylinderBetween(P.torso, pelvis, chest, 0.12);
-    P.head.position.copy(chest).add(new THREE.Vector3(side * 0.02, 0.22, 0.03));
+    // ---- legs: hip (pelvis) -> knee -> foot, knees bent forward toward the nose ----
+    const V = (x, y, z) => new THREE.Vector3(x, y, z);
+    const jointAt = (mesh, p, r) => { mesh.position.copy(p); mesh.scale.setScalar(r); };
 
-    // hands on the boom: compute boom grip points in board-local space
-    const gripLocal1 = new THREE.Vector3(0.3 * 1, 1.55, -0.55); // on windward side of boom torus
-    const gripLocal2 = new THREE.Vector3(0.3 * 1, 1.55, -1.15);
-    // boom torus is scaled x0.32 around center z=-1.0 — approximate grip on windward side:
-    gripLocal1.set(0, 1.55, -0.45); gripLocal2.set(0, 1.55, -1.1);
-    const g1 = gripLocal1.clone().applyEuler(this.rig.rotation).add(this.rig.position);
-    const g2 = gripLocal2.clone().applyEuler(this.rig.rotation).add(this.rig.position);
-    const shoulderF = chest.clone().add(new THREE.Vector3(0, 0.15, 0.1));
-    const shoulderB = chest.clone().add(new THREE.Vector3(0, 0.15, -0.1));
+    const kneeL = fFront.clone().lerp(pelvis, 0.5); kneeL.z += 0.11; kneeL.y += 0.02;
+    const kneeR = fBack.clone().lerp(pelvis, 0.5);  kneeR.z += 0.08; kneeR.y += 0.02;
+    boneBetween(P.thighL, pelvis, kneeL);
+    boneBetween(P.thighR, pelvis, kneeR);
+    boneBetween(P.shinL, kneeL, fFront);
+    boneBetween(P.shinR, kneeR, fBack);
+    jointAt(P.pelvis, pelvis, 0.1);
+    jointAt(P.kneeL, kneeL, 0.06);
+    jointAt(P.kneeR, kneeR, 0.06);
+    // booties resting on the deck, pointing forward
+    P.footL.position.copy(fFront).add(V(0, -0.03, 0.06));
+    P.footR.position.copy(fBack).add(V(0, -0.03, 0.06));
+    P.footL.rotation.set(0, 0, 0); P.footR.rotation.set(0, 0, 0);
+
+    // ---- torso + head ----
+    boneBetween(P.torso, pelvis, chest);
+    P.harness.position.copy(pelvis).lerp(chest, 0.18).add(V(0, 0.02, 0));
+    const neckBase = chest.clone().add(V(side * 0.01, 0.12, 0.02));
+    const headPos = chest.clone().add(V(side * 0.02, 0.34, 0.03));
+    boneBetween(P.neck, neckBase, headPos.clone().add(V(0, -0.1, 0)));
+    P.head.position.copy(headPos);
+    P.cap.position.copy(headPos).add(V(0, 0.015, -0.01));
+
+    // ---- arms: shoulder -> elbow -> hand on the boom ----
+    // boom grip points in board-local space (windward side of the boom torus)
+    const g1 = V(0, 1.55, -0.45).applyEuler(this.rig.rotation).add(this.rig.position);
+    const g2 = V(0, 1.55, -1.1).applyEuler(this.rig.rotation).add(this.rig.position);
+    const shoulderF = chest.clone().add(V(side * 0.12, 0.14, 0.08));
+    const shoulderB = chest.clone().add(V(side * 0.12, 0.14, -0.08));
+
+    let handF, handB;
     if (!crashed) {
-      cylinderBetween(P.armF, shoulderF, g1, 0.045);
-      cylinderBetween(P.armB, shoulderB, g2, 0.045);
-    } else {
-      cylinderBetween(P.armF, shoulderF, chest.clone().add(new THREE.Vector3(side * 0.4, 0.1, 0.3)), 0.045);
-      cylinderBetween(P.armB, shoulderB, chest.clone().add(new THREE.Vector3(side * 0.5, 0.05, -0.2)), 0.045);
+      handF = g1; handB = g2;
+    } else { // arms flail toward the water beside the board
+      handF = chest.clone().add(V(side * 0.4, 0.1, 0.3));
+      handB = chest.clone().add(V(side * 0.5, 0.05, -0.2));
     }
+    // elbows bend down-and-out from the straight shoulder->hand line
+    const elbowF = shoulderF.clone().lerp(handF, 0.5).add(V(side * 0.05, -0.09, 0));
+    const elbowB = shoulderB.clone().lerp(handB, 0.5).add(V(side * 0.05, -0.09, 0));
+    boneBetween(P.upperArmF, shoulderF, elbowF);
+    boneBetween(P.upperArmB, shoulderB, elbowB);
+    boneBetween(P.foreArmF, elbowF, handF);
+    boneBetween(P.foreArmB, elbowB, handB);
+    jointAt(P.shoulderF, shoulderF, 0.06);
+    jointAt(P.shoulderB, shoulderB, 0.06);
+    jointAt(P.elbowF, elbowF, 0.048);
+    jointAt(P.elbowB, elbowB, 0.048);
+    jointAt(P.handF, handF, 0.05);
+    jointAt(P.handB, handB, 0.05);
   }
 
   #updateWindArrows(state, dt) {
