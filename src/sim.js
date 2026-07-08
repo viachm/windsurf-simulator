@@ -50,6 +50,7 @@ export class WindsurfSim {
     this.crashReason = '';
     this.crashLesson = '';
     this.crashTimer = 0;
+    this.recoverHold = false;
     this.maneuver = null;            // {type:'tack'|'gybe', from, to, dur, t}
     // danger accumulators (seconds spent in a hazardous condition)
     this.acc = { catapult: 0, backFall: 0, spinout: 0, pearl: 0 };
@@ -109,6 +110,7 @@ export class WindsurfSim {
     this.crashReason = reason;
     this.crashLesson = lesson;
     this.crashTimer = 3.2;
+    this.recoverHold = false;   // set true while the player holds the crash popup to read it
     this.maneuver = null;
     this.planing = false;
     this.yawVel = 0;
@@ -137,10 +139,14 @@ export class WindsurfSim {
 
     // ------- crashed: float and count down -------
     if (this.crashed) {
-      this.crashTimer -= dt;
+      // while the player holds the popup to read it, freeze the countdown and
+      // don't auto-recover — recovery happens on release (see UI).
+      if (!this.recoverHold) {
+        this.crashTimer -= dt;
+        if (this.crashTimer <= 0) this.recover();
+      }
       this.v *= Math.pow(0.2, dt);
       this.yawVel *= Math.pow(0.1, dt);
-      if (this.crashTimer <= 0) this.recover();
       return this.snapshot(inputs, warnings, { power01: 0, required01: 0, trim: 'luff', sheetOpt: 45 });
     }
 

@@ -30,6 +30,7 @@ export class UI {
     this.#bindPanel();
     this.#bindSettings();
     this.#bindKeys();
+    this.#bindCrashHold();
     this.compassCtx = $('compass').getContext('2d');
 
     // keep the framing centred if the viewport changes (rotate / URL bar)
@@ -176,6 +177,25 @@ export class UI {
     const bottomInset = Math.max(0, H - $('panel').getBoundingClientRect().top);
     const topInset = $('meters').getBoundingClientRect().bottom;  // lowest top overlay edge
     this.world.setFramingLift((bottomInset - topInset) / H);
+  }
+
+  // Press-and-hold the crash popup to read it: holding freezes the recovery
+  // countdown; releasing recovers immediately and starts a fresh run.
+  #bindCrashHold() {
+    const ov = $('crash-overlay');
+    const hold = (e) => {
+      if (!this.sim.crashed) return;
+      this.sim.recoverHold = true;
+      e.preventDefault();
+    };
+    const release = () => {
+      if (!this.sim.recoverHold) return;
+      this.sim.recoverHold = false;
+      if (this.sim.crashed) this.sim.recover();   // release -> back on the board
+    };
+    ov.addEventListener('pointerdown', hold);
+    ov.addEventListener('pointerup', release);
+    ov.addEventListener('pointercancel', release);
   }
 
   // -------- interlocked setters (the "smart logic") --------
@@ -413,7 +433,10 @@ export class UI {
     if (st.crashed) {
       $('crash-reason').textContent = t(st.crashReason);
       $('crash-lesson').textContent = t(st.crashLesson);
-      $('crash-timer').textContent = t('crash.timer', { n: Math.max(0, st.crashTimer).toFixed(0) });
+      // hold to keep reading; release to sail again (see #bindCrashHold)
+      $('crash-timer').textContent = this.sim.recoverHold
+        ? t('crash.release')
+        : `${t('crash.timer', { n: Math.max(0, st.crashTimer).toFixed(0) })}  ·  ${t('crash.hold')}`;
     }
 
     // action buttons enabled state

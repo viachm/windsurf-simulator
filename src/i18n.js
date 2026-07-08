@@ -48,6 +48,8 @@ export const STRINGS = {
     // --- crash overlay ---
     'crash.splash': 'SPLASH!',
     'crash.timer': 'back on the board in {n}…',
+    'crash.hold': 'hold to keep reading',
+    'crash.release': 'release to sail again →',
 
     // --- control panel ---
     'panel.header': 'RIG & BODY CONTROLS',
@@ -180,6 +182,8 @@ export const STRINGS = {
     // --- crash overlay ---
     'crash.splash': 'ПЛЮХ!',
     'crash.timer': 'знову на дошці за {n}…',
+    'crash.hold': 'тримайте, щоб читати',
+    'crash.release': 'відпустіть, щоб продовжити →',
 
     // --- control panel ---
     'panel.header': 'КЕРУВАННЯ ОСНАЩЕННЯМ І ТІЛОМ',
