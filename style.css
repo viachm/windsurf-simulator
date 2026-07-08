@@ -257,7 +257,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
     position: absolute;
     left: 0; right: 0; top: auto; bottom: 0;
     width: 100%; max-width: 100%;
-    max-height: 42vh; max-height: 42dvh;   /* open sheet ~1.2/3 of the screen; body scrolls */
+    max-height: 46vh; max-height: 46dvh;   /* open sheet a touch taller; body scrolls */
     border-radius: 16px 16px 0 0;
     border-left: 0; border-right: 0; border-bottom: 0;
     box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.45);
@@ -268,15 +268,15 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   .panel-header {
     position: relative;
     align-items: center;
-    padding: 13px 14px 11px;
-    padding-bottom: calc(11px + env(safe-area-inset-bottom)); /* clear the home bar */
+    padding: 9px 14px 8px;                                   /* ~30% thinner header */
+    padding-bottom: calc(8px + env(safe-area-inset-bottom)); /* clear the home bar */
     border-radius: 16px 16px 0 0;
     cursor: pointer;
     font-size: 11px;
   }
   /* grab-handle affordance at the very top of the bar */
   .panel-header::before {
-    content: ""; position: absolute; top: 6px; left: 50%;
+    content: ""; position: absolute; top: 4px; left: 50%;
     transform: translateX(-50%);
     width: 46px; height: 5px; border-radius: 3px;
     background: rgba(180, 220, 255, 0.4);
@@ -286,7 +286,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
     background: rgba(79, 195, 247, 0.16); border-color: var(--accent); color: var(--accent);
   }
   /* the open sheet doesn't need the header's home-bar padding — the body has it */
-  #panel:not(.collapsed) .panel-header { padding-bottom: 11px; }
+  #panel:not(.collapsed) .panel-header { padding-bottom: 8px; }
 
   #panel-body {
     padding: 8px 12px;
@@ -350,10 +350,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
     top: calc(6px + env(safe-area-inset-top));
     gap: 5px;
   }
-  #settings-toggle { padding: 5px 7px; }
-  #settings-toggle svg { width: 13px; height: 13px; }
+  #settings-toggle { padding: 0 11px; height: 38px; border-radius: 10px; }
+  #settings-toggle svg { width: 19px; height: 19px; }
   #settings-panel {
-    right: 8px; top: calc(40px + env(safe-area-inset-top));
+    right: 8px; top: calc(50px + env(safe-area-inset-top));
     width: min(240px, calc(100vw - 16px));
   }
 

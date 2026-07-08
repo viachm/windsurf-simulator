@@ -38,7 +38,9 @@ export class World {
     this.scene.fog = new THREE.FogExp2(0xbfdcec, 0.0032);
 
     this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 2000);
-    this.camera.position.set(15, 8.75, -19.5); // start zoomed out (~1.5x)
+    // start zoomed out (~1.5x); phones pull back a touch more for a wider view
+    const mobileZoom = matchMedia('(max-width: 768px)').matches ? 1.28 : 1;
+    this.camera.position.set(15 * mobileZoom, 1.4 + 7.35 * mobileZoom, -19.5 * mobileZoom);
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enablePan = false;

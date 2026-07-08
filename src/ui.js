@@ -111,8 +111,13 @@ export class UI {
       this.setPanelCollapsed(!$('panel').classList.contains('collapsed'));
     });
 
-    // on phones, start collapsed so the water is visible; the header sits as a bottom bar
-    if (this.#isMobile()) this.setPanelCollapsed(true);
+    // Phone defaults: light wind (~7 km/h), controls open from the start.
+    if (this.#isMobile()) {
+      $('windset').value = 4;                       // 4 kn ≈ 7 km/h — a gentle start
+      this.sim.baseWind = 4 / 1.94384;
+      this.#refreshWindReadout();
+      this.setPanelCollapsed(false);
+    }
   }
 
   // ---------------- settings popover ----------------
