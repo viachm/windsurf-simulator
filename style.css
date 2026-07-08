@@ -129,15 +129,17 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #crash-timer { font-size: 11px; margin-top: 14px; color: var(--text-dim); }
 
 /* ---------- control panel ---------- */
-/* ---------- language toggle ---------- */
-#lang-toggle {
-  position: absolute; right: 366px; top: 14px; z-index: 20;
+/* ---------- top-right buttons (info + language) ---------- */
+#top-buttons { position: absolute; right: 366px; top: 14px; z-index: 20; display: flex; gap: 6px; }
+#lang-toggle, #info-toggle {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 8px; color: var(--text); backdrop-filter: blur(6px);
-  padding: 7px 12px; cursor: pointer; font-family: inherit;
-  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  cursor: pointer; font-family: inherit; font-weight: 700; letter-spacing: 1.5px;
 }
-#lang-toggle:hover { border-color: var(--accent); color: var(--accent); }
+#lang-toggle { padding: 7px 12px; font-size: 11px; }
+#info-toggle { padding: 6px 9px; display: flex; align-items: center; justify-content: center; }
+#info-toggle svg { display: block; }
+#lang-toggle:hover, #info-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
 #panel {
   position: absolute; right: 14px; top: 14px; width: 340px;
@@ -275,37 +277,44 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   .toggles-row { gap: 0; }
   input[type="range"] { height: 20px; }
 
-  /* ---- compact top HUD (compass dropped to save width) ---- */
+  /* ---- top HUD: wide, flat boxes filling the row (compass dropped) ----
+     Span from the left edge to just before the top-right buttons; flex:1 makes
+     the three boxes wide, which also lets the labels sit on one line (flatter). */
   #hud-top {
     top: calc(6px + env(safe-area-inset-top));
-    gap: 5px; padding: 0 6px; max-width: 100%; justify-content: center;
+    left: 8px; right: 86px; transform: none; max-width: none;
+    gap: 6px; padding: 0; justify-content: flex-start;
   }
-  .hud-box { min-width: 0; flex: 1; max-width: 92px; padding: 3px 6px; border-radius: 8px; }
-  .hud-label { font-size: 7px; letter-spacing: 0.4px; }
-  .hud-value { font-size: 13px; margin-top: 0; }
+  .hud-box { flex: 1; min-width: 0; max-width: none; padding: 3px 8px; border-radius: 8px; }
+  .hud-label { font-size: 7.5px; letter-spacing: 0.4px; line-height: 1.2; }
+  .hud-value { font-size: 14px; margin-top: 1px; line-height: 1.05; }
   .hud-unit { font-size: 8px; margin-left: 2px; }
-  #pos-val { font-size: 9px; line-height: 1.25; }
-  .hud-sub { font-size: 7px; min-height: 8px; }
+  #pos-val { font-size: 10px; line-height: 1.1; }
+  .hud-sub { font-size: 7.5px; min-height: 0; line-height: 1.1; }
   #planing-badge { font-size: 7px; padding: 0 4px; }
   .compass-box { display: none; }
 
-  /* ---- meters: slim full-width strip under the HUD ---- */
+  /* ---- meters: one row, power (left) + balance (right) ---- */
   #meters {
-    top: calc(52px + env(safe-area-inset-top));
-    left: 8px; right: 8px; width: auto; gap: 5px;
+    top: calc(50px + env(safe-area-inset-top));
+    left: 8px; right: 8px; width: auto;
+    flex-direction: row; gap: 6px;
   }
-  .meter-block { padding: 4px 9px; border-radius: 8px; }
+  .meter-block { flex: 1; min-width: 0; padding: 4px 10px; border-radius: 8px; }
   .meter-title { font-size: 7.5px; margin-bottom: 3px; }
   .meter-hint { display: none; }
   .meter-track { height: 10px; }
   #lean-marker { width: 10px; height: 10px; }
 
-  /* ---- language toggle tucks into the free top-right corner ---- */
-  #lang-toggle {
+  /* ---- info + language buttons in the top-right corner ---- */
+  #top-buttons {
     right: 8px; left: auto;
     top: calc(6px + env(safe-area-inset-top));
-    padding: 5px 8px; font-size: 9px;
+    gap: 5px;
   }
+  #lang-toggle { padding: 5px 8px; font-size: 9px; }
+  #info-toggle { padding: 4px 6px; }
+  #info-toggle svg { width: 13px; height: 13px; }
 
   /* ---- coaching hint lifts above the collapsed bar ---- */
   #hint-bar { bottom: calc(64px + env(safe-area-inset-bottom)); max-width: 92%; }

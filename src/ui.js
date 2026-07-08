@@ -73,6 +73,12 @@ export class UI {
 
     $('welcome-close').addEventListener('click', () => {
       $('welcome-overlay').classList.add('off');
+      try { localStorage.setItem('ws_welcomeSeen', '1'); } catch (e) {} // don't show again next time
+    });
+
+    // ℹ button reopens the how-to on demand
+    $('info-toggle').addEventListener('click', () => {
+      $('welcome-overlay').classList.remove('off');
     });
 
     // tapping anywhere on the header toggles — a bigger, touch-friendly target
