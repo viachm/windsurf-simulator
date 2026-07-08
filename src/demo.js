@@ -12,6 +12,9 @@
 import { t } from './i18n.js';
 
 const KN = 1.94384; // m/s -> knots
+const DEG = Math.PI / 180;
+const PREVIEW_PHASES = 4;   // how many upcoming steps the dashed route shows
+const PREVIEW_LEG = 16;     // world-metres drawn per upcoming step
 
 // Each mode sets its wind ONCE at start (a sensible speed for the tour) and then
 // leaves it stable — the user can still drag the wind slider mid-demo without
@@ -101,6 +104,7 @@ export class DemoDirector {
     this.mode = null;
     this.script = null;
     this.ui.setRake(0);
+    this.ui.showRoutePreview(null);
     if (this.onCaption) this.onCaption(null);
     if (this.onState) this.onState(null);
   }
@@ -121,9 +125,12 @@ export class DemoDirector {
   // Called once per frame BEFORE sim.update, with the previous frame's state.
   tick(dt, st) {
     if (!this.active || !st) return;
-    if (st.crashed) return;                 // let recovery run; resume after
+    if (st.crashed) { this.ui.showRoutePreview(null); return; } // resume after recovery
     const seg = this.script[this.i];
     this.segT += dt;
+
+    // dashed preview of the route ahead (current + next few steps)
+    this.ui.showRoutePreview(this.#buildPreview(st));
 
     // steering + turns (wind is left stable — set once at start)
     if (st.maneuver) {
@@ -159,5 +166,36 @@ export class DemoDirector {
     if (Math.abs(err) > 3) rake = Math.max(-1, Math.min(1, err / 22));
     rake = Math.round(rake * 2) / 2;          // -> {-1,-0.5,0,0.5,1}
     this.ui.setRake(rake);
+  }
+
+  // Project the planned route a few steps ahead as world-space nodes, starting at
+  // the board. The board heading that yields a given |beta| B on tack sign s is
+  // h = windFromAngle - s*B (since beta = windFromAngle - heading). Each upcoming
+  // segment becomes a straight leg at its target course; a tack/gybe flips the
+  // tack, so the path kinks into a V through the wind — exactly what's coming.
+  #buildPreview(st) {
+    const wa = st.windFromAngle;
+    let s = st.beta >= 0 ? 1 : -1;                 // current tack sign
+    const nodes = [{ x: st.pos.x, z: st.pos.z }];
+    const run = (h, len) => {
+      const p = nodes[nodes.length - 1];
+      nodes.push({ x: p.x + Math.sin(h) * len, z: p.z + Math.cos(h) * len });
+    };
+    let idx = this.i;
+    for (let k = 0; k < PREVIEW_PHASES; k++) {
+      const seg = this.script[idx % this.script.length];
+      // remaining length shrinks as we progress through the current leg
+      const rem = k === 0 ? Math.max(4, PREVIEW_LEG * (1 - this.segT / seg.dur)) : PREVIEW_LEG;
+      const isTurn = seg.turn && !(k === 0 && this.turned);
+      if (isTurn) {
+        run(wa - s * seg.beta * DEG, rem * 0.5); // approach on the current tack
+        s = -s;                                  // turn crosses the wind
+        run(wa - s * seg.beta * DEG, PREVIEW_LEG); // exit on the new tack
+      } else {
+        run(wa - s * seg.beta * DEG, rem);
+      }
+      idx++;
+    }
+    return nodes;
   }
 }

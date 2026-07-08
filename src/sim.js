@@ -57,7 +57,7 @@ export class WindsurfSim {
     this.u = 0;                      // leeway (drift) speed toward starboard, m/s
     this.yawVel = 0;                 // yaw rate, rad/s, +ve = turning toward port
     this.windFromAngle0 = 0;         // wind FROM +Z direction
-    this.baseWind = 14 / KN;         // m/s
+    this.baseWind = 7;               // m/s (default true wind)
     this.planing = false;
     this.crashed = false;
     this.crashReason = '';

@@ -117,7 +117,7 @@ export class UI {
     $('btn-reset').addEventListener('click', () => { this.sim.reset(); this.resetInputs(); });
 
     $('windset').addEventListener('input', (e) => {
-      this.sim.baseWind = (+e.target.value) / 1.94384;
+      this.sim.baseWind = +e.target.value;      // slider is in m/s
       this.#refreshWindReadout();
     });
 
@@ -138,11 +138,9 @@ export class UI {
       this.setPanelCollapsed(!$('panel').classList.contains('collapsed'));
     });
 
-    // Phone defaults: light wind (10 km/h), controls open from the start.
+    // Phone default: open the controls from the start (wind uses the shared
+    // 7 m/s default set in the sim).
     if (this.#isMobile()) {
-      this.sim.baseWind = 10 / 3.6;                 // 10 km/h — a gentle start
-      $('windset').value = 5;                       // nearest whole knot for the thumb
-      this.#refreshWindReadout();
       this.setPanelCollapsed(false);
     }
   }
@@ -209,8 +207,12 @@ export class UI {
     };
     const close = () => { panel.classList.add('off'); btn.classList.remove('open'); };
 
+    this._closeDemoPanel = close;
+
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      // once a tour is running the button IS the stop button — one tap ends it
+      if (this.demo.running) { this.demo.stop(); return; }
       panel.classList.contains('off') ? open() : close();
     });
     $('demo-close').addEventListener('click', close);
@@ -222,7 +224,6 @@ export class UI {
     for (const b of panel.querySelectorAll('.demo-mode')) {
       b.addEventListener('click', () => { this.demo.start(b.dataset.mode); close(); });
     }
-    $('demo-stop').addEventListener('click', () => { this.demo.stop(); close(); });
 
     // Any hands-on control ends the demo — like touching the wheel on cruise
     // control. Capture phase so it fires before the control's own handler. The
@@ -233,21 +234,55 @@ export class UI {
     }, true);
   }
 
-  // Reflect the demo's live state on the button, popover and caption banner.
+  // Reflect the demo's live state on the button and popover. While running, the
+  // ▶ DEMO pill turns into a ■ STOP button (icon + label + red styling) so one
+  // tap ends the tour — no reopening the popover.
   #setDemoState(mode) {
-    $('demo-toggle').classList.toggle('active', !!mode);
-    $('demo-panel').classList.toggle('running', !!mode);
+    const btn = $('demo-toggle');
+    btn.classList.toggle('running', !!mode);
+    const path = btn.querySelector('svg path');
+    const label = btn.querySelector('.demo-btn-label');
+    if (mode) {
+      path.setAttribute('d', 'M6 6h12v12H6z');   // ■ stop
+      label.textContent = t('demo.stopbtn');
+      btn.title = 'stop demo / зупинити демо';
+    } else {
+      path.setAttribute('d', 'M8 5v14l11-7z');    // ▶ play
+      label.textContent = t('demo.btn');
+      btn.title = 'guided demo / демо-тур';
+    }
     for (const b of $('demo-panel').querySelectorAll('.demo-mode')) {
       b.classList.toggle('active', b.dataset.mode === mode);
     }
     $('demo-tag').textContent = mode ? t(`demo.mode.${mode}`) : '';
   }
 
+  // The demo narration reuses the SAME slot as every other transient message —
+  // low-centre on desktop, full-width just above the control sheet on phones.
   #showCaption(text) {
     const el = $('demo-caption');
-    if (text) { $('demo-cap').textContent = text; el.classList.remove('off'); }
-    else { el.classList.add('off'); }
+    if (text) {
+      $('demo-cap').textContent = text;
+      this.#positionAbovePanel(el);
+      el.classList.remove('off');
+    } else {
+      el.classList.add('off');
+    }
   }
+
+  // Park a bottom overlay just above the (open) control sheet on phones; on
+  // desktop fall back to its CSS position. Shared by the toast and the caption.
+  #positionAbovePanel(el) {
+    if (this.#isMobile()) {
+      const panelTop = $('panel').getBoundingClientRect().top;
+      el.style.bottom = `${Math.round(innerHeight - panelTop + 10)}px`;
+    } else {
+      el.style.bottom = '';
+    }
+  }
+
+  // Forward the demo's route-preview points to the 3D world (or null to hide).
+  showRoutePreview(points) { if (this.world) this.world.setRoutePreview(points); }
 
   // Turn the beginner autopilot on/off (used by the demo director).
   setAutotrim(on) {
@@ -257,8 +292,7 @@ export class UI {
 
   // Keep the wind slider + readout in step with a scripted wind change.
   syncWindControl() {
-    const kn = this.sim.baseWind * 1.94384;
-    $('windset').value = Math.round(kn);
+    $('windset').value = Math.round(this.sim.baseWind * 2) / 2;  // m/s, snapped to the 0.5 step
     this.#refreshWindReadout();
   }
 
@@ -271,6 +305,9 @@ export class UI {
     p.classList.toggle('collapsed', collapsed);
     $('panel-toggle').textContent = collapsed ? '+' : '–';
     this.#applyFramingLift();
+    // keep the demo caption sitting just above the sheet as it resizes
+    const cap = $('demo-caption');
+    if (!cap.classList.contains('off')) this.#positionAbovePanel(cap);
   }
 
   // Centre the rider in the clear band between the top overlays (HUD + meters)
@@ -429,12 +466,7 @@ export class UI {
   #showToast(msg) {
     const el = $('toast');
     el.textContent = msg;
-    if (this.#isMobile()) {
-      const panelTop = $('panel').getBoundingClientRect().top;
-      el.style.bottom = `${Math.round(innerHeight - panelTop + 10)}px`;
-    } else {
-      el.style.bottom = ''; // fall back to the CSS position
-    }
+    this.#positionAbovePanel(el);
     el.classList.add('on');
 
     clearTimeout(this._toastTimer);
@@ -561,9 +593,10 @@ export class UI {
     $('lean-marker').style.left = `${Math.min(1.3, st.eff01 || 0) / 1.3 * 100}%`;
     $('lean-marker').style.background = st.danger > 0.4 ? '#ff7043' : '#4fc3f7';
 
-    // hint bar: sim coaching warnings (flash/interlock messages go to the toast)
+    // hint bar: sim coaching warnings (flash/interlock messages go to the toast).
+    // Silenced during a demo — the narration caption owns that bottom slot.
     const hintEl = $('hint-text');
-    if (st.warnings.length) {
+    if (st.warnings.length && !this.demo.running) {
       hintEl.textContent = t(st.warnings[0]);
       hintEl.classList.toggle('warn', st.danger > 0.25);
     } else {

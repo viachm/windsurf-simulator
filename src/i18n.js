@@ -91,7 +91,7 @@ export const STRINGS = {
     'btn.gybe.t': 'turn away from the wind through downwind',
     'btn.reset': 'RESET <span class="key-hint">R</span>',
 
-    'ctl.truewind': 'TRUE WIND <span class="ctl-value" id="windset-val">14 kn</span>',
+    'ctl.truewind': 'TRUE WIND <span class="ctl-value" id="windset-val">7.0 m/s</span>',
     'help.note': 'drag to orbit the camera · scroll to zoom',
 
     // --- points of sail ---
@@ -147,6 +147,7 @@ export const STRINGS = {
 
     // --- guided demo ---
     'demo.btn': 'DEMO',
+    'demo.stopbtn': 'STOP',
     'demo.title': 'GUIDED DEMO',
     'demo.intro': 'Sit back — the board sails a teaching route on its own, working every control. Touch anything to take over.',
     'demo.mode.beginner': 'Beginner lesson',
@@ -155,7 +156,6 @@ export const STRINGS = {
     'demo.mode.freeride.d': 'Strong wind, planing, footstraps and fast transitions.',
     'demo.mode.chill': 'Chill cruise',
     'demo.mode.chill.d': 'A calm, endless cruise — like a screensaver.',
-    'demo.stop': '■ STOP DEMO',
     // beginner tour captions
     'demo.b.beam': 'Beam reach — the wind is straight off your side. The easiest, steadiest course; the board just cruises.',
     'demo.b.headup': 'Heading up — steering the nose closer to the wind. Watch the shaded no-go zone we must stay out of.',
@@ -261,7 +261,7 @@ export const STRINGS = {
     'btn.gybe.t': 'поворот фордевінд — відвернути від вітру через повний курс',
     'btn.reset': 'СКИНУТИ <span class="key-hint">R</span>',
 
-    'ctl.truewind': 'СПРАВЖНІЙ ВІТЕР <span class="ctl-value" id="windset-val">14 kn</span>',
+    'ctl.truewind': 'СПРАВЖНІЙ ВІТЕР <span class="ctl-value" id="windset-val">7.0 м/с</span>',
     'help.note': 'тягніть, щоб обертати камеру · прокрутка — масштаб',
 
     // --- points of sail ---
@@ -317,6 +317,7 @@ export const STRINGS = {
 
     // --- guided demo ---
     'demo.btn': 'ДЕМО',
+    'demo.stopbtn': 'СТОП',
     'demo.title': 'ДЕМО-ТУР',
     'demo.intro': 'Відкиньтеся — дошка сама пройде навчальний маршрут і покаже роботу всіх керувань. Торкніться будь-чого, щоб перехопити.',
     'demo.mode.beginner': 'Урок для новачка',
@@ -325,7 +326,6 @@ export const STRINGS = {
     'demo.mode.freeride.d': 'Сильний вітер, глісування, петлі та швидкі повороти.',
     'demo.mode.chill': 'Спокійний круїз',
     'demo.mode.chill.d': 'Спокійне нескінченне катання — наче заставка.',
-    'demo.stop': '■ ЗУПИНИТИ ДЕМО',
     // beginner tour captions
     'demo.b.beam': 'Галфвінд — вітер точно збоку. Найлегший і найстабільніший курс; дошка спокійно йде.',
     'demo.b.headup': 'Приводимося — скеровуємо ніс ближче до вітру. Дивіться на затінений сектор левентика, куди йти не можна.',

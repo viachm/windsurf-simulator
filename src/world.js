@@ -73,6 +73,7 @@ export class World {
     this.#splash();
     this.#wake();
     this.#trail();
+    this.#routePreview();
 
     this.sailorSide = 1;       // +1 = port (local +X); animated on tack/gybe
     this.prevBoardPos = new THREE.Vector3();
@@ -506,6 +507,66 @@ export class World {
     this.trailLine.frustumCulled = false;
     this.trailLine.renderOrder = 999; // draw last, above the sea surface
     this.scene.add(this.trailLine);
+  }
+
+  // Dashed "planned route" drawn AHEAD of the board during a demo, so you can see
+  // which way it is about to go (and where the next turns fall). Fed world-space
+  // points by the demo director via setRoutePreview(); hidden the rest of the time.
+  #routePreview() {
+    const MAXP = 96;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAXP * 3), 3));
+    geo.setDrawRange(0, 0);
+    const mat = new THREE.LineDashedMaterial({
+      color: 0xffd54f, transparent: true, opacity: 0.95,
+      dashSize: 1.2, gapSize: 0.65, depthWrite: false, depthTest: false,
+    });
+    this.routeLine = new THREE.Line(geo, mat);
+    this.routeLine.frustumCulled = false;
+    this.routeLine.renderOrder = 998;
+    this.routeLine.visible = false;
+    this.scene.add(this.routeLine);
+
+    // flat arrowhead lying on the water, baked pointing along +Z (local)
+    const tri = new THREE.BufferGeometry();
+    tri.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+      0, 0, 1.7, -1.0, 0, -0.7, 1.0, 0, -0.7,
+    ]), 3));
+    tri.setIndex([0, 1, 2]);
+    const triMat = new THREE.MeshBasicMaterial({
+      color: 0xffd54f, transparent: true, opacity: 0.9,
+      side: THREE.DoubleSide, depthWrite: false, depthTest: false,
+    });
+    this.routeArrow = new THREE.Mesh(tri, triMat);
+    this.routeArrow.renderOrder = 998;
+    this.routeArrow.visible = false;
+    this.scene.add(this.routeArrow);
+  }
+
+  // points: array of {x,z} world coords from the board forward, or null to hide.
+  setRoutePreview(points) {
+    if (!points || points.length < 2) {
+      this.routeLine.visible = false;
+      this.routeArrow.visible = false;
+      return;
+    }
+    const y = 0.28; // float just above the water (depthTest off -> always visible)
+    const attr = this.routeLine.geometry.attributes.position;
+    const arr = attr.array;
+    const n = Math.min(points.length, arr.length / 3);
+    for (let i = 0; i < n; i++) {
+      arr[i * 3] = points[i].x; arr[i * 3 + 1] = y; arr[i * 3 + 2] = points[i].z;
+    }
+    attr.needsUpdate = true;
+    this.routeLine.geometry.setDrawRange(0, n);
+    this.routeLine.computeLineDistances(); // dashes need per-vertex distances
+    this.routeLine.visible = true;
+
+    // arrowhead at the tip, aimed along the final leg
+    const a = points[n - 2], b = points[n - 1];
+    this.routeArrow.position.set(b.x, y, b.z);
+    this.routeArrow.rotation.set(0, Math.atan2(b.x - a.x, b.z - a.z), 0);
+    this.routeArrow.visible = true;
   }
 
   update(state, dt) {
