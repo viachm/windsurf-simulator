@@ -668,6 +668,23 @@ export class World {
 
     // ---- camera follows ----
     const boardPos = this.board.position;
+    // Chase: swing the camera around the board to track heading changes, so the
+    // over-the-shoulder view stays BEHIND the rider through tacks & gybes
+    // (otherwise a 180° turn leaves the camera facing the rider's front). Manual
+    // orbit still works — the chosen angle simply rotates along with the board.
+    if (this._prevHeading === undefined) this._prevHeading = state.heading;
+    let dHeading = state.heading - this._prevHeading;
+    this._prevHeading = state.heading;
+    // ignore discontinuous jumps (reset / recover teleports the heading)
+    if (Math.abs(dHeading) > 0.5) dHeading = 0;
+    if (dHeading) {
+      const off = new THREE.Vector3().subVectors(this.camera.position, this.prevBoardPos);
+      const c = Math.cos(dHeading), s = Math.sin(dHeading);
+      const ox = off.x * c + off.z * s;         // rotate about +Y, same sense as board.rotation.y
+      const oz = -off.x * s + off.z * c;
+      off.set(ox, off.y, oz);
+      this.camera.position.copy(this.prevBoardPos).add(off);
+    }
     const delta = new THREE.Vector3().subVectors(boardPos, this.prevBoardPos);
     if (delta.lengthSq() < 100) this.camera.position.add(delta);
     this.prevBoardPos.copy(boardPos);
