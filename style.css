@@ -89,6 +89,18 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #hint-text:empty { opacity: 0; }
 #hint-text.warn { color: var(--danger); font-weight: 700; animation: pulse 0.5s infinite alternate; }
 
+/* ---------- toast (why an action was blocked) ---------- */
+#toast {
+  position: absolute; left: 50%; bottom: 78px; z-index: 25;
+  transform: translateX(-50%) translateY(8px);
+  max-width: min(440px, 90vw); pointer-events: none; text-align: center;
+  background: var(--panel-bg); border: 1px solid var(--accent2); color: var(--accent2);
+  border-radius: 10px; padding: 10px 16px; font-size: 13px; line-height: 1.35;
+  backdrop-filter: blur(6px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease;
+}
+#toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
 /* ---------- welcome overlay ---------- */
 #welcome-overlay {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -360,6 +372,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   /* ---- coaching hint lifts above the collapsed bar ---- */
   #hint-bar { bottom: calc(64px + env(safe-area-inset-bottom)); max-width: 92%; }
   #hint-text { font-size: 11px; padding: 6px 12px; }
+  /* toast floats just above the control sheet (exact offset set in JS) */
+  #toast { font-size: 12px; padding: 8px 14px; max-width: 92vw; }
 
   /* ---- orbit help note is irrelevant on touch ---- */
   #help-note { display: none; }

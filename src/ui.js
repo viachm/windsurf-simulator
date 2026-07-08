@@ -317,7 +317,28 @@ export class UI {
     }
   }
 
-  flashMsg(msg) { this.flash = { msg, until: performance.now() + 2800 }; }
+  flashMsg(msg) { this.flash = { msg, until: performance.now() + 2800 }; this.#showToast(msg); }
+
+  // Transient toast explaining why an action was blocked (or a state change).
+  // On phones it floats just above the control sheet so it isn't hidden behind
+  // it; on desktop it sits low-centre. Fades after a moment or on the next tap.
+  #showToast(msg) {
+    const el = $('toast');
+    el.textContent = msg;
+    if (this.#isMobile()) {
+      const panelTop = $('panel').getBoundingClientRect().top;
+      el.style.bottom = `${Math.round(innerHeight - panelTop + 10)}px`;
+    } else {
+      el.style.bottom = ''; // fall back to the CSS position
+    }
+    el.classList.add('on');
+
+    clearTimeout(this._toastTimer);
+    const hide = () => { el.classList.remove('on'); clearTimeout(this._toastTimer); };
+    this._toastTimer = setTimeout(hide, 2800);
+    // dismiss on the next interaction — deferred so the triggering tap doesn't count
+    setTimeout(() => addEventListener('pointerdown', hide, { once: true }), 0);
+  }
 
   // ---------------- keyboard ----------------
   #bindKeys() {
@@ -426,12 +447,9 @@ export class UI {
     $('lean-marker').style.left = `${Math.min(1.3, st.eff01 || 0) / 1.3 * 100}%`;
     $('lean-marker').style.background = st.danger > 0.4 ? '#ff7043' : '#4fc3f7';
 
-    // hint bar: flash messages take priority, then sim warnings
+    // hint bar: sim coaching warnings (flash/interlock messages go to the toast)
     const hintEl = $('hint-text');
-    if (performance.now() < this.flash.until) {
-      hintEl.textContent = this.flash.msg;
-      hintEl.classList.remove('warn');
-    } else if (st.warnings.length) {
+    if (st.warnings.length) {
       hintEl.textContent = t(st.warnings[0]);
       hintEl.classList.toggle('warn', st.danger > 0.25);
     } else {
