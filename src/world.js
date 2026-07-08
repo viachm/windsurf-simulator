@@ -47,7 +47,7 @@ export class World {
     this.controls.maxPolarAngle = 85 * DEG;
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
-    this.controls.zoomSpeed = 7.0;            // fewer scrolls to reach the zoom you want
+    this.controls.zoomSpeed = 4.5;            // gentler zoom step (was 7.0 — too aggressive)
     this.controls.target.set(0, 1.4, 0);
 
     this.#lightsAndSky();
