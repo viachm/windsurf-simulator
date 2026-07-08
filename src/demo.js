@@ -13,8 +13,20 @@ import { t } from './i18n.js';
 
 const KN = 1.94384; // m/s -> knots
 const DEG = Math.PI / 180;
-const PREVIEW_PHASES = 4;   // how many upcoming steps the dashed route shows
-const PREVIEW_LEG = 16;     // world-metres drawn per upcoming step
+
+// ---- route preview (world-anchored chevrons the board sails through) ----
+// Each frame we predict the route forward in TIME from the board's real state
+// (so the board is always on it), then drop chevrons at fixed WORLD-distance
+// positions so they sit still and vanish as the board passes — rather than
+// sliding along with it.
+const PDT = 0.2;            // prediction timestep, seconds
+const HORIZON = 8;          // seconds of route to predict ahead
+const STEER_RATE = 0.7;     // rad/s — how fast the pen swings onto a new course
+const ARC_RATE = 1.0;       // rad/s — sweep rate through a tack/gybe
+const MARKER_SP = 3;        // metres between chevrons
+const MAX_MARKERS = 22;     // chevrons shown at once
+
+function wrapAngle(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
 
 // Each mode sets its wind ONCE at start (a sensible speed for the tour) and then
 // leaves it stable — the user can still drag the wind slider mid-demo without
@@ -77,6 +89,7 @@ export class DemoDirector {
     this.segT = 0;
     this.turned = false;
     this.settleT = 0;
+    this.dist = 0;         // cumulative board distance — anchors chevrons in world
     this.onCaption = null; // (text|null) => void
     this.onState = null;   // (mode|null) => void
   }
@@ -88,6 +101,7 @@ export class DemoDirector {
     this.mode = mode;
     this.script = SCRIPTS[mode].segments;
     this.i = 0; this.segT = 0; this.turned = false; this.settleT = 0;
+    this.dist = 0;                          // reset the chevron world-anchor
     this.active = true;
     // set a sensible wind for the tour ONCE, then leave it stable (the user can
     // still adjust it with the slider mid-demo)
@@ -130,8 +144,9 @@ export class DemoDirector {
     const seg = this.script[this.i];
     this.segT += dt;
 
-    // dashed preview of the route ahead (current + next few steps)
-    this.ui.showRoutePreview(this.#buildPreview(st));
+    // route preview: chevrons pinned to world positions the board sails through
+    this.dist += Math.abs(st.v) * dt;
+    this.ui.showRoutePreview(this.#buildMarkers(st));
 
     // steering + turns (wind is left stable — set once at start)
     if (st.maneuver) {
@@ -169,34 +184,62 @@ export class DemoDirector {
     this.ui.setRake(rake);
   }
 
-  // Project the planned route a few steps ahead as world-space nodes, starting at
-  // the board. The board heading that yields a given |beta| B on tack sign s is
-  // h = windFromAngle - s*B (since beta = windFromAngle - heading). Each upcoming
-  // segment becomes a straight leg at its target course; a tack/gybe flips the
-  // tack, so the path kinks into a V through the wind — exactly what's coming.
-  #buildPreview(st) {
+  // Predict the route forward from the board's ACTUAL state (so the board is
+  // always on it), then place chevrons at fixed world-distance positions. The
+  // marker phase is tied to the board's cumulative distance, so as the board
+  // advances each chevron holds its world spot and is consumed at the near end.
+  #buildMarkers(st) {
+    // 1) forward prediction in time, mirroring the director's own logic
     const wa = st.windFromAngle;
-    let s = st.beta >= 0 ? 1 : -1;                 // current tack sign
-    const nodes = [{ x: st.pos.x, z: st.pos.z }];
-    const run = (h, len) => {
-      const p = nodes[nodes.length - 1];
-      nodes.push({ x: p.x + Math.sin(h) * len, z: p.z + Math.cos(h) * len });
-    };
-    let idx = this.i;
-    for (let k = 0; k < PREVIEW_PHASES; k++) {
-      const seg = this.script[idx % this.script.length];
-      // remaining length shrinks as we progress through the current leg
-      const rem = k === 0 ? Math.max(4, PREVIEW_LEG * (1 - this.segT / seg.dur)) : PREVIEW_LEG;
-      const isTurn = seg.turn && !(k === 0 && this.turned);
-      if (isTurn) {
-        run(wa - s * seg.beta * DEG, rem * 0.5); // approach on the current tack
-        s = -s;                                  // turn crosses the wind
-        run(wa - s * seg.beta * DEG, PREVIEW_LEG); // exit on the new tack
+    const pts = [{ x: st.pos.x, z: st.pos.z, along: 0, h: st.heading }];
+    let x = st.pos.x, z = st.pos.z, h = st.heading, along = 0;
+    let s = st.beta >= 0 ? 1 : -1, i = this.i, segT = this.segT, turned = this.turned, arc = 0;
+    const v = Math.min(12, Math.max(2.2, Math.abs(st.v)));
+    for (let t = 0; t < HORIZON; t += PDT) {
+      const seg = this.script[i % this.script.length];
+      if (arc) {
+        // sweeping through a tack/gybe
+        const dh = Math.sign(arc) * Math.min(Math.abs(arc), ARC_RATE * PDT);
+        h += dh; arc -= dh;
+        if (Math.abs(arc) < 1e-3) { arc = 0; i++; segT = 0; turned = false; }
       } else {
-        run(wa - s * seg.beta * DEG, rem);
+        segT += PDT;
+        if (seg.turn && !turned && segT > 0.3) {
+          // begin the turn: signed sweep through the wind (tack) or downwind (gybe)
+          const B = seg.beta * DEG;
+          arc = seg.turn === 'tack' ? s * 2 * B : -s * (2 * Math.PI - 2 * B);
+          s = -s; turned = true;
+        } else {
+          // steer toward the target course for this point of sail
+          const th = wa - s * seg.beta * DEG;
+          let dh = wrapAngle(th - h);
+          const mx = STEER_RATE * PDT;
+          if (dh > mx) dh = mx; else if (dh < -mx) dh = -mx;
+          h += dh;
+          if (!seg.turn && segT >= seg.dur) { i++; segT = 0; turned = false; }
+        }
       }
-      idx++;
+      const vv = arc ? v * 0.7 : v;          // ease off through the turns
+      x += Math.sin(h) * vv * PDT; z += Math.cos(h) * vv * PDT; along += vv * PDT;
+      pts.push({ x, z, along, h });
     }
-    return nodes;
+
+    // 2) drop chevrons at world-anchored arc-length positions
+    const total = along;
+    const phase = MARKER_SP - (this.dist % MARKER_SP);   // shifts with the board
+    const out = [];
+    let j = 0;
+    for (let A = phase; A < total - 0.5 && out.length < MAX_MARKERS; A += MARKER_SP) {
+      while (j < pts.length - 1 && pts[j + 1].along < A) j++;
+      const a = pts[j], b = pts[Math.min(j + 1, pts.length - 1)];
+      const f = (A - a.along) / ((b.along - a.along) || 1);
+      out.push({
+        x: a.x + (b.x - a.x) * f,
+        z: a.z + (b.z - a.z) * f,
+        angle: a.h,
+        scale: Math.max(0.6, 1 - out.length * 0.03),
+      });
+    }
+    return out;
   }
 }

@@ -509,64 +509,52 @@ export class World {
     this.scene.add(this.trailLine);
   }
 
-  // Dashed "planned route" drawn AHEAD of the board during a demo, so you can see
-  // which way it is about to go (and where the next turns fall). Fed world-space
-  // points by the demo director via setRoutePreview(); hidden the rest of the time.
+  // "Planned route" chevrons laid AHEAD of the board during a demo. They are
+  // fixed in WORLD space (not glued to the board): the board sails through them
+  // and each one vanishes as it's passed, so you read your motion along them.
+  // Fed world-space markers {x,z,angle,scale} by the director via setRoutePreview().
   #routePreview() {
-    const MAXP = 96;
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAXP * 3), 3));
-    geo.setDrawRange(0, 0);
-    const mat = new THREE.LineDashedMaterial({
-      color: 0xffd54f, transparent: true, opacity: 0.95,
-      dashSize: 1.2, gapSize: 0.65, depthWrite: false, depthTest: false,
-    });
-    this.routeLine = new THREE.Line(geo, mat);
-    this.routeLine.frustumCulled = false;
-    this.routeLine.renderOrder = 998;
-    this.routeLine.visible = false;
-    this.scene.add(this.routeLine);
-
-    // flat arrowhead lying on the water, baked pointing along +Z (local)
-    const tri = new THREE.BufferGeometry();
-    tri.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-      0, 0, 1.7, -1.0, 0, -0.7, 1.0, 0, -0.7,
-    ]), 3));
-    tri.setIndex([0, 1, 2]);
-    const triMat = new THREE.MeshBasicMaterial({
+    // one flat chevron arrow, tip at shape +Y
+    const s = new THREE.Shape();
+    s.moveTo(0, 0.62);
+    s.lineTo(0.5, -0.34);
+    s.lineTo(0, -0.02);
+    s.lineTo(-0.5, -0.34);
+    s.lineTo(0, 0.62);
+    const geo = new THREE.ShapeGeometry(s);
+    geo.rotateX(Math.PI / 2);        // lay flat: shape +Y (tip) -> local +Z
+    const mat = new THREE.MeshBasicMaterial({
       color: 0xffd54f, transparent: true, opacity: 0.9,
-      side: THREE.DoubleSide, depthWrite: false, depthTest: false,
+      depthWrite: false, depthTest: false, side: THREE.DoubleSide,
     });
-    this.routeArrow = new THREE.Mesh(tri, triMat);
-    this.routeArrow.renderOrder = 998;
-    this.routeArrow.visible = false;
-    this.scene.add(this.routeArrow);
+    this.routeCount = 40;
+    this.routeMesh = new THREE.InstancedMesh(geo, mat, this.routeCount);
+    this.routeMesh.frustumCulled = false;
+    this.routeMesh.renderOrder = 998;
+    this.routeMesh.count = 0;
+    this.routeMesh.visible = false;
+    this.scene.add(this.routeMesh);
+    this._routeDummy = new THREE.Object3D();
   }
 
-  // points: array of {x,z} world coords from the board forward, or null to hide.
-  setRoutePreview(points) {
-    if (!points || points.length < 2) {
-      this.routeLine.visible = false;
-      this.routeArrow.visible = false;
-      return;
-    }
-    const y = 0.28; // float just above the water (depthTest off -> always visible)
-    const attr = this.routeLine.geometry.attributes.position;
-    const arr = attr.array;
-    const n = Math.min(points.length, arr.length / 3);
+  // markers: [{x,z,angle,scale}] world-space, board-forward, or null to hide.
+  setRoutePreview(markers) {
+    const mesh = this.routeMesh;
+    if (!markers || !markers.length) { mesh.visible = false; mesh.count = 0; return; }
+    const n = Math.min(markers.length, this.routeCount);
+    const d = this._routeDummy;
     for (let i = 0; i < n; i++) {
-      arr[i * 3] = points[i].x; arr[i * 3 + 1] = y; arr[i * 3 + 2] = points[i].z;
+      const m = markers[i];
+      const sc = m.scale || 1;
+      d.position.set(m.x, 0.26, m.z);
+      d.rotation.set(0, m.angle, 0);        // tip (local +Z) aims along the route
+      d.scale.set(sc, sc, sc);
+      d.updateMatrix();
+      mesh.setMatrixAt(i, d.matrix);
     }
-    attr.needsUpdate = true;
-    this.routeLine.geometry.setDrawRange(0, n);
-    this.routeLine.computeLineDistances(); // dashes need per-vertex distances
-    this.routeLine.visible = true;
-
-    // arrowhead at the tip, aimed along the final leg
-    const a = points[n - 2], b = points[n - 1];
-    this.routeArrow.position.set(b.x, y, b.z);
-    this.routeArrow.rotation.set(0, Math.atan2(b.x - a.x, b.z - a.z), 0);
-    this.routeArrow.visible = true;
+    mesh.count = n;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.visible = true;
   }
 
   update(state, dt) {
