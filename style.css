@@ -209,3 +209,101 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   position: absolute; bottom: 6px; right: 14px; font-size: 10px; color: rgba(200,230,255,0.4);
   pointer-events: none;
 }
+
+/* =====================================================================
+   MOBILE  —  bottom-sheet controls, compact HUD, touch-friendly
+   ===================================================================== */
+@media (max-width: 768px) {
+
+  /* ---- control panel becomes a collapsible bottom sheet ---- */
+  #panel {
+    left: 0; right: 0; top: auto; bottom: 0;
+    width: 100%; max-width: 100%;
+    max-height: 66vh;
+    border-radius: 18px 18px 0 0;
+    border-left: 0; border-right: 0; border-bottom: 0;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.45);
+  }
+  #panel.collapsed { padding-bottom: env(safe-area-inset-bottom); }
+
+  .panel-header {
+    position: relative;          /* anchor the grab handle */
+    padding: 16px 16px 12px;
+    border-radius: 18px 18px 0 0;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  /* drag-handle affordance */
+  .panel-header::before {
+    content: ""; position: absolute; top: 6px; left: 50%;
+    transform: translateX(-50%);
+    width: 44px; height: 5px; border-radius: 3px;
+    background: rgba(180, 220, 255, 0.35);
+  }
+  #panel-toggle { width: 30px; height: 30px; font-size: 18px; }
+
+  #panel-body {
+    padding: 10px 14px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+
+  /* tighter control spacing so more fits without scrolling */
+  .ctl { margin-bottom: 12px; }
+  .ctl-label { font-size: 10px; margin-bottom: 5px; }
+  .seg { gap: 5px; }
+  .seg button { padding: 9px 2px; font-size: 10px; }   /* ~34px tall tap target */
+  .action-btn { padding: 11px 4px; font-size: 11px; }
+  .toggle-row { padding: 6px 0; font-size: 12px; }
+  .toggle-row input { width: 18px; height: 18px; }
+  input[type="range"] { height: 26px; }
+
+  /* ---- compact top HUD (compass dropped to save width) ---- */
+  #hud-top {
+    top: calc(8px + env(safe-area-inset-top));
+    gap: 5px; padding: 0 6px; max-width: 100%; justify-content: center;
+  }
+  .hud-box { min-width: 0; flex: 1; max-width: 96px; padding: 5px 6px; border-radius: 8px; }
+  .hud-label { font-size: 7.5px; letter-spacing: 0.5px; }
+  .hud-value { font-size: 16px; }
+  #pos-val { font-size: 10.5px; line-height: 1.3; }
+  .hud-sub { font-size: 8px; }
+  #planing-badge { font-size: 8px; }
+  .compass-box { display: none; }
+
+  /* ---- meters move to a full-width strip under the HUD ---- */
+  #meters {
+    top: calc(66px + env(safe-area-inset-top));
+    left: 8px; right: 8px; width: auto; gap: 6px;
+  }
+  .meter-block { padding: 6px 10px; }
+  .meter-hint { display: none; }   /* keep the balance title short on small screens */
+
+  /* ---- language toggle tucks into the free top-right corner ---- */
+  #lang-toggle {
+    right: 8px; left: auto;
+    top: calc(8px + env(safe-area-inset-top));
+    padding: 6px 9px; font-size: 10px;
+  }
+
+  /* ---- coaching hint lifts above the collapsed sheet ---- */
+  #hint-bar { bottom: 66px; max-width: 92%; }
+  #hint-text { font-size: 11px; padding: 6px 12px; }
+
+  /* ---- orbit help note is irrelevant on touch ---- */
+  #help-note { display: none; }
+
+  /* ---- overlays fit the viewport ---- */
+  #welcome-card {
+    padding: 20px 22px; max-width: 92vw; max-height: 86vh; overflow-y: auto;
+    font-size: 12px;
+  }
+  #welcome-card .w-title { font-size: 18px; }
+  #crash-card { padding: 22px 24px; max-width: 90vw; }
+  #crash-title { font-size: 28px; }
+}
+
+/* very narrow phones — drop the point-of-sail box too if things get tight */
+@media (max-width: 380px) {
+  .hud-box { padding: 4px 5px; }
+  .hud-value { font-size: 14px; }
+}

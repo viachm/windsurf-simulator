@@ -71,11 +71,17 @@ export class UI {
       $('welcome-overlay').classList.add('off');
     });
 
-    $('panel-toggle').addEventListener('click', () => {
+    const setCollapsed = (collapsed) => {
       const p = $('panel');
-      p.classList.toggle('collapsed');
-      $('panel-toggle').textContent = p.classList.contains('collapsed') ? '+' : '–';
+      p.classList.toggle('collapsed', collapsed);
+      $('panel-toggle').textContent = collapsed ? '+' : '–';
+    };
+    // tapping anywhere on the header toggles — a bigger, touch-friendly target
+    $('panel').querySelector('.panel-header').addEventListener('click', () => {
+      setCollapsed(!$('panel').classList.contains('collapsed'));
     });
+    // on phones, start collapsed so the water is visible; the header sits as a bottom bar
+    if (window.matchMedia('(max-width: 768px)').matches) setCollapsed(true);
 
     $('lang-toggle').addEventListener('click', () => toggleLang());
   }
@@ -219,8 +225,8 @@ export class UI {
   /** continuous key handling + auto-trim; call every frame before sim.update */
   tickInputs(dt, lastState) {
     const held = this.keysHeld;
-    if (held.has('ArrowLeft')) this.setRake(-1);   // upwind
-    if (held.has('ArrowRight')) this.setRake(1);   // downwind
+    if (held.has('ArrowLeft')) this.setRake(1);    // forward → downwind
+    if (held.has('ArrowRight')) this.setRake(-1);  // back → upwind
     if (held.has('KeyW')) { this.inputs.sheetDeg = Math.max(0, this.inputs.sheetDeg - 35 * dt); $('sheet').value = this.inputs.sheetDeg; }
     if (held.has('KeyS')) { this.inputs.sheetDeg = Math.min(90, this.inputs.sheetDeg + 35 * dt); $('sheet').value = this.inputs.sheetDeg; }
     if (held.has('KeyQ')) this.setLean(this.inputs.lean - 55 * dt);

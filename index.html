@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <title>Windsurf Simulator</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏄</text></svg>" />
   <link rel="stylesheet" href="style.css" />
@@ -70,7 +70,7 @@
            A sail can never drive you straight into it (the shaded <b>no-go wedge</b>) — sail across it.</p>
         <ol>
           <li data-i18n-html="welcome.step1"><b>Trim the sail</b> — keep the sheet slider on the green tick (or turn on Auto-trim). Flapping = no power, over-pulled = stall.</li>
-          <li data-i18n-html="welcome.step2"><b>Steer with the mast</b> — rake back ◀ turns you upwind, rake forward ▶ turns you downwind. No rudder!</li>
+          <li data-i18n-html="welcome.step2"><b>Steer with the mast</b> — rake forward ◀ turns you downwind, rake back ▶ turns you upwind. No rudder!</li>
           <li data-i18n-html="welcome.step3"><b>Balance the pull</b> — the harder the sail pulls, the more you must lean windward. Keep the ◆ inside the yellow band or you swim.</li>
           <li data-i18n-html="welcome.step4"><b>Chase the plane</b> — enough speed and power and the board pops on top of the water. Then: feet in the straps (3), daggerboard up (D), hang on.</li>
         </ol>
@@ -117,13 +117,13 @@
         <div class="ctl">
           <div class="ctl-label" data-i18n-html="ctl.rake">MAST RAKE — steering <span class="key-hint">◀ ▶</span></div>
           <div class="seg" id="rake-seg">
-            <button data-rake="-1"  data-i18n="rake.hardback" data-i18n-title="rake.hardback.t" title="rake hard back → turn upwind fast">⤒ hard back</button>
-            <button data-rake="-0.5" data-i18n="rake.back" data-i18n-title="rake.back.t" title="rake back → head upwind">back</button>
-            <button data-rake="0" class="active" data-i18n="rake.neutral">neutral</button>
-            <button data-rake="0.5" data-i18n="rake.fwd" data-i18n-title="rake.fwd.t" title="rake forward → bear away downwind">fwd</button>
             <button data-rake="1"  data-i18n="rake.hardfwd" data-i18n-title="rake.hardfwd.t" title="rake hard forward → turn downwind fast">⤓ hard fwd</button>
+            <button data-rake="0.5" data-i18n="rake.fwd" data-i18n-title="rake.fwd.t" title="rake forward → bear away downwind">fwd</button>
+            <button data-rake="0" class="active" data-i18n="rake.neutral">neutral</button>
+            <button data-rake="-0.5" data-i18n="rake.back" data-i18n-title="rake.back.t" title="rake back → head upwind">back</button>
+            <button data-rake="-1"  data-i18n="rake.hardback" data-i18n-title="rake.hardback.t" title="rake hard back → turn upwind fast">⤒ hard back</button>
           </div>
-          <div class="ctl-sub"><span data-i18n="ctl.rake.up">← turns you UPWIND</span><span data-i18n="ctl.rake.down">turns you DOWNWIND →</span></div>
+          <div class="ctl-sub"><span data-i18n="ctl.rake.down">← turns you DOWNWIND</span><span data-i18n="ctl.rake.up">turns you UPWIND →</span></div>
         </div>
 
         <div class="ctl">

@@ -9,6 +9,8 @@
 
 const DEG = Math.PI / 180;
 const KN = 1.94384; // m/s -> knots
+const THRUST_N = 340;  // sail thrust scale, N at power01=1
+const K_WALL = 1.4;    // displacement-hull wave-drag wall strength
 
 function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
 function smoothstep(a, b, x) {
@@ -209,15 +211,26 @@ export class WindsurfSim {
       + smoothstep(18, 45, -diff) * 0.55; // extra heel force when badly oversheeted
     if (diff > 40) effDrive = 0;          // fully luffing
 
-    // Point-of-sail factor: no drive in the no-go zone, slightly soft dead-run.
-    const pointFactor = smoothstep(36, 55, absBetaDeg) * (1 - 0.25 * smoothstep(150, 180, absBetaDeg));
-    // As you accelerate the APPARENT wind swings forward; when it gets too close
-    // to the bow the sail cannot drive any more -> natural top-speed limit.
-    const apparentGate = smoothstep(16, 32, absBetaAppDeg);
-
-    const pressure = clamp((awSpeed / 10.0) * (awSpeed / 10.0), 0, 1.6);
-    const power01 = clamp(pressure * effDrive * pointFactor * apparentGate, 0, 1.35);
-    const heel01 = clamp(pressure * (effDrive + stallExtra) * Math.max(pointFactor, 0.25 * smoothstep(15, 40, absBetaDeg)), 0, 1.6);
+    // A sail is an aerofoil: decompose its force into lift (perpendicular to the
+    // APPARENT wind) and drag (along it), then resolve both onto the boat's own
+    // heading to get drive (forward) and side (heel/leeway) components. This is
+    // why upwind sailing works at all: at a tight apparent angle lift dominates
+    // and a fast, low-drag rig still nets forward thrust; downwind lift collapses
+    // (flow can't stay attached past a dead run) and a squared-off sail drives
+    // like a barn door on drag alone.
+    const bA = Math.abs(betaApp);            // apparent wind angle off the bow, rad
+    const bAdeg = absBetaAppDeg;
+    const q = (awSpeed / 10) ** 2;           // normalized dynamic pressure
+    // Lift needs attached flow: dies approaching head-to-wind AND approaching dead run.
+    const CL = 1.05 * effDrive * smoothstep(14, 30, bAdeg) * smoothstep(180, 150, bAdeg);
+    // A well-trimmed sail squared off to the apparent wind pushes like a barn door downwind.
+    const CD = 0.10 + 3.2 * effDrive * smoothstep(50, 135, bAdeg);
+    // Oversheeted stalled sail: lots of sideways heel, little drive.
+    const sideStall = 0.55 * smoothstep(18, 45, -diff);
+    const drive01 = q * (CL * Math.sin(bA) - CD * Math.cos(bA));  // cos<0 aft of beam -> drag drives you
+    const side01 = q * (Math.max(0, CL * Math.cos(bA)) + 0.08 * CD * Math.sin(bA) + sideStall);
+    const power01 = clamp(drive01, 0, 1.35);
+    const heel01 = clamp(side01 + 0.22 * Math.max(0, drive01), 0, 1.6); // rig tension hangs on downwind too
 
     // ------- steering (mast rake moves the centre of effort) -------
     // Rake steering needs water flow over the fin: authority fades to nothing as
@@ -257,7 +270,7 @@ export class WindsurfSim {
 
     // ------- planing state -------
     if (!this.planing) {
-      if (this.v > 4.2 && power01 > 0.72 && absBetaDeg > 70 && trim === 'good') this.planing = true;
+      if (this.v > 3.8 && power01 > 0.3 && absBetaDeg > 70 && trim === 'good') this.planing = true;
     } else if (this.v < 3.6 || power01 < 0.28) {
       this.planing = false;
     }
@@ -265,7 +278,7 @@ export class WindsurfSim {
     // ------- drag -------
     let drag;
     if (this.planing) {
-      drag = 2.2 * this.v * Math.abs(this.v);
+      drag = 2.5 * this.v * Math.abs(this.v);
       if (inputs.stance === 'mid') drag *= 1.4;           // not in the straps
       if (inputs.dagger) drag *= 1.5;                     // board wants to rail over
     } else {
@@ -274,13 +287,16 @@ export class WindsurfSim {
         drag *= 1.9;                                      // tail sinks
         warnings.push('warn.tailSink');
       }
+      // Displacement hull hits its wave-making "wall": pushing harder barely
+      // helps once you're near hull speed. Breaking onto the plane removes it.
+      drag += K_WALL * smoothstep(4.0, 6.2, this.v) * this.v * this.v;
     }
     if (inputs.dagger && !this.planing) drag += 0.25 * this.v * this.v;
     drag *= 1 + 1.8 * Math.abs(this.yawVel);   // carving scrubs speed
     drag += 14 * this.u * this.u;              // slip (sideways flow) drag
 
     // ------- thrust & integrate speed -------
-    const thrust = power01 * 260;
+    const thrust = power01 * THRUST_N;
     const mass = 97; // rider + board + rig
     this.v += ((thrust - drag) / mass) * dt;
 
