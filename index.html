@@ -101,6 +101,10 @@
           <div class="ctl-label" data-i18n-html="ctl.sheet">SAIL SHEET <span class="key-hint">W / S</span>
             <span class="ctl-value" id="sheet-val">45°</span>
           </div>
+          <label class="toggle-row">
+            <input type="checkbox" id="autotrim" />
+            <span data-i18n="ctl.autotrim">Auto-trim assist (sheets for you)</span>
+          </label>
           <div class="slider-wrap">
             <input type="range" id="sheet" min="0" max="90" value="55" step="1" />
             <div id="sheet-optimal" title="optimal trim"></div>
@@ -108,10 +112,6 @@
           <div class="ctl-sub">
             <span data-i18n="ctl.sheet.in">pulled in (0°)</span><span data-i18n="ctl.sheet.out">let out (90°)</span>
           </div>
-          <label class="toggle-row">
-            <input type="checkbox" id="autotrim" />
-            <span data-i18n="ctl.autotrim">Auto-trim assist (sheets for you)</span>
-          </label>
         </div>
 
         <div class="ctl">
