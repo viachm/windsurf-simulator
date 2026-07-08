@@ -43,7 +43,7 @@ export class World {
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enablePan = false;
     this.controls.minDistance = 4;
-    this.controls.maxDistance = 40;
+    this.controls.maxDistance = 55;   // allow zooming out a bit further than before (was 40)
     this.controls.maxPolarAngle = 85 * DEG;
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
