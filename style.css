@@ -116,7 +116,11 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #crash-overlay {
   position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
   background: rgba(4, 16, 28, 0.45); z-index: 20;
-  cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+  cursor: pointer; touch-action: none;
+}
+/* stop iOS from selecting text / showing the callout when you press-and-hold */
+#crash-overlay, #crash-overlay * {
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
 #crash-overlay.on { display: flex; }
 #crash-card {

@@ -196,6 +196,9 @@ export class UI {
     ov.addEventListener('pointerdown', hold);
     ov.addEventListener('pointerup', release);
     ov.addEventListener('pointercancel', release);
+    // iOS starts a text selection / magnifier on long-press; suppress its default
+    ov.addEventListener('touchstart', (e) => { if (this.sim.crashed) e.preventDefault(); }, { passive: false });
+    ov.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
   // -------- interlocked setters (the "smart logic") --------
