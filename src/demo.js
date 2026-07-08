@@ -25,6 +25,7 @@ const STEER_RATE = 0.7;     // rad/s — how fast the pen swings onto a new cour
 const ARC_RATE = 1.0;       // rad/s — sweep rate through a tack/gybe
 const MARKER_SP = 3;        // metres between chevrons
 const MAX_MARKERS = 22;     // chevrons shown at once
+const OVERRIDE_SEC = 3;     // seconds the user's manual input holds before the tour re-corrects
 
 function wrapAngle(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
 
@@ -90,11 +91,19 @@ export class DemoDirector {
     this.turned = false;
     this.settleT = 0;
     this.dist = 0;         // cumulative board distance — anchors chevrons in world
+    this.overrideT = 0;    // >0 while the user's manual input temporarily holds
     this.onCaption = null; // (text|null) => void
     this.onState = null;   // (mode|null) => void
   }
 
   get running() { return this.active; }
+  // While overriding, the tour yields the helm: the director stops steering and
+  // the autopilot stands down, so the user's manual inputs carry the board off
+  // course. It re-corrects once the window lapses.
+  get overriding() { return this.active && this.overrideT > 0; }
+
+  // A manual touch of any control (except the wind) opens/refreshes the window.
+  nudge() { if (this.active) this.overrideT = OVERRIDE_SEC; }
 
   start(mode) {
     if (!SCRIPTS[mode]) return;
@@ -102,6 +111,7 @@ export class DemoDirector {
     this.script = SCRIPTS[mode].segments;
     this.i = 0; this.segT = 0; this.turned = false; this.settleT = 0;
     this.dist = 0;                          // reset the chevron world-anchor
+    this.overrideT = 0;
     this.active = true;
     // set a sensible wind for the tour ONCE, then leave it stable (the user can
     // still adjust it with the slider mid-demo)
@@ -140,29 +150,36 @@ export class DemoDirector {
   // Called once per frame BEFORE sim.update, with the previous frame's state.
   tick(dt, st) {
     if (!this.active || !st) return;
+    if (this.overrideT > 0) this.overrideT = Math.max(0, this.overrideT - dt);
     if (st.crashed) { this.ui.showRoutePreview(null); return; } // resume after recovery
     const seg = this.script[this.i];
     this.segT += dt;
 
-    // route preview: chevrons pinned to world positions the board sails through
+    // route preview: chevrons pinned to world positions the board sails through.
+    // The timeline keeps advancing during an override so we rejoin the CURRENT
+    // target course, not a stale one, once the user lets go.
     this.dist += Math.abs(st.v) * dt;
     this.ui.showRoutePreview(this.#buildMarkers(st));
+
+    const held = this.overriding;   // user has the helm for a moment
 
     // steering + turns (wind is left stable — set once at start)
     if (st.maneuver) {
       // a tack/gybe is auto-steering — don't fight the rake
     } else if (seg.turn && !this.turned) {
-      // hold the entry angle, then fire the turn as soon as the sim allows it
-      this.#steer(seg.beta, st);
-      const res = seg.turn === 'tack' ? this.sim.startTack() : this.sim.startGybe();
-      if (res.ok) this.turned = true;
-      else if (this.segT > seg.dur) this.#advance();   // give up, move on
+      if (!held) {
+        // hold the entry angle, then fire the turn as soon as the sim allows it
+        this.#steer(seg.beta, st);
+        const res = seg.turn === 'tack' ? this.sim.startTack() : this.sim.startGybe();
+        if (res.ok) this.turned = true;
+        else if (this.segT > seg.dur) this.#advance();   // give up, move on
+      }
       return;
-    } else {
+    } else if (!held) {
       this.#steer(seg.beta, st);
     }
 
-    // advance to the next segment
+    // advance to the next segment (keeps ticking even during an override)
     if (seg.turn) {
       if (this.turned && !st.maneuver) {
         this.settleT += dt;

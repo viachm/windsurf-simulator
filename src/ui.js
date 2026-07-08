@@ -93,7 +93,12 @@ export class UI {
       this.#takeManualControl();          // grabbing the boom switches the assist off
       this.inputs.sheetDeg = +e.target.value;
     });
-    $('autotrim').addEventListener('change', (e) => { this.inputs.autotrim = e.target.checked; });
+    $('autotrim').addEventListener('change', (e) => {
+      // during a demo the autopilot stays on (the override handles temporary
+      // manual control); otherwise the checkbox is the real toggle
+      if (this.demo.running) { e.target.checked = true; this.inputs.autotrim = true; this.demo.nudge(); return; }
+      this.inputs.autotrim = e.target.checked;
+    });
     $('autotrim').checked = this.inputs.autotrim; // reflect the default (on)
 
     $('rake-seg').addEventListener('click', (e) => {
@@ -225,12 +230,14 @@ export class UI {
       b.addEventListener('click', () => { this.demo.start(b.dataset.mode); close(); });
     }
 
-    // Any hands-on control ends the demo — like touching the wheel on cruise
-    // control. Capture phase so it fires before the control's own handler. The
-    // wind slider is exempt: the user may retune the (stable) wind mid-demo.
+    // Touching a control during a demo does NOT stop it — it briefly hands the
+    // helm to the user (they steer off course, then the tour re-corrects). The
+    // wind slider and the header (collapse) are exempt: the wind is meant to be
+    // retuned freely and stays put, and collapsing isn't a control input.
     $('panel').addEventListener('pointerdown', (e) => {
-      if (e.target.closest('#windset')) return;
-      this.demo.stop();
+      if (!this.demo.running) return;
+      if (e.target.closest('#windset') || e.target.closest('.panel-header')) return;
+      this.demo.nudge();
     }, true);
   }
 
@@ -453,7 +460,10 @@ export class UI {
 
   // Hand control back to the player: any manual input on a control the autopilot
   // manages switches the assist off (so the tap actually sticks) and says so.
+  // During a demo this instead opens a brief manual-override window — the tour
+  // keeps running and re-corrects afterwards, so we never kill the autopilot.
   #takeManualControl() {
+    if (this.demo.running) { this.demo.nudge(); return; }
     if (!this.inputs.autotrim) return;
     this.inputs.autotrim = false;
     $('autotrim').checked = false;
@@ -482,8 +492,8 @@ export class UI {
       if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
       if (e.repeat) return;
       this.keysHeld.add(e.code);
-      // any gameplay key hands control back to the player and ends the demo
-      if (this.demo.running && GAME_KEYS.has(e.code)) this.demo.stop();
+      // during a demo a gameplay key opens a brief override instead of stopping
+      if (this.demo.running && GAME_KEYS.has(e.code)) this.demo.nudge();
       switch (e.code) {
         case 'Digit1': this.setStance('front', true); break;
         case 'Digit2': this.setStance('mid', true); break;
@@ -515,6 +525,12 @@ export class UI {
       && (held.has('KeyW') || held.has('KeyS') || held.has('KeyQ') || held.has('KeyE'))) {
       this.#takeManualControl();
     }
+    // during a demo, keep the override window alive while a steering/rig key is held
+    if (this.demo.running
+      && (held.has('ArrowLeft') || held.has('ArrowRight') || held.has('KeyW')
+        || held.has('KeyS') || held.has('KeyQ') || held.has('KeyE'))) {
+      this.demo.nudge();
+    }
     if (held.has('ArrowLeft')) this.setRake(1);    // forward → downwind
     if (held.has('ArrowRight')) this.setRake(-1);  // back → upwind
     if (held.has('KeyW')) { this.inputs.sheetDeg = Math.max(0, this.inputs.sheetDeg - 35 * dt); $('sheet').value = this.inputs.sheetDeg; }
@@ -526,7 +542,9 @@ export class UI {
       // Full beginner autopilot: keep the rig, the rider's weight, the
       // daggerboard and the stance all managed so a passive sailor cruises (and
       // even planes) without ever being flung off. You just steer with the
-      // arrows; turn it off to practise real balance yourself.
+      // arrows; turn it off to practise real balance yourself. (During a demo
+      // override the autopilot stays on — only the director's steering pauses —
+      // so a stray manual input can steer off course but never capsizes.)
       const clamp01 = (v, a, b) => Math.max(a, Math.min(b, v));
 
       // 1) sheet -> the optimal boom angle for clean, maximum drive.
