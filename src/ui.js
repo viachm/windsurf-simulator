@@ -22,7 +22,7 @@ export class UI {
       lean: 25,
       dagger: true,
       harness: false,
-      autotrim: false,
+      autotrim: true,   // beginner assist on by default (full autopilot)
     };
     this.units = loadUnits();
     this.keysHeld = new Set();
@@ -49,7 +49,10 @@ export class UI {
   #unitLabel() { return t(this.units === 'kmh' ? 'unit.kmh' : 'unit.kn'); }
 
   #refreshWindReadout() {
-    $('windset-val').textContent = `${this.#conv(+$('windset').value).toFixed(0)} ${this.#unitLabel()}`;
+    // Read the actual base wind (m/s) so the label is exact even when it doesn't
+    // land on a whole knot (e.g. 10 km/h ≈ 5.4 kn).
+    const kn = this.sim.baseWind * 1.94384;
+    $('windset-val').textContent = `${this.#conv(kn).toFixed(0)} ${this.#unitLabel()}`;
   }
 
   #syncLangButtons() {
@@ -68,6 +71,7 @@ export class UI {
       }
     });
     $('autotrim').addEventListener('change', (e) => { this.inputs.autotrim = e.target.checked; });
+    $('autotrim').checked = this.inputs.autotrim; // reflect the default (on)
 
     $('rake-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
@@ -111,10 +115,10 @@ export class UI {
       this.setPanelCollapsed(!$('panel').classList.contains('collapsed'));
     });
 
-    // Phone defaults: light wind (~7 km/h), controls open from the start.
+    // Phone defaults: light wind (10 km/h), controls open from the start.
     if (this.#isMobile()) {
-      $('windset').value = 4;                       // 4 kn ≈ 7 km/h — a gentle start
-      this.sim.baseWind = 4 / 1.94384;
+      this.sim.baseWind = 10 / 3.6;                 // 10 km/h — a gentle start
+      $('windset').value = 5;                       // nearest whole knot for the thumb
       this.#refreshWindReadout();
       this.setPanelCollapsed(false);
     }
