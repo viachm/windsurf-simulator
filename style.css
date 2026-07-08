@@ -129,17 +129,43 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #crash-timer { font-size: 11px; margin-top: 14px; color: var(--text-dim); }
 
 /* ---------- control panel ---------- */
-/* ---------- top-right buttons (info + language) ---------- */
-#top-buttons { position: absolute; right: 366px; top: 14px; z-index: 20; display: flex; gap: 6px; }
-#lang-toggle, #info-toggle {
+/* ---------- top-right buttons (info + settings) ---------- */
+#top-buttons { position: absolute; right: 366px; top: 14px; z-index: 30; display: flex; gap: 6px; }
+#settings-toggle {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 8px; color: var(--text); backdrop-filter: blur(6px);
   cursor: pointer; font-family: inherit; font-weight: 700; letter-spacing: 1.5px;
+  padding: 6px 9px; display: flex; align-items: center; justify-content: center;
 }
-#lang-toggle { padding: 7px 12px; font-size: 11px; }
-#info-toggle { padding: 6px 9px; display: flex; align-items: center; justify-content: center; }
-#info-toggle svg { display: block; }
-#lang-toggle:hover, #info-toggle:hover { border-color: var(--accent); color: var(--accent); }
+#settings-toggle svg { display: block; }
+#settings-toggle:hover, #settings-toggle.open { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- settings popover ---------- */
+#settings-panel {
+  position: absolute; right: 14px; top: 52px; width: 260px; z-index: 30;
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 12px; color: var(--text); backdrop-filter: blur(8px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4); overflow: hidden;
+}
+#settings-panel.off { display: none; }
+.settings-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; font-size: 11px; letter-spacing: 2px; color: var(--accent);
+  border-bottom: 1px solid var(--panel-border);
+}
+#settings-close {
+  background: none; border: 1px solid var(--panel-border); color: var(--text);
+  border-radius: 6px; width: 22px; height: 22px; cursor: pointer; font-size: 15px; line-height: 1;
+}
+.settings-body { padding: 14px; }
+.settings-action {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  margin-top: 4px; padding: 9px; background: rgba(255,255,255,0.06);
+  border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text);
+  cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+}
+.settings-action svg { display: block; }
+.settings-action:hover { border-color: var(--accent); color: var(--accent); }
 
 #panel {
   position: absolute; right: 14px; top: 14px; width: 340px;
@@ -226,7 +252,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
     position: absolute;
     left: 0; right: 0; top: auto; bottom: 0;
     width: 100%; max-width: 100%;
-    max-height: 38vh; max-height: 38dvh;   /* open sheet ~1/3 of the screen; body scrolls */
+    max-height: 42vh; max-height: 42dvh;   /* open sheet ~1.2/3 of the screen; body scrolls */
     border-radius: 16px 16px 0 0;
     border-left: 0; border-right: 0; border-bottom: 0;
     box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.45);
@@ -306,15 +332,18 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   .meter-track { height: 10px; }
   #lean-marker { width: 10px; height: 10px; }
 
-  /* ---- info + language buttons in the top-right corner ---- */
+  /* ---- info + settings buttons in the top-right corner ---- */
   #top-buttons {
     right: 8px; left: auto;
     top: calc(6px + env(safe-area-inset-top));
     gap: 5px;
   }
-  #lang-toggle { padding: 5px 8px; font-size: 9px; }
-  #info-toggle { padding: 4px 6px; }
-  #info-toggle svg { width: 13px; height: 13px; }
+  #settings-toggle { padding: 5px 7px; }
+  #settings-toggle svg { width: 13px; height: 13px; }
+  #settings-panel {
+    right: 8px; top: calc(40px + env(safe-area-inset-top));
+    width: min(240px, calc(100vw - 16px));
+  }
 
   /* ---- coaching hint lifts above the collapsed bar ---- */
   #hint-bar { bottom: calc(64px + env(safe-area-inset-bottom)); max-width: 92%; }

@@ -13,9 +13,16 @@ export const STRINGS = {
     'lang.toggle': 'УКР',
     'lang.name': 'EN',
 
+    // --- settings ---
+    'settings.title': 'SETTINGS',
+    'settings.units': 'SPEED UNITS',
+    'settings.lang': 'LANGUAGE',
+    'settings.howto': 'HOW TO PLAY',
+
     // --- HUD ---
     'hud.speed': 'BOARD SPEED',
     'unit.kn': 'kn',
+    'unit.kmh': 'km/h',
     'hud.planing': 'PLANING!',
     'hud.pos': 'POINT OF SAIL',
     'hud.wind': 'WIND',
@@ -138,9 +145,16 @@ export const STRINGS = {
     'lang.toggle': 'ENG',
     'lang.name': 'УКР',
 
+    // --- settings ---
+    'settings.title': 'НАЛАШТУВАННЯ',
+    'settings.units': 'ОДИНИЦІ ШВИДКОСТІ',
+    'settings.lang': 'МОВА',
+    'settings.howto': 'ЯК ГРАТИ',
+
     // --- HUD ---
     'hud.speed': 'ШВИДКІСТЬ ДОШКИ',
     'unit.kn': 'вуз',
+    'unit.kmh': 'км/год',
     'hud.planing': 'ГЛІСУВАННЯ!',
     'hud.pos': 'КУРС ДО ВІТРУ',
     'hud.wind': 'ВІТЕР',

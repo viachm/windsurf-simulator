@@ -1,9 +1,15 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, toggleLang, onLangChange } from './i18n.js';
+import { t, setLang, getLang, onLangChange } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
+const KMH = 1.852; // knots -> km/h
+
+function loadUnits() {
+  try { const u = localStorage.getItem('ws_units'); if (u === 'kn' || u === 'kmh') return u; } catch { /* ignore */ }
+  return 'kmh'; // km/h by default
+}
 
 export class UI {
   constructor(sim, world = null) {
@@ -18,9 +24,11 @@ export class UI {
       harness: false,
       autotrim: false,
     };
+    this.units = loadUnits();
     this.keysHeld = new Set();
     this.flash = { msg: '', until: 0 };
     this.#bindPanel();
+    this.#bindSettings();
     this.#bindKeys();
     this.compassCtx = $('compass').getContext('2d');
 
@@ -30,8 +38,22 @@ export class UI {
     // Static markup (incl. the windset readout) is re-templated on language
     // change; re-sync the readouts that aren't refreshed every frame.
     onLangChange(() => {
-      $('windset-val').textContent = `${$('windset').value} ${t('unit.kn')}`;
+      this.#refreshWindReadout();
+      this.#syncLangButtons();
     });
+  }
+
+  // Speed conversion + unit label follow the current unit choice.
+  #conv(kn) { return this.units === 'kmh' ? kn * KMH : kn; }
+  #unitLabel() { return t(this.units === 'kmh' ? 'unit.kmh' : 'unit.kn'); }
+
+  #refreshWindReadout() {
+    $('windset-val').textContent = `${this.#conv(+$('windset').value).toFixed(0)} ${this.#unitLabel()}`;
+  }
+
+  #syncLangButtons() {
+    const cur = getLang();
+    for (const b of $('lang-seg').children) b.classList.toggle('active', b.dataset.lang === cur);
   }
 
   // ---------------- panel bindings ----------------
@@ -68,7 +90,7 @@ export class UI {
 
     $('windset').addEventListener('input', (e) => {
       this.sim.baseWind = (+e.target.value) / 1.94384;
-      $('windset-val').textContent = `${e.target.value} ${t('unit.kn')}`;
+      this.#refreshWindReadout();
     });
 
     $('welcome-close').addEventListener('click', () => {
@@ -76,9 +98,11 @@ export class UI {
       try { localStorage.setItem('ws_welcomeSeen', '1'); } catch (e) {} // don't show again next time
     });
 
-    // ℹ button reopens the how-to on demand
+    // "How to play" (in settings) reopens the how-to on demand
     $('info-toggle').addEventListener('click', () => {
       $('welcome-overlay').classList.remove('off');
+      $('settings-panel').classList.add('off');
+      $('settings-toggle').classList.remove('open');
     });
 
     // tapping anywhere on the header toggles — a bigger, touch-friendly target
@@ -88,8 +112,46 @@ export class UI {
 
     // on phones, start collapsed so the water is visible; the header sits as a bottom bar
     if (this.#isMobile()) this.setPanelCollapsed(true);
+  }
 
-    $('lang-toggle').addEventListener('click', () => toggleLang());
+  // ---------------- settings popover ----------------
+  #bindSettings() {
+    const panel = $('settings-panel');
+    const btn = $('settings-toggle');
+    const open = () => { panel.classList.remove('off'); btn.classList.add('open'); };
+    const close = () => { panel.classList.add('off'); btn.classList.remove('open'); };
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      panel.classList.contains('off') ? open() : close();
+    });
+    $('settings-close').addEventListener('click', close);
+    // tap outside the popover closes it
+    addEventListener('click', (e) => {
+      if (!panel.classList.contains('off') && !panel.contains(e.target) && !btn.contains(e.target)) close();
+    });
+
+    $('units-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      this.setUnits(b.dataset.units);
+    });
+
+    $('lang-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      setLang(b.dataset.lang);
+    });
+
+    // initial state
+    this.setUnits(this.units);
+    this.#syncLangButtons();
+    this.#refreshWindReadout();
+  }
+
+  setUnits(u) {
+    this.units = (u === 'kn') ? 'kn' : 'kmh';
+    try { localStorage.setItem('ws_units', this.units); } catch { /* ignore */ }
+    for (const b of $('units-seg').children) b.classList.toggle('active', b.dataset.units === this.units);
+    this.#refreshWindReadout();
   }
 
   #isMobile() { return window.matchMedia('(max-width: 768px)').matches; }
@@ -299,15 +361,18 @@ export class UI {
 
   // ---------------- HUD ----------------
   updateHUD(st) {
-    $('speed-val').textContent = st.speedKn.toFixed(1);
+    const unit = this.#unitLabel();
+    $('speed-val').textContent = this.#conv(st.speedKn).toFixed(1);
+    $('speed-unit').textContent = unit;
     $('planing-badge').classList.toggle('on', st.planing);
     $('pos-val').textContent = st.maneuver
       ? (st.maneuver.type === 'tack' ? t('man.tacking') : t('man.gybing'))
       : t(st.pointOfSailKey);
     $('tack-val').textContent = t(st.tackKey);
-    $('wind-val').textContent = st.windKn.toFixed(0);
+    $('wind-val').textContent = this.#conv(st.windKn).toFixed(0);
+    $('wind-unit').textContent = unit;
     $('gust-val').textContent = st.gustKn > 0.8
-      ? t('hud.gust', { n: st.gustKn.toFixed(0), unit: t('unit.kn') })
+      ? t('hud.gust', { n: this.#conv(st.gustKn).toFixed(0), unit })
       : '';
 
     // sheet readout + optimal marker

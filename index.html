@@ -19,22 +19,57 @@
   <div id="app">
     <canvas id="scene"></canvas>
 
-    <!-- Top-right buttons: info (reopen how-to) + language -->
+    <!-- Top-right button: settings (units, language, how-to) -->
     <div id="top-buttons">
-      <button id="info-toggle" title="how to play / як грати" aria-label="how to play">
+      <button id="settings-toggle" title="settings / налаштування" aria-label="settings">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10" /><line x1="12" y1="11" x2="12" y2="16" /><line x1="12" y1="8" x2="12.01" y2="8" />
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
         </svg>
       </button>
-      <button id="lang-toggle" title="switch language / змінити мову" data-i18n="lang.toggle">УКР</button>
+    </div>
+
+    <!-- Settings popover (units, language, wind) -->
+    <div id="settings-panel" class="off">
+      <div class="settings-header">
+        <span data-i18n="settings.title">SETTINGS</span>
+        <button id="settings-close" aria-label="close">×</button>
+      </div>
+      <div class="settings-body">
+        <div class="ctl">
+          <div class="ctl-label" data-i18n="settings.units">SPEED UNITS</div>
+          <div class="seg" id="units-seg">
+            <button data-units="kmh" data-i18n="unit.kmh">km/h</button>
+            <button data-units="kn" data-i18n="unit.kn">kn</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <div class="ctl-label" data-i18n="settings.lang">LANGUAGE</div>
+          <div class="seg" id="lang-seg">
+            <button data-lang="en">EN</button>
+            <button data-lang="uk">УКР</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <div class="ctl-label" data-i18n-html="ctl.truewind">TRUE WIND <span class="ctl-value" id="windset-val">14 kn</span></div>
+          <input type="range" id="windset" min="6" max="28" value="14" step="1" />
+        </div>
+        <button id="info-toggle" class="settings-action" title="how to play / як грати">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="11" x2="12" y2="16" /><line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+          <span data-i18n="settings.howto">HOW TO PLAY</span>
+        </button>
+      </div>
     </div>
 
     <!-- Top HUD -->
     <div id="hud-top">
       <div class="hud-box" id="speed-box">
         <div class="hud-label" data-i18n="hud.speed">BOARD SPEED</div>
-        <div class="hud-value"><span id="speed-val">0.0</span><span class="hud-unit" data-i18n="unit.kn">kn</span></div>
+        <div class="hud-value"><span id="speed-val">0.0</span><span class="hud-unit" id="speed-unit">kn</span></div>
         <div id="planing-badge" data-i18n="hud.planing">PLANING!</div>
       </div>
       <div class="hud-box" id="pos-box">
@@ -44,7 +79,7 @@
       </div>
       <div class="hud-box" id="wind-box">
         <div class="hud-label" data-i18n="hud.wind">WIND</div>
-        <div class="hud-value"><span id="wind-val">14</span><span class="hud-unit" data-i18n="unit.kn">kn</span></div>
+        <div class="hud-value"><span id="wind-val">14</span><span class="hud-unit" id="wind-unit">kn</span></div>
         <div class="hud-sub" id="gust-val"></div>
       </div>
       <div class="hud-box compass-box">
@@ -171,11 +206,6 @@
           <button id="btn-tack" class="action-btn" data-i18n-html="btn.tack" data-i18n-title="btn.tack.t" title="turn the nose through the wind (upwind turn)">⟲ TACK <span class="key-hint">T</span></button>
           <button id="btn-gybe" class="action-btn" data-i18n-html="btn.gybe" data-i18n-title="btn.gybe.t" title="turn away from the wind through downwind">⟳ GYBE <span class="key-hint">G</span></button>
           <button id="btn-reset" class="action-btn subtle" data-i18n-html="btn.reset">RESET <span class="key-hint">R</span></button>
-        </div>
-
-        <div class="ctl">
-          <div class="ctl-label" data-i18n-html="ctl.truewind">TRUE WIND <span class="ctl-value" id="windset-val">14 kn</span></div>
-          <input type="range" id="windset" min="6" max="28" value="14" step="1" />
         </div>
 
       </div>
