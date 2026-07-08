@@ -120,7 +120,7 @@ export const STRINGS = {
 
     // --- coaching warnings (sim) ---
     'warn.tailSink': 'Tail is sinking — move your feet forward until you have speed.',
-    'warn.irons': 'In irons! Rake the rig hard forward or back to swing the nose off the wind.',
+    'warn.irons': 'In irons! Sheet the sail IN (W) to catch the wind — the nose is already falling off; then bear away (◀).',
     'warn.overpowered': 'OVERPOWERED! Lean out harder (Q/E) or sheet out (S) before it launches you!',
     'warn.backfall': 'Sail has no power for that lean — you are falling in backwards!',
     'warn.spinout': 'Daggerboard down at planing speed — the board is railing! Pull it up (D)!',
@@ -254,7 +254,7 @@ export const STRINGS = {
 
     // --- coaching warnings (sim) ---
     'warn.tailSink': 'Корма провалюється — пересуньте ноги вперед, доки не наберете швидкість.',
-    'warn.irons': 'Ви в левентику! Різко нахиліть оснащення вперед або назад, щоб зіштовхнути ніс із вітру.',
+    'warn.irons': 'Ви в левентику! Виберіть шкот (W), щоб піймати вітер — ніс уже сходить із вітру; далі увалітеся (◀).',
     'warn.overpowered': 'ПЕРЕВАНТАЖЕННЯ! Сильніше виносьтеся (Q/E) або травіть шкот (S), доки вас не викинуло!',
     'warn.backfall': 'У вітрилі немає тяги для такого нахилу — ви падаєте назад!',
     'warn.spinout': 'Шверт опущено на швидкості глісування — дошку кладе на кант! Підніміть його (D)!',

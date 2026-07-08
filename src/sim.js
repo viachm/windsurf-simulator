@@ -279,6 +279,23 @@ export class WindsurfSim {
       this.u = v0 * Math.sin(dpsi) + u0 * Math.cos(dpsi);
     }
 
+    // ------- weathervane out of the no-go zone -------
+    // A board head-to-wind is an UNSTABLE equilibrium: the flogging sail makes no
+    // drive, so the fin has no flow to steer with — but the rig's windage still
+    // swings the bow off the eye of the wind. Without this you sit pinned in irons
+    // forever (you can't rake out with no speed). Fall off toward the current tack
+    // so the board self-recovers to the edge of the no-go, where a trimmed sail
+    // catches. It fades to nothing by ~46deg and whenever the sail is driving, so
+    // it never fights a rider who is sailing (or deliberately pinching) with power.
+    if (power01 < 0.12 && absBetaDeg < 46) {
+      const wvRate = (-betaSign) * 0.30 * smoothstep(46, 6, absBetaDeg); // rad/s
+      const dpsiWv = wvRate * dt;
+      this.heading += dpsiWv;
+      const v0 = this.v, u0 = this.u;
+      this.v = v0 * Math.cos(dpsiWv) - u0 * Math.sin(dpsiWv);
+      this.u = v0 * Math.sin(dpsiWv) + u0 * Math.cos(dpsiWv);
+    }
+
     // ------- planing state -------
     if (!this.planing) {
       if (this.v > 3.8 && power01 > 0.26 && absBetaDeg > 70 && absBetaDeg < 162 && trim === 'good') this.planing = true;
