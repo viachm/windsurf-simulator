@@ -372,8 +372,16 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   /* ---- coaching hint lifts above the collapsed bar ---- */
   #hint-bar { bottom: calc(64px + env(safe-area-inset-bottom)); max-width: 92%; }
   #hint-text { font-size: 11px; padding: 6px 12px; }
-  /* toast floats just above the control sheet (exact offset set in JS) */
-  #toast { font-size: 12px; padding: 8px 14px; max-width: 92vw; }
+  /* toast spans the screen just above the control sheet (offset set in JS) */
+  #toast {
+    left: 6px; right: 6px; max-width: none;
+    transform: translateY(8px);
+    font-size: 10.5px; line-height: 1.3; padding: 7px 10px;
+  }
+  #toast.on { transform: translateY(0); }
+
+  /* no physical keys on a phone — hide the keyboard-shortcut badges */
+  .key-hint { display: none; }
 
   /* ---- orbit help note is irrelevant on touch ---- */
   #help-note { display: none; }

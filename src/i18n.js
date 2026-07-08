@@ -107,6 +107,7 @@ export const STRINGS = {
 
     // --- flash messages (UI interlocks) ---
     'flash.autotrimOff': 'Auto-trim off — you have the boom now.',
+    'flash.manual': 'Auto-trim off — you have the controls now.',
     'flash.noBackStraps': 'Not enough speed for the back straps — the tail would sink. Get moving first!',
     'flash.unhookFront': 'Unhooked from the harness — you cannot stay hooked in standing at the mast.',
     'flash.unhookUpright': 'Stood upright — the harness line went slack and unhooked.',
@@ -241,6 +242,7 @@ export const STRINGS = {
 
     // --- flash messages (UI interlocks) ---
     'flash.autotrimOff': 'Автоналаштування вимкнено — гік тепер ваш.',
+    'flash.manual': 'Автоналаштування вимкнено — керування у ваших руках.',
     'flash.noBackStraps': 'Замало швидкості для задніх петель — корма провалиться. Спершу розженіться!',
     'flash.unhookFront': 'Відчепилися від трапеції — не можна лишатися зачепленим, стоячи біля щогли.',
     'flash.unhookUpright': 'Випросталися — трос трапеції ослаб і від’єднався.',

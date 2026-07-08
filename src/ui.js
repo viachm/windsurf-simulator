@@ -63,12 +63,8 @@ export class UI {
   // ---------------- panel bindings ----------------
   #bindPanel() {
     $('sheet').addEventListener('input', (e) => {
+      this.#takeManualControl();          // grabbing the boom switches the assist off
       this.inputs.sheetDeg = +e.target.value;
-      if (this.inputs.autotrim) { // manual override switches assist off
-        this.inputs.autotrim = false;
-        $('autotrim').checked = false;
-        this.flashMsg(t('flash.autotrimOff'));
-      }
     });
     $('autotrim').addEventListener('change', (e) => { this.inputs.autotrim = e.target.checked; });
     $('autotrim').checked = this.inputs.autotrim; // reflect the default (on)
@@ -80,12 +76,12 @@ export class UI {
 
     $('stance-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
-      this.setStance(b.dataset.stance);
+      this.setStance(b.dataset.stance, true);
     });
 
-    $('lean').addEventListener('input', (e) => this.setLean(+e.target.value));
+    $('lean').addEventListener('input', (e) => { this.#takeManualControl(); this.setLean(+e.target.value); });
 
-    $('dagger').addEventListener('change', (e) => { this.inputs.dagger = e.target.checked; });
+    $('dagger').addEventListener('change', (e) => { this.#takeManualControl(); this.inputs.dagger = e.target.checked; });
 
     $('harness').addEventListener('change', (e) => this.setHarness(e.target.checked));
 
@@ -218,7 +214,7 @@ export class UI {
     }
   }
 
-  setStance(s) {
+  setStance(s, userInitiated = false) {
     const st = this.sim.lastState;
     // interlock: can't run to the back straps with no speed — you'd sink the tail instantly
     if (s === 'back' && st && st.v < 1.5 && !st.planing) {
@@ -226,6 +222,7 @@ export class UI {
       this.#markBlocked('stance-seg', s);
       return;
     }
+    if (userInitiated) this.#takeManualControl(); // else the autopilot overrides it right back
     this.inputs.stance = s;
     for (const b of $('stance-seg').children) b.classList.toggle('active', b.dataset.stance === s);
     // interlock: moving to the very front unhooks the harness (the lines can't reach)
@@ -317,7 +314,16 @@ export class UI {
     }
   }
 
-  flashMsg(msg) { this.flash = { msg, until: performance.now() + 2800 }; this.#showToast(msg); }
+  flashMsg(msg) { this.flash = { msg, until: performance.now() + 3300 }; this.#showToast(msg); }
+
+  // Hand control back to the player: any manual input on a control the autopilot
+  // manages switches the assist off (so the tap actually sticks) and says so.
+  #takeManualControl() {
+    if (!this.inputs.autotrim) return;
+    this.inputs.autotrim = false;
+    $('autotrim').checked = false;
+    this.flashMsg(t('flash.manual'));
+  }
 
   // Transient toast explaining why an action was blocked (or a state change).
   // On phones it floats just above the control sheet so it isn't hidden behind
@@ -335,7 +341,7 @@ export class UI {
 
     clearTimeout(this._toastTimer);
     const hide = () => { el.classList.remove('on'); clearTimeout(this._toastTimer); };
-    this._toastTimer = setTimeout(hide, 2800);
+    this._toastTimer = setTimeout(hide, 3300);
     // dismiss on the next interaction — deferred so the triggering tap doesn't count
     setTimeout(() => addEventListener('pointerdown', hide, { once: true }), 0);
   }
@@ -347,10 +353,10 @@ export class UI {
       if (e.repeat) return;
       this.keysHeld.add(e.code);
       switch (e.code) {
-        case 'Digit1': this.setStance('front'); break;
-        case 'Digit2': this.setStance('mid'); break;
-        case 'Digit3': this.setStance('back'); break;
-        case 'KeyD': $('dagger').checked = !$('dagger').checked; this.inputs.dagger = $('dagger').checked; break;
+        case 'Digit1': this.setStance('front', true); break;
+        case 'Digit2': this.setStance('mid', true); break;
+        case 'Digit3': this.setStance('back', true); break;
+        case 'KeyD': this.#takeManualControl(); $('dagger').checked = !$('dagger').checked; this.inputs.dagger = $('dagger').checked; break;
         case 'KeyH': this.setHarness(!this.inputs.harness); break;
         case 'KeyT': this.tryTack(); break;
         case 'KeyG': this.tryGybe(); break;
@@ -370,6 +376,11 @@ export class UI {
   /** continuous key handling + auto-trim; call every frame before sim.update */
   tickInputs(dt, lastState) {
     const held = this.keysHeld;
+    // touching the sheet/lean keys takes over from the autopilot (arrows just steer)
+    if (this.inputs.autotrim
+      && (held.has('KeyW') || held.has('KeyS') || held.has('KeyQ') || held.has('KeyE'))) {
+      this.#takeManualControl();
+    }
     if (held.has('ArrowLeft')) this.setRake(1);    // forward → downwind
     if (held.has('ArrowRight')) this.setRake(-1);  // back → upwind
     if (held.has('KeyW')) { this.inputs.sheetDeg = Math.max(0, this.inputs.sheetDeg - 35 * dt); $('sheet').value = this.inputs.sheetDeg; }
