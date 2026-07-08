@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Windsurf Simulator</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏄</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="scene"></canvas>
+
+    <!-- Language toggle -->
+    <button id="lang-toggle" title="switch language / змінити мову" data-i18n="lang.toggle">УКР</button>
+
+    <!-- Top HUD -->
+    <div id="hud-top">
+      <div class="hud-box" id="speed-box">
+        <div class="hud-label" data-i18n="hud.speed">BOARD SPEED</div>
+        <div class="hud-value"><span id="speed-val">0.0</span><span class="hud-unit" data-i18n="unit.kn">kn</span></div>
+        <div id="planing-badge" data-i18n="hud.planing">PLANING!</div>
+      </div>
+      <div class="hud-box" id="pos-box">
+        <div class="hud-label" data-i18n="hud.pos">POINT OF SAIL</div>
+        <div class="hud-value" id="pos-val">Beam Reach</div>
+        <div class="hud-sub" id="tack-val">Starboard tack</div>
+      </div>
+      <div class="hud-box" id="wind-box">
+        <div class="hud-label" data-i18n="hud.wind">WIND</div>
+        <div class="hud-value"><span id="wind-val">14</span><span class="hud-unit" data-i18n="unit.kn">kn</span></div>
+        <div class="hud-sub" id="gust-val"></div>
+      </div>
+      <div class="hud-box compass-box">
+        <canvas id="compass" width="120" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- Meters -->
+    <div id="meters">
+      <div class="meter-block">
+        <div class="meter-title" data-i18n-html="meter.power">SAIL POWER <span id="trim-state"></span></div>
+        <div class="meter-track"><div class="meter-fill" id="power-fill"></div></div>
+      </div>
+      <div class="meter-block">
+        <div class="meter-title" data-i18n-html="meter.balance">BALANCE <span class="meter-hint">(diamond = your lean, band = what the sail demands)</span></div>
+        <div class="meter-track balance-track">
+          <div id="required-band"></div>
+          <div id="lean-marker"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coaching hint -->
+    <div id="hint-bar"><span id="hint-text"></span></div>
+
+    <!-- Welcome / how-to overlay -->
+    <div id="welcome-overlay">
+      <div id="welcome-card">
+        <div class="w-title" data-i18n="welcome.title">🏄 WINDSURF SIMULATOR</div>
+        <p data-i18n-html="welcome.intro">You are on a board with a sail. The <b>yellow arrow</b> on the compass is the wind.
+           A sail can never drive you straight into it (the shaded <b>no-go wedge</b>) — sail across it.</p>
+        <ol>
+          <li data-i18n-html="welcome.step1"><b>Trim the sail</b> — keep the sheet slider on the green tick (or turn on Auto-trim). Flapping = no power, over-pulled = stall.</li>
+          <li data-i18n-html="welcome.step2"><b>Steer with the mast</b> — rake back ◀ turns you upwind, rake forward ▶ turns you downwind. No rudder!</li>
+          <li data-i18n-html="welcome.step3"><b>Balance the pull</b> — the harder the sail pulls, the more you must lean windward. Keep the ◆ inside the yellow band or you swim.</li>
+          <li data-i18n-html="welcome.step4"><b>Chase the plane</b> — enough speed and power and the board pops on top of the water. Then: feet in the straps (3), daggerboard up (D), hang on.</li>
+        </ol>
+        <p class="w-goal" data-i18n-html="welcome.goal">Try to reach the <span style="color:#ff7043">■ orange buoy upwind</span> (you'll need to tack), then blast back to the <span style="color:#ffd54f">■ yellow one</span>.</p>
+        <button id="welcome-close" data-i18n="welcome.close">SAIL AWAY →</button>
+      </div>
+    </div>
+
+    <!-- Crash overlay -->
+    <div id="crash-overlay">
+      <div id="crash-card">
+        <div id="crash-title" data-i18n="crash.splash">SPLASH!</div>
+        <div id="crash-reason"></div>
+        <div id="crash-lesson"></div>
+        <div id="crash-timer">back on the board in 3…</div>
+      </div>
+    </div>
+
+    <!-- Control panel -->
+    <div id="panel">
+      <div class="panel-header">
+        <span data-i18n="panel.header">RIG &amp; BODY CONTROLS</span>
+        <button id="panel-toggle" title="collapse">–</button>
+      </div>
+      <div id="panel-body">
+
+        <div class="ctl">
+          <div class="ctl-label" data-i18n-html="ctl.sheet">SAIL SHEET <span class="key-hint">W / S</span>
+            <span class="ctl-value" id="sheet-val">45°</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="sheet" min="0" max="90" value="55" step="1" />
+            <div id="sheet-optimal" title="optimal trim"></div>
+          </div>
+          <div class="ctl-sub">
+            <span data-i18n="ctl.sheet.in">pulled in (0°)</span><span data-i18n="ctl.sheet.out">let out (90°)</span>
+          </div>
+          <label class="toggle-row">
+            <input type="checkbox" id="autotrim" />
+            <span data-i18n="ctl.autotrim">Auto-trim assist (sheets for you)</span>
+          </label>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-label" data-i18n-html="ctl.rake">MAST RAKE — steering <span class="key-hint">◀ ▶</span></div>
+          <div class="seg" id="rake-seg">
+            <button data-rake="-1"  data-i18n="rake.hardback" data-i18n-title="rake.hardback.t" title="rake hard back → turn upwind fast">⤒ hard back</button>
+            <button data-rake="-0.5" data-i18n="rake.back" data-i18n-title="rake.back.t" title="rake back → head upwind">back</button>
+            <button data-rake="0" class="active" data-i18n="rake.neutral">neutral</button>
+            <button data-rake="0.5" data-i18n="rake.fwd" data-i18n-title="rake.fwd.t" title="rake forward → bear away downwind">fwd</button>
+            <button data-rake="1"  data-i18n="rake.hardfwd" data-i18n-title="rake.hardfwd.t" title="rake hard forward → turn downwind fast">⤓ hard fwd</button>
+          </div>
+          <div class="ctl-sub"><span data-i18n="ctl.rake.up">← turns you UPWIND</span><span data-i18n="ctl.rake.down">turns you DOWNWIND →</span></div>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-label" data-i18n-html="ctl.stance">FOOT STANCE <span class="key-hint">1 / 2 / 3</span></div>
+          <div class="seg" id="stance-seg">
+            <button data-stance="front" data-i18n="stance.front">front (by mast)</button>
+            <button data-stance="mid" class="active" data-i18n="stance.mid">neutral</button>
+            <button data-stance="back" data-i18n="stance.back">back (straps)</button>
+          </div>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-label" data-i18n-html="ctl.lean">WINDWARD LEAN <span class="key-hint">Q / E</span>
+            <span class="ctl-value" id="lean-val">25%</span>
+          </div>
+          <input type="range" id="lean" min="0" max="100" value="25" step="1" />
+          <div class="ctl-sub"><span data-i18n="ctl.lean.upright">upright</span><span data-i18n="ctl.lean.out">hiked way out</span></div>
+        </div>
+
+        <div class="ctl toggles-row">
+          <label class="toggle-row">
+            <input type="checkbox" id="dagger" checked />
+            <span data-i18n-html="ctl.dagger">Daggerboard down <span class="key-hint">D</span></span>
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" id="harness" />
+            <span data-i18n-html="ctl.harness">Hook into harness <span class="key-hint">H</span></span>
+          </label>
+        </div>
+
+        <div class="ctl btn-row">
+          <button id="btn-tack" class="action-btn" data-i18n-html="btn.tack" data-i18n-title="btn.tack.t" title="turn the nose through the wind (upwind turn)">⟲ TACK <span class="key-hint">T</span></button>
+          <button id="btn-gybe" class="action-btn" data-i18n-html="btn.gybe" data-i18n-title="btn.gybe.t" title="turn away from the wind through downwind">⟳ GYBE <span class="key-hint">G</span></button>
+          <button id="btn-reset" class="action-btn subtle" data-i18n-html="btn.reset">RESET <span class="key-hint">R</span></button>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-label" data-i18n-html="ctl.truewind">TRUE WIND <span class="ctl-value" id="windset-val">14 kn</span></div>
+          <input type="range" id="windset" min="6" max="28" value="14" step="1" />
+        </div>
+
+      </div>
+    </div>
+
+    <div id="help-note" data-i18n="help.note">drag to orbit the camera · scroll to zoom</div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
