@@ -11,7 +11,7 @@ const DEG = Math.PI / 180;
 const KN = 1.94384; // m/s -> knots
 const THRUST_N = 340;      // sail thrust scale, N at drive01=1
 const THRUST_CLAMP = 2.05; // thrust saturates later than the UI power meter's 1.35
-const K_WALL = 1.4;        // displacement-hull wave-drag wall strength
+const K_WALL = 3.2;        // displacement-hull wave-drag wall strength (the hump before planing)
 
 // ---- maneuver geometry (|beta| targets, radians) ----
 // A tack/gybe runs in two phases: SETUP auto-steers the bow to the ideal entry
@@ -355,9 +355,15 @@ export class WindsurfSim {
     }
 
     // ------- planing state -------
+    // Planing is EARNED: you must first punch the hull over its wave-drag hump
+    // (see K_WALL below, which peaks ~5 m/s). On a beam reach a low-speed board
+    // stalls just short of the hump; bearing away onto a broad reach adds drive
+    // and lets you break through and pop onto the plane — exactly the real
+    // "get planing" move. Onset needs real speed AND power so it can't trigger
+    // the instant the sail loads up.
     if (!this.planing) {
-      if (this.v > 3.8 && power01 > 0.26 && absBetaDeg > 70 && absBetaDeg < 162 && trim === 'good') this.planing = true;
-    } else if (this.v < 3.6 || power01 < 0.20) {
+      if (this.v > 5.0 && power01 > 0.34 && absBetaDeg > 70 && absBetaDeg < 162 && trim === 'good') this.planing = true;
+    } else if (this.v < 4.5 || power01 < 0.20) {
       this.planing = false;
     }
 
@@ -371,14 +377,19 @@ export class WindsurfSim {
       if (inputs.stance === 'mid') drag *= 1.4;           // not in the straps
       if (inputs.dagger) drag *= 1.5;                     // board wants to rail over
     } else {
-      drag = 12.0 * this.v * Math.abs(this.v) * 0.5 + 9 * this.v;
+      // Displacement drag: heavier than a planing skim so acceleration off the
+      // line is gradual (a real board takes several seconds to build way, not
+      // ~1s), and a beam reach settles into a modest cruise rather than rocketing.
+      drag = 9.0 * this.v * Math.abs(this.v) + 11 * this.v;
       if (inputs.stance === 'back' && this.v < 3.5) {
         drag *= 1.9;                                      // tail sinks
         warnings.push('warn.tailSink');
       }
-      // Displacement hull hits its wave-making "wall": pushing harder barely
-      // helps once you're near hull speed. Breaking onto the plane removes it.
-      drag += K_WALL * smoothstep(4.0, 6.2, this.v) * this.v * this.v;
+      // Displacement hull hits its wave-making "wall": a hump around hull speed
+      // (~5 m/s) that pushing harder barely beats. You climb it, stall just
+      // short on a beam reach, and only punch through by bearing away for drive.
+      // Breaking onto the plane removes it.
+      drag += K_WALL * smoothstep(3.6, 5.5, this.v) * this.v * this.v;
     }
     if (inputs.dagger && !this.planing) drag += 0.25 * this.v * this.v;
     drag *= 1 + 1.8 * Math.abs(this.yawVel);   // carving scrubs speed
@@ -388,7 +399,12 @@ export class WindsurfSim {
     // Thrust keeps scaling past the UI meter's 1.35 clamp (power01 stays 0..1.35
     // for the display, steering authority and planing thresholds) so stronger
     // wind keeps making a faster board instead of flat-lining the polar.
-    const thrust = clamp(drive01, 0, THRUST_CLAMP) * THRUST_N;
+    // Off the line the rig can't put its full drive into the hull: there is no
+    // water flow over the fin, the rider is still sheeting in and the apparent
+    // wind is weakest. Thrust ramps in with boat speed so the launch is a smooth
+    // build (not a jerk) — full drive by ~3 m/s, so top speed is unaffected.
+    const flowRamp = 0.4 + 0.6 * smoothstep(0.2, 3.2, Math.abs(this.v));
+    const thrust = clamp(drive01, 0, THRUST_CLAMP) * THRUST_N * flowRamp;
     const mass = 97; // rider + board + rig
     this.v += ((thrust - drag) / mass) * dt;
 

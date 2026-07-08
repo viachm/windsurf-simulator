@@ -50,9 +50,19 @@ export class World {
     this.scene.fog = new THREE.FogExp2(0xbfdcec, 0.0032);
 
     this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 2000);
-    // start zoomed out (~1.5x); phones pull back a touch more for a wider view
+    // Default view: over the tail, looking forward along the board's start
+    // heading, so we watch the rider from behind his back (and see where he's
+    // going). Start heading matches WindsurfSim.reset() (~100°); phones pull
+    // back a touch more for a wider view.
     const mobileZoom = matchMedia('(max-width: 768px)').matches ? 1.28 : 1;
-    this.camera.position.set(15 * mobileZoom, 1.4 + 7.35 * mobileZoom, -19.5 * mobileZoom);
+    const startHeading = 100 * DEG;
+    const nx = Math.sin(startHeading), nz = Math.cos(startHeading);   // nose direction
+    const back = 24 * mobileZoom, lift = 8.7 * mobileZoom, lat = 4;   // behind, above, slight starboard
+    this.camera.position.set(
+      -nx * back + (-nz) * lat,   // behind the tail, offset toward starboard
+      1.4 + lift,
+      -nz * back + (nx) * lat,
+    );
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enablePan = false;
