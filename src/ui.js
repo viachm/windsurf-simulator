@@ -77,12 +77,8 @@ export class UI {
 
     // tapping anywhere on the header toggles — a bigger, touch-friendly target
     $('panel').querySelector('.panel-header').addEventListener('click', () => {
-      if (Date.now() < (this._suppressClickUntil || 0)) return; // a swipe already handled it
       this.setPanelCollapsed(!$('panel').classList.contains('collapsed'));
     });
-
-    // swipe the sheet up to open / down to close (mobile)
-    this.#bindSwipe();
 
     // on phones, start collapsed so the water is visible; the header sits as a bottom bar
     if (this.#isMobile()) this.setPanelCollapsed(true);
@@ -112,32 +108,6 @@ export class UI {
     const bottomInset = Math.max(0, H - $('panel').getBoundingClientRect().top);
     const topInset = $('meters').getBoundingClientRect().bottom;  // lowest top overlay edge
     this.world.setFramingLift((bottomInset - topInset) / H);
-  }
-
-  // Swipe up on the collapsed bar to open; swipe down (from the top of the
-  // sheet) to close. Small drags fall through to the header's tap-to-toggle.
-  #bindSwipe() {
-    const panel = $('panel');
-    const body = $('panel-body');
-    const THRESH = 40;
-    let startY = null, startCollapsed = false;
-
-    panel.addEventListener('touchstart', (e) => {
-      startY = e.touches[0].clientY;
-      startCollapsed = panel.classList.contains('collapsed');
-    }, { passive: true });
-
-    panel.addEventListener('touchend', (e) => {
-      if (startY === null) return;
-      const dy = e.changedTouches[0].clientY - startY;
-      let handled = false;
-      if (startCollapsed && dy < -THRESH) { this.setPanelCollapsed(false); handled = true; }
-      // only close on a downward swipe that starts at the top of the scroll area,
-      // so scrolling the controls doesn't accidentally dismiss the sheet
-      else if (!startCollapsed && dy > THRESH && body.scrollTop <= 0) { this.setPanelCollapsed(true); handled = true; }
-      if (handled) this._suppressClickUntil = Date.now() + 400; // don't let the tap re-toggle
-      startY = null;
-    }, { passive: true });
   }
 
   // -------- interlocked setters (the "smart logic") --------
