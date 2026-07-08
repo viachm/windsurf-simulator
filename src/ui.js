@@ -24,6 +24,9 @@ export class UI {
     this.#bindKeys();
     this.compassCtx = $('compass').getContext('2d');
 
+    // keep the framing centred if the viewport changes (rotate / URL bar)
+    addEventListener('resize', () => this.#applyFramingLift());
+
     // Static markup (incl. the windset readout) is re-templated on language
     // change; re-sync the readouts that aren't refreshed every frame.
     onLangChange(() => {
@@ -90,21 +93,25 @@ export class UI {
   #isMobile() { return window.matchMedia('(max-width: 768px)').matches; }
 
   // Single source of truth for the control sheet's open/closed state. Also lifts
-  // the 3D framing on mobile so the rider stays visible above the open sheet.
+  // the 3D framing on mobile so the rider stays centred in the open state.
   setPanelCollapsed(collapsed) {
     const p = $('panel');
     p.classList.toggle('collapsed', collapsed);
     $('panel-toggle').textContent = collapsed ? '+' : '–';
+    this.#applyFramingLift();
+  }
 
-    if (this.world) {
-      if (this.#isMobile() && !collapsed) {
-        const rect = p.getBoundingClientRect();               // reflowed to open height
-        const covered = Math.max(0, innerHeight - rect.top);
-        this.world.setBottomCoverFraction(covered / innerHeight);
-      } else {
-        this.world.setBottomCoverFraction(0);
-      }
-    }
+  // Centre the rider in the clear band between the top overlays (HUD + meters)
+  // and the open control sheet: shift up by half the difference of the two
+  // insets, so it isn't pushed too high (which ignoring the top overlay did).
+  #applyFramingLift() {
+    if (!this.world) return;
+    const collapsed = $('panel').classList.contains('collapsed');
+    if (!this.#isMobile() || collapsed) { this.world.setFramingLift(0); return; }
+    const H = innerHeight;
+    const bottomInset = Math.max(0, H - $('panel').getBoundingClientRect().top);
+    const topInset = $('meters').getBoundingClientRect().bottom;  // lowest top overlay edge
+    this.world.setFramingLift((bottomInset - topInset) / H);
   }
 
   // Swipe up on the collapsed bar to open; swipe down (from the top of the

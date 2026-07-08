@@ -66,7 +66,7 @@ export class World {
     // When the mobile control sheet covers the lower part of the screen, we
     // lens-shift the projection upward so the rider stays framed in the strip
     // of scene that's still visible above the sheet (instead of behind it).
-    this._coverFrac = 0;       // fraction of viewport height hidden by the sheet
+    this._framingLift = 0;     // desired upward framing shift (fraction of height)
     this._lensY = 0;           // eased vertical projection offset (NDC)
 
     addEventListener('resize', () => {
@@ -525,20 +525,21 @@ export class World {
     this.controls.target.lerp(new THREE.Vector3(boardPos.x, boardPos.y + 1.4, boardPos.z), Math.min(dt * 6, 1));
     this.controls.update();
 
-    // Lens-shift the rider up above the control sheet (mobile). Ease it so
-    // opening/closing the sheet pans smoothly rather than jumping. elements[9]
-    // is the frustum's vertical off-centre term; negative lifts the subject.
-    const targetLens = -this._coverFrac;
+    // Lens-shift the rider so it stays centred in the clear band between the
+    // top overlays and the control sheet (mobile). Ease it so opening/closing
+    // the sheet pans smoothly. elements[9] is the frustum's vertical off-centre
+    // term; negative lifts the subject up the screen.
+    const targetLens = -this._framingLift;
     this._lensY += (targetLens - this._lensY) * Math.min(dt * 8, 1);
     this.camera.projectionMatrix.elements[9] = this._lensY;
 
     this.renderer.render(this.scene, this.camera);
   }
 
-  // Tell the world how much of the viewport height (0..1) is covered by the
-  // mobile control sheet, so it can raise the framing to keep the rider visible.
-  setBottomCoverFraction(f) {
-    this._coverFrac = Math.max(0, Math.min(0.85, f || 0));
+  // Vertical framing offset (fraction of viewport height): positive lifts the
+  // rider up the screen so it stays centred between the HUD and the open sheet.
+  setFramingLift(f) {
+    this._framingLift = Math.max(-0.35, Math.min(0.85, f || 0));
   }
 
   #poseSailor(state, t) {

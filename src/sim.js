@@ -208,8 +208,6 @@ export class WindsurfSim {
     else if (diff < -20) trim = 'stall';
 
     let effDrive = Math.exp(-(diff / 26) * (diff / 26));
-    const stallExtra = smoothstep(-18, -45, -Math.abs(Math.min(diff, 0))) * 0
-      + smoothstep(18, 45, -diff) * 0.55; // extra heel force when badly oversheeted
     if (diff > 40) effDrive = 0;          // fully luffing
 
     // A sail is an aerofoil: decompose its force into lift (perpendicular to the
