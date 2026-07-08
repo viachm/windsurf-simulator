@@ -12,9 +12,15 @@ const GAME_KEYS = new Set([
   'KeyD', 'KeyH', 'KeyT', 'KeyG', 'KeyR', 'ArrowLeft', 'ArrowRight',
 ]);
 
+const MS = 1 / 1.94384; // knots -> m/s
+
 function loadUnits() {
   try { const u = localStorage.getItem('ws_units'); if (u === 'kn' || u === 'kmh') return u; } catch { /* ignore */ }
-  return 'kmh'; // km/h by default
+  return 'kmh'; // board speed: km/h by default
+}
+function loadWindUnits() {
+  try { const u = localStorage.getItem('ws_windUnits'); if (u === 'kn' || u === 'kmh' || u === 'ms') return u; } catch { /* ignore */ }
+  return 'ms'; // wind speed: m/s by default (the windsurfing convention)
 }
 
 export class UI {
@@ -31,6 +37,7 @@ export class UI {
       autotrim: true,   // beginner assist on by default (full autopilot)
     };
     this.units = loadUnits();
+    this.windUnits = loadWindUnits();
     this.keysHeld = new Set();
     this.flash = { msg: '', until: 0 };
 
@@ -58,15 +65,21 @@ export class UI {
     });
   }
 
-  // Speed conversion + unit label follow the current unit choice.
+  // Board-speed conversion + label follow the board unit choice (km/h | kn).
   #conv(kn) { return this.units === 'kmh' ? kn * KMH : kn; }
   #unitLabel() { return t(this.units === 'kmh' ? 'unit.kmh' : 'unit.kn'); }
+
+  // Wind-speed conversion + label follow the wind unit choice (m/s | km/h | kn).
+  #convWind(kn) { return this.windUnits === 'ms' ? kn * MS : this.windUnits === 'kmh' ? kn * KMH : kn; }
+  #windUnitLabel() { return t(this.windUnits === 'ms' ? 'unit.ms' : this.windUnits === 'kmh' ? 'unit.kmh' : 'unit.kn'); }
+  // m/s reads best with one decimal; km/h and knots as whole numbers.
+  #fmtWind(kn) { const v = this.#convWind(kn); return this.windUnits === 'ms' ? v.toFixed(1) : v.toFixed(0); }
 
   #refreshWindReadout() {
     // Read the actual base wind (m/s) so the label is exact even when it doesn't
     // land on a whole knot (e.g. 10 km/h ≈ 5.4 kn).
     const kn = this.sim.baseWind * 1.94384;
-    $('windset-val').textContent = `${this.#conv(kn).toFixed(0)} ${this.#unitLabel()}`;
+    $('windset-val').textContent = `${this.#fmtWind(kn)} ${this.#windUnitLabel()}`;
   }
 
   #syncLangButtons() {
@@ -156,6 +169,11 @@ export class UI {
       this.setUnits(b.dataset.units);
     });
 
+    $('windunits-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      this.setWindUnits(b.dataset.windunits);
+    });
+
     $('lang-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       setLang(b.dataset.lang);
@@ -163,6 +181,7 @@ export class UI {
 
     // initial state
     this.setUnits(this.units);
+    this.setWindUnits(this.windUnits);
     this.#syncLangButtons();
     this.#refreshWindReadout();
   }
@@ -171,6 +190,12 @@ export class UI {
     this.units = (u === 'kn') ? 'kn' : 'kmh';
     try { localStorage.setItem('ws_units', this.units); } catch { /* ignore */ }
     for (const b of $('units-seg').children) b.classList.toggle('active', b.dataset.units === this.units);
+  }
+
+  setWindUnits(u) {
+    this.windUnits = (u === 'kn' || u === 'kmh') ? u : 'ms';
+    try { localStorage.setItem('ws_windUnits', this.windUnits); } catch { /* ignore */ }
+    for (const b of $('windunits-seg').children) b.classList.toggle('active', b.dataset.windunits === this.windUnits);
     this.#refreshWindReadout();
   }
 
@@ -510,10 +535,11 @@ export class UI {
       ? (st.maneuver.type === 'tack' ? t('man.tacking') : t('man.gybing'))
       : t(st.pointOfSailKey);
     $('tack-val').textContent = t(st.tackKey);
-    $('wind-val').textContent = this.#conv(st.windKn).toFixed(0);
-    $('wind-unit').textContent = unit;
+    const windUnit = this.#windUnitLabel();
+    $('wind-val').textContent = this.#fmtWind(st.windKn);
+    $('wind-unit').textContent = windUnit;
     $('gust-val').textContent = st.gustKn > 0.8
-      ? t('hud.gust', { n: this.#conv(st.gustKn).toFixed(0), unit })
+      ? t('hud.gust', { n: this.#fmtWind(st.gustKn), unit: windUnit })
       : '';
 
     // sheet readout + optimal marker

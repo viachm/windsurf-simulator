@@ -15,7 +15,8 @@ export const STRINGS = {
 
     // --- settings ---
     'settings.title': 'SETTINGS',
-    'settings.units': 'SPEED UNITS',
+    'settings.units': 'BOARD SPEED UNITS',
+    'settings.windunits': 'WIND SPEED UNITS',
     'settings.lang': 'LANGUAGE',
     'settings.howto': 'HOW TO PLAY',
 
@@ -23,6 +24,7 @@ export const STRINGS = {
     'hud.speed': 'BOARD SPEED',
     'unit.kn': 'kn',
     'unit.kmh': 'km/h',
+    'unit.ms': 'm/s',
     'hud.planing': 'PLANING!',
     'hud.pos': 'POINT OF SAIL',
     'hud.wind': 'WIND',
@@ -183,7 +185,8 @@ export const STRINGS = {
 
     // --- settings ---
     'settings.title': 'НАЛАШТУВАННЯ',
-    'settings.units': 'ОДИНИЦІ ШВИДКОСТІ',
+    'settings.units': 'ОДИНИЦІ ШВИДКОСТІ ДОШКИ',
+    'settings.windunits': 'ОДИНИЦІ ШВИДКОСТІ ВІТРУ',
     'settings.lang': 'МОВА',
     'settings.howto': 'ЯК ГРАТИ',
 
@@ -191,6 +194,7 @@ export const STRINGS = {
     'hud.speed': 'ШВИДКІСТЬ ДОШКИ',
     'unit.kn': 'вуз',
     'unit.kmh': 'км/год',
+    'unit.ms': 'м/с',
     'hud.planing': 'ГЛІСУВАННЯ!',
     'hud.pos': 'КУРС ДО ВІТРУ',
     'hud.wind': 'ВІТЕР',
