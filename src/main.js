@@ -7,7 +7,7 @@ applyStatic(); // localise the static markup for the saved/default language
 
 const sim = new WindsurfSim();
 const world = new World(document.getElementById('scene'));
-const ui = new UI(sim);
+const ui = new UI(sim, world);
 
 let last = performance.now();
 let wasCrashed = false;

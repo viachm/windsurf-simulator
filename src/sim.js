@@ -197,7 +197,7 @@ export class WindsurfSim {
       });
     }
 
-    // ------- sail trim -------
+    // ------- sail trim (lift/drag decomposed along the apparent wind) -------
     // Optimal boom angle grows as the (apparent) wind moves aft.
     const sheetOpt = clamp(0.55 * absBetaAppDeg - 12, 8, 82);
     const diff = inputs.sheetDeg - sheetOpt;    // >0 let out too far, <0 pulled in too much
@@ -222,11 +222,11 @@ export class WindsurfSim {
     const bAdeg = absBetaAppDeg;
     const q = (awSpeed / 10) ** 2;           // normalized dynamic pressure
     // Lift needs attached flow: dies approaching head-to-wind AND approaching dead run.
-    const CL = 1.3 * effDrive * smoothstep(14, 30, bAdeg) * smoothstep(180, 150, bAdeg);
+    const CL = 1.85 * effDrive * smoothstep(14, 42, bAdeg) * smoothstep(180, 150, bAdeg);
     // A well-trimmed sail squared off to the apparent wind pushes like a barn door downwind.
     // Onset starts near apparent-beam (cos~0, drag neither helps nor hurts there)
     // so it never fights the lift term forward of the beam.
-    const CD = 0.10 + 4.0 * effDrive * smoothstep(90, 150, bAdeg);
+    const CD = 0.10 + 6.0 * effDrive * smoothstep(90, 125, bAdeg);
     // Oversheeted stalled sail: lots of sideways heel, little drive.
     const sideStall = 0.55 * smoothstep(18, 45, -diff);
     const drive01 = q * (CL * Math.sin(bA) - CD * Math.cos(bA));  // cos<0 aft of beam -> drag drives you

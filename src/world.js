@@ -63,6 +63,12 @@ export class World {
     this.sailorSide = 1;       // +1 = port (local +X); animated on tack/gybe
     this.prevBoardPos = new THREE.Vector3();
 
+    // When the mobile control sheet covers the lower part of the screen, we
+    // lens-shift the projection upward so the rider stays framed in the strip
+    // of scene that's still visible above the sheet (instead of behind it).
+    this._coverFrac = 0;       // fraction of viewport height hidden by the sheet
+    this._lensY = 0;           // eased vertical projection offset (NDC)
+
     addEventListener('resize', () => {
       this.camera.aspect = innerWidth / innerHeight;
       this.camera.updateProjectionMatrix();
@@ -519,7 +525,20 @@ export class World {
     this.controls.target.lerp(new THREE.Vector3(boardPos.x, boardPos.y + 1.4, boardPos.z), Math.min(dt * 6, 1));
     this.controls.update();
 
+    // Lens-shift the rider up above the control sheet (mobile). Ease it so
+    // opening/closing the sheet pans smoothly rather than jumping. elements[9]
+    // is the frustum's vertical off-centre term; negative lifts the subject.
+    const targetLens = -this._coverFrac;
+    this._lensY += (targetLens - this._lensY) * Math.min(dt * 8, 1);
+    this.camera.projectionMatrix.elements[9] = this._lensY;
+
     this.renderer.render(this.scene, this.camera);
+  }
+
+  // Tell the world how much of the viewport height (0..1) is covered by the
+  // mobile control sheet, so it can raise the framing to keep the rider visible.
+  setBottomCoverFraction(f) {
+    this._coverFrac = Math.max(0, Math.min(0.85, f || 0));
   }
 
   #poseSailor(state, t) {
