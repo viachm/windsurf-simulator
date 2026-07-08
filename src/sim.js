@@ -13,6 +13,19 @@ const THRUST_N = 340;      // sail thrust scale, N at drive01=1
 const THRUST_CLAMP = 2.05; // thrust saturates later than the UI power meter's 1.35
 const K_WALL = 1.4;        // displacement-hull wave-drag wall strength
 
+// ---- maneuver geometry (|beta| targets, radians) ----
+// A tack/gybe runs in two phases: SETUP auto-steers the bow to the ideal entry
+// angle, then TURN carries it through the wind. Entry/exit are the |beta| the
+// board holds just before and after the turn.
+const TACK_ENTRY = 42 * DEG;   // close-hauled: how tight we come up before crossing
+const TACK_EXIT  = 52 * DEG;   // close reach we settle onto on the new tack
+const GYBE_ENTRY = 148 * DEG;  // deep broad reach we bear away to before carving
+const GYBE_EXIT  = 130 * DEG;  // broad reach we settle onto on the new tack
+const TACK_VMIN  = 1.4;        // need this much way on to coast through the no-go
+const GYBE_VMIN  = 1.6;        // need this much to carry the carve through the run
+const TACK_MAX_BETA = 112 * DEG; // beyond this you're downwind -> must gybe
+const GYBE_MIN_BETA = 68 * DEG;  // inside this you're upwind   -> must tack
+
 function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
 function smoothstep(a, b, x) {
   const t = clamp((x - a) / (b - a), 0, 1);
@@ -84,25 +97,50 @@ export class WindsurfSim {
     return signedAngle(f.x, f.z, w.x, w.z);
   }
 
+  // Returns { ok:true } or { ok:false, reason } so the UI can explain a block.
+  // Note: dHeading = -dBeta (rotating the bow to port/+heading swings the wind
+  // FROM-angle the other way). All phase deltas below are in HEADING space.
   startTack() {
+    if (this.crashed || this.maneuver) return { ok: false, reason: 'busy' };
     const b = this.beta();
-    if (this.crashed || this.maneuver) return false;
-    if (this.v < 1.2) return false;
-    if (Math.abs(b) > 100 * DEG) return false; // too far downwind, gybe instead
-    const delta = 2 * b; // rotate so beta -> -beta
-    this.maneuver = { type: 'tack', delta, done: 0, dur: clamp(Math.abs(delta) / (1.1), 1.2, 3.2), t: 0 };
-    return true;
+    if (Math.abs(b) > TACK_MAX_BETA) return { ok: false, reason: 'downwind' };
+    if (this.v < TACK_VMIN) return { ok: false, reason: 'slow' };
+    const s = b >= 0 ? 1 : -1;              // current tack (wind side)
+    // SETUP: head up to close-hauled on the current tack (reduce |beta| to entry).
+    const setupDH = (Math.abs(b) - TACK_ENTRY) * s;
+    // TURN: carry the bow up through the eye of the wind onto the other tack.
+    const turnDH = (TACK_ENTRY + TACK_EXIT) * s;
+    this.maneuver = this.#buildManeuver('tack', s, setupDH, turnDH);
+    return { ok: true };
   }
 
   startGybe() {
+    if (this.crashed || this.maneuver) return { ok: false, reason: 'busy' };
     const b = this.beta();
-    if (this.crashed || this.maneuver) return false;
-    if (this.v < 1.5) return false;
-    if (Math.abs(b) < 75 * DEG) return false; // head downwind first
-    const sign = b > 0 ? -1 : 1; // turn away from the wind
-    const delta = sign * 2 * (Math.PI - Math.abs(b));
-    this.maneuver = { type: 'gybe', delta, done: 0, dur: clamp(Math.abs(delta) / 0.9, 1.4, 3.6), t: 0 };
-    return true;
+    if (Math.abs(b) < GYBE_MIN_BETA) return { ok: false, reason: 'upwind' };
+    if (this.v < GYBE_VMIN) return { ok: false, reason: 'slow' };
+    const s = b >= 0 ? 1 : -1;
+    // SETUP: bear away to a deep broad reach (increase |beta| to entry).
+    const setupDH = -(GYBE_ENTRY - Math.abs(b)) * s;
+    // TURN: carry the stern through dead-downwind onto the other tack.
+    const turnDH = -((Math.PI - GYBE_ENTRY) + (Math.PI - GYBE_EXIT)) * s;
+    this.maneuver = this.#buildManeuver('gybe', s, setupDH, turnDH);
+    return { ok: true };
+  }
+
+  #buildManeuver(type, s, setupDH, turnDH) {
+    const turnRate = type === 'tack' ? 1.15 : 0.98;       // rad/s nominal
+    const setupRate = type === 'tack' ? 0.95 : 0.85;
+    const setupDur = clamp(Math.abs(setupDH) / setupRate, 0, 2.2);
+    const turnDur = clamp(Math.abs(turnDH) / turnRate, 1.2, 3.4);
+    const hasSetup = setupDur > 0.15;
+    return {
+      type, s, setupDH, turnDH, setupDur, turnDur,
+      phase: hasSetup ? 'setup' : 'turn',
+      tPhase: 0, tTotal: 0,
+      totalDur: (hasSetup ? setupDur : 0) + turnDur,
+      turn01: 0, overall01: 0,     // progress fields read by the renderer
+    };
   }
 
   crash(reason, lesson) {
@@ -170,37 +208,57 @@ export class WindsurfSim {
     // ------- maneuver (tack / gybe) overrides steering -------
     if (this.maneuver) {
       const m = this.maneuver;
-      m.t += dt;
-      const s = clamp(m.t / m.dur, 0, 1);
-      // bell-shaped rate: ∫ 6s(1-s) ds over [0,1] = 1, so the turn still sums to delta
-      const rate = (m.delta / m.dur) * 6 * s * (1 - s);
-      this.yawVel = rate;
-      const dpsi = rate * dt;
-      this.heading += dpsi;
-      m.done += dpsi;
-      // A committed tack/gybe is carved on the loaded rail: most of the velocity
-      // is redirected WITH the hull, only a fraction escapes as sideways slip
-      // (free-body rotation here would stack on the decay below and end the
-      // maneuver moving backwards).
-      const dpsiFree = dpsi * 0.2;
-      const v0 = this.v, u0 = this.u;
-      this.v = v0 * Math.cos(dpsiFree) - u0 * Math.sin(dpsiFree);
-      this.u = (v0 * Math.sin(dpsiFree) + u0 * Math.cos(dpsiFree)) * Math.pow(0.25, dt);
-      const decay = m.type === 'tack' ? 0.45 : (this.planing ? 0.82 : 0.62);
-      this.v *= Math.pow(decay, dt);
-      if (m.type === 'gybe' && this.v < 3.8) this.planing = false;
-      if (m.t >= m.dur) {
-        this.maneuver = null;
-        if (m.type === 'tack' && this.v < 0.4) {
-          this.stuckInIrons = true;
+      m.tPhase += dt; m.tTotal += dt;
+      let power01 = 0.12;
+
+      if (m.phase === 'setup') {
+        // Phase 1 — auto-steer to the ideal entry angle while still driving.
+        // Bell-shaped rate over the phase so ∫ = setupDH exactly.
+        const s01 = clamp(m.tPhase / m.setupDur, 0, 1);
+        const dH = (m.setupDH / m.setupDur) * 6 * s01 * (1 - s01) * dt;
+        this.yawVel = dt > 0 ? dH / dt : 0;
+        this.heading += dH;
+        // Board is powered and carving normally here: rotate velocity with the
+        // hull and let the fin bleed the slip.
+        const v0 = this.v, u0 = this.u;
+        this.v = v0 * Math.cos(dH) - u0 * Math.sin(dH);
+        this.u = (v0 * Math.sin(dH) + u0 * Math.cos(dH)) * Math.pow(0.2, dt);
+        this.v *= Math.pow(m.type === 'gybe' ? 0.97 : 0.9, dt); // gybe bears away, keeps speed
+        power01 = 0.4;
+        if (m.tPhase >= m.setupDur) { m.phase = 'turn'; m.tPhase = 0; }
+      } else {
+        // Phase 2 — carry the bow/stern through the wind.
+        const s01 = clamp(m.tPhase / m.turnDur, 0, 1);
+        m.turn01 = s01;
+        const dH = (m.turnDH / m.turnDur) * 6 * s01 * (1 - s01) * dt;
+        this.yawVel = dt > 0 ? dH / dt : 0;
+        this.heading += dH;
+        // Carved on the loaded rail: most velocity follows the hull, a little
+        // escapes as slip (a free-body spin here would end the turn backwards).
+        const dHFree = dH * 0.2;
+        const v0 = this.v, u0 = this.u;
+        this.v = v0 * Math.cos(dHFree) - u0 * Math.sin(dHFree);
+        this.u = (v0 * Math.sin(dHFree) + u0 * Math.cos(dHFree)) * Math.pow(0.25, dt);
+        const decay = m.type === 'tack' ? 0.5 : (this.planing ? 0.85 : 0.66);
+        this.v *= Math.pow(decay, dt);
+        if (m.type === 'gybe' && this.v < 3.8) this.planing = false;
+        // Stalled head-to-wind mid-tack: the way ran out before the bow crossed.
+        // Bail into irons instead of drifting backwards through the eye.
+        if (m.type === 'tack' && s01 > 0.35 && s01 < 0.85 && this.v < 0.25) {
+          this.maneuver = null; this.stuckInIrons = true; this.yawVel = 0;
+          warnings.push('warn.irons');
+        } else if (m.tPhase >= m.turnDur) {
+          this.maneuver = null;
+          if (m.type === 'tack' && this.v < 0.4) this.stuckInIrons = true;
         }
       }
+
+      if (this.maneuver) this.maneuver.overall01 = clamp(m.tTotal / m.totalDur, 0, 1);
       const f2 = this.fwd(), r2 = this.right();
       this.pos.x += (f2.x * this.v + r2.x * this.u) * dt;
       this.pos.z += (f2.z * this.v + r2.z * this.u) * dt;
       return this.snapshot(inputs, warnings, {
-        power01: 0.15, required01: 0.1, trim: 'good',
-        sheetOpt: 45, maneuverProgress: m.t / m.dur, maneuverType: m.type,
+        power01, required01: 0.1, trim: 'good', sheetOpt: 45,
       });
     }
 

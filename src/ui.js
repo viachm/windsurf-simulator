@@ -263,14 +263,13 @@ export class UI {
   }
 
   tryTack() {
-    const st = this.sim.lastState;
     if (this.sim.maneuver) return;
-    if (st && Math.abs(st.beta) > 100 * DEG) {
-      this.flashMsg(t('flash.tooDownwind'));
-      return;
-    }
-    if (!this.sim.startTack()) {
-      this.flashMsg(t('flash.tackNeedSpeed'));
+    // The sim now auto-steers to the entry angle, so we only block when it is
+    // truly impossible: no way on, or pointing downwind (gybe territory).
+    const res = this.sim.startTack();
+    if (!res.ok) {
+      if (res.reason === 'downwind') this.flashMsg(t('flash.tooDownwind'));
+      else if (res.reason === 'slow') this.flashMsg(t('flash.tackNeedSpeed'));
       return;
     }
     // maneuver housekeeping: sheet out, unhook, step to neutral
@@ -281,14 +280,11 @@ export class UI {
   }
 
   tryGybe() {
-    const st = this.sim.lastState;
     if (this.sim.maneuver) return;
-    if (st && Math.abs(st.beta) < 75 * DEG) {
-      this.flashMsg(t('flash.gybeFromBroad'));
-      return;
-    }
-    if (!this.sim.startGybe()) {
-      this.flashMsg(t('flash.gybeNeedSpeed'));
+    const res = this.sim.startGybe();
+    if (!res.ok) {
+      if (res.reason === 'upwind') this.flashMsg(t('flash.tooUpwind'));
+      else if (res.reason === 'slow') this.flashMsg(t('flash.gybeNeedSpeed'));
       return;
     }
     if (this.inputs.harness) this.setHarness(false);

@@ -540,27 +540,59 @@ export class World {
 
     // ---- rig pose ----
     const sheetRad = (state.inputs.sheetDeg || 45) * DEG;
+    const m = state.maneuver;
+    // Which side the RIDER should be on. Off a maneuver this tracks the wind
+    // side; during a maneuver it is driven by the turn so the rider and rig
+    // cross together instead of snapping when beta passes through 0/180.
+    let riderTargetSide = side;
     let sailYaw = side * sheetRad;
-    if (state.maneuver) {
-      // sail swings across during tack/gybe
-      const p = state.maneuver.t / state.maneuver.dur;
-      sailYaw = side * sheetRad * Math.cos(p * Math.PI) * -1;
+    let maneuverLuff = false;
+
+    if (m) {
+      if (m.phase === 'setup') {
+        // Setup: still sailing to the entry angle, sheeted on the entry tack.
+        riderTargetSide = m.s;
+        sailYaw = m.s * sheetRad;
+        this.rig.rotation.x = m.type === 'gybe' ? 0.06 : -0.04; // slight rake in the setup sense
+      } else {
+        // Turn: rig crosses over, luffs through the midpoint, settles on the
+        // new side. Rider slides across in lock-step.
+        const flip = THREE.MathUtils.smoothstep(m.turn01 || 0, 0.15, 0.85); // 0->1
+        const manSide = m.s * (1 - 2 * flip);
+        riderTargetSide = manSide;
+        // sail angle collapses to ~luff at the crossover, opens on the new side
+        sailYaw = manSide * sheetRad * (0.35 + 0.65 * Math.abs(1 - 2 * flip));
+        // rake swing: a tack throws the rig back over the tail, a gybe throws it
+        // forward across the nose. Peaks at the crossover.
+        const swing = Math.sin(Math.PI * (m.turn01 || 0));
+        this.rig.rotation.x = (m.type === 'tack' ? -0.55 : 0.6) * swing;
+        // sail flogs through the eye of the wind
+        maneuverLuff = Math.abs(1 - 2 * flip) < 0.5;
+        if (maneuverLuff) sailYaw += Math.sin(t * 24) * 0.06;
+        this.rig.rotation.y = sailYaw;
+        this.rig.rotation.z = -manSide * 0.10;
+      }
     }
-    if (state.trim === 'luff' && !state.crashed) sailYaw += Math.sin(t * 22) * 0.05; // flutter
-    this.rig.rotation.y = sailYaw;
-    this.rig.rotation.x = (state.inputs.rake || 0) * 0.30;                 // fwd = tilt to nose
-    this.rig.rotation.z = -side * (0.10 + 0.22 * Math.min(state.eff01 || 0, 1)); // rake to windward
+    if (!m || m.phase === 'setup') {
+      if (state.trim === 'luff' && !state.crashed) sailYaw += Math.sin(t * 22) * 0.05; // flutter
+      this.rig.rotation.y = sailYaw;
+      if (!m) this.rig.rotation.x = (state.inputs.rake || 0) * 0.30;        // fwd = tilt to nose
+      this.rig.rotation.z = -side * (0.10 + 0.22 * Math.min(state.eff01 || 0, 1)); // rake to windward
+    }
     if (state.crashed) { this.rig.rotation.z = -side * 1.35; this.rig.rotation.x = 0.2; }
 
     // sail visual power: bulge opacity trick
-    this.sailMat.opacity = state.trim === 'luff' ? 0.75 + Math.sin(t * 26) * 0.08 : 0.9;
+    const luffing = maneuverLuff || (state.trim === 'luff' && !m);
+    this.sailMat.opacity = luffing ? 0.75 + Math.sin(t * 26) * 0.08 : 0.9;
 
     // daggerboard slides up/down
     const dagTargetY = state.inputs.dagger ? -0.2 : 0.28;
     this.dagger.position.y += (dagTargetY - this.dagger.position.y) * Math.min(dt * 5, 1);
 
     // ---- sailor ----
-    this.sailorSide += (side - this.sailorSide) * Math.min(dt * 2.5, 1);
+    // Cross a touch faster during a maneuver so the rider stays with the rig.
+    const crossRate = m && m.phase === 'turn' ? 4.5 : 2.5;
+    this.sailorSide += (riderTargetSide - this.sailorSide) * Math.min(dt * crossRate, 1);
     this.#poseSailor(state, t);
 
     // ---- wind arrows ----

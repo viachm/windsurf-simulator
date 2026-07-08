@@ -116,6 +116,7 @@ export const STRINGS = {
     'flash.tooDownwind': 'Too far downwind to tack — use GYBE, or head up first (rake back[[ ▶]]).',
     'flash.tackNeedSpeed': 'Need some speed to carry the nose through the wind — power up first.',
     'flash.gybeFromBroad': 'Gybing starts from a broad reach — bear away first (rake forward[[ ◀]]).',
+    'flash.tooUpwind': 'Too close to the wind to gybe — use TACK instead.',
     'flash.gybeNeedSpeed': 'Need steerage way to gybe — get some speed first.',
     'main.recovered': 'Back up. Sheet in slowly[[ (W)]] and build speed on a beam reach.',
 
@@ -251,6 +252,7 @@ export const STRINGS = {
     'flash.tooDownwind': 'Занадто під вітром для оверштагу — робіть ДЖАЙБ або спершу приведіться (нахил назад[[ ▶]]).',
     'flash.tackNeedSpeed': 'Потрібна швидкість, щоб пронести ніс через вітер — спершу наберіть тягу.',
     'flash.gybeFromBroad': 'Джайб починають із бакштагу — спершу увалітеся (нахил вперед[[ ◀]]).',
+    'flash.tooUpwind': 'Занадто круто до вітру для джайбу — робіть ОВЕРШТАГ.',
     'flash.gybeNeedSpeed': 'Потрібен хід, щоб зробити джайб — спершу наберіть швидкість.',
     'main.recovered': 'Знову на ногах. Повільно вибирайте шкот[[ (W)]] і набирайте швидкість на галфвінді.',
 
