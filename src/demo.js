@@ -29,38 +29,39 @@ export const DEMO_MODES = ['beginner', 'freeride', 'chill'];
 
 const SCRIPTS = {
   // Every point of sail, one tack, one gybe — slow and narrated, gentle wind.
+  // Segment durations are tuned so one full lap runs ~60s, then it repeats.
   beginner: {
     wind: 12,
     segments: [
-      { cap: 'demo.b.beam',   beta: 95,  dur: 8 },
-      { cap: 'demo.b.headup', beta: 60,  dur: 9 },
+      { cap: 'demo.b.beam',   beta: 95,  dur: 10 },
+      { cap: 'demo.b.headup', beta: 60,  dur: 11 },
       { cap: 'demo.b.tack',   beta: 52,  dur: 9, turn: 'tack' },
-      { cap: 'demo.b.bear',   beta: 120, dur: 9 },
-      { cap: 'demo.b.broad',  beta: 135, dur: 8 },
+      { cap: 'demo.b.bear',   beta: 120, dur: 11 },
+      { cap: 'demo.b.broad',  beta: 135, dur: 10 },
       { cap: 'demo.b.gybe',   beta: 140, dur: 9, turn: 'gybe' },
-      { cap: 'demo.b.settle', beta: 95,  dur: 8 },
+      { cap: 'demo.b.settle', beta: 95,  dur: 10 },
     ],
   },
   // Strong wind, planing, footstraps, fast transitions: blast, turn, blast.
   freeride: {
     wind: 24,
     segments: [
-      { cap: 'demo.f.power',  beta: 115, dur: 7 },
-      { cap: 'demo.f.plane',  beta: 105, dur: 8 },
+      { cap: 'demo.f.power',  beta: 115, dur: 9 },
+      { cap: 'demo.f.plane',  beta: 105, dur: 11 },
       { cap: 'demo.f.gybe',   beta: 138, dur: 9, turn: 'gybe' },
-      { cap: 'demo.f.blast',  beta: 125, dur: 7 },
-      { cap: 'demo.f.upwind', beta: 62,  dur: 8 },
+      { cap: 'demo.f.blast',  beta: 125, dur: 10 },
+      { cap: 'demo.f.upwind', beta: 62,  dur: 10 },
       { cap: 'demo.f.tack',   beta: 52,  dur: 9, turn: 'tack' },
-      { cap: 'demo.f.back',   beta: 115, dur: 6 },
+      { cap: 'demo.f.back',   beta: 115, dur: 9 },
     ],
   },
   // Calm, endless cruise — a screensaver. No maneuvers.
   chill: {
     wind: 11,
     segments: [
-      { cap: 'demo.c.cruise', beta: 95,  dur: 14 },
-      { cap: 'demo.c.up',     beta: 72,  dur: 12 },
-      { cap: 'demo.c.down',   beta: 118, dur: 12 },
+      { cap: 'demo.c.cruise', beta: 95,  dur: 20 },
+      { cap: 'demo.c.up',     beta: 72,  dur: 18 },
+      { cap: 'demo.c.down',   beta: 118, dur: 18 },
     ],
   },
 };
