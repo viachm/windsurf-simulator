@@ -267,6 +267,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   display: flex; align-items: center; gap: 6px;
 }
 .ctl-value { margin-left: auto; color: var(--text); font-weight: 700; font-size: 12px; }
+.ctl-hint { margin-left: auto; letter-spacing: 0; text-transform: none; font-size: 9px; color: var(--text-dim); opacity: 0.75; font-weight: 400; }
 .key-hint {
   font-size: 9px; color: var(--text-dim); border: 1px solid var(--panel-border);
   border-radius: 4px; padding: 0 4px;

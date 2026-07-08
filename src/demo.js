@@ -45,6 +45,7 @@ const SCRIPTS = {
   // Segment durations are tuned so one full lap runs ~60s, then it repeats.
   beginner: {
     wind: 12,
+    sail: 6.5,          // universal all-round — gentle, docile for learning
     segments: [
       { cap: 'demo.b.beam',   beta: 95,  dur: 10 },
       { cap: 'demo.b.headup', beta: 60,  dur: 11 },
@@ -58,6 +59,7 @@ const SCRIPTS = {
   // Strong wind, planing, footstraps, fast transitions: blast, turn, blast.
   freeride: {
     wind: 24,
+    sail: 5.0,          // small strong-wind sail — planes hard yet stays controllable
     segments: [
       { cap: 'demo.f.power',  beta: 115, dur: 9 },
       { cap: 'demo.f.plane',  beta: 105, dur: 11 },
@@ -71,6 +73,7 @@ const SCRIPTS = {
   // Calm, endless cruise — a screensaver. No maneuvers.
   chill: {
     wind: 11,
+    sail: 8.0,          // big light-wind sail — easy, relaxed cruising power
     segments: [
       { cap: 'demo.c.cruise', beta: 95,  dur: 20 },
       { cap: 'demo.c.up',     beta: 72,  dur: 18 },
@@ -113,10 +116,12 @@ export class DemoDirector {
     this.dist = 0;                          // reset the chevron world-anchor
     this.overrideT = 0;
     this.active = true;
-    // set a sensible wind for the tour ONCE, then leave it stable (the user can
-    // still adjust it with the slider mid-demo)
+    // set a sensible wind AND sail for the tour ONCE, then leave them stable (the
+    // user can still adjust both mid-demo). Small sail for the windy freeride,
+    // big sail for the light-wind chill — each shown selected in settings.
     this.sim.baseWind = SCRIPTS[mode].wind / KN;
     this.ui.syncWindControl();
+    if (SCRIPTS[mode].sail) this.ui.setSailArea(SCRIPTS[mode].sail);
     // full autopilot so the rig/body trim themselves and never crash
     this.ui.setAutotrim(true);
     this.#caption();

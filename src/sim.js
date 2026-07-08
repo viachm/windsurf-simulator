@@ -12,6 +12,12 @@ const KN = 1.94384; // m/s -> knots
 const THRUST_N = 340;      // sail thrust scale, N at drive01=1
 const THRUST_CLAMP = 2.05; // thrust saturates later than the UI power meter's 1.35
 const K_WALL = 3.2;        // displacement-hull wave-drag wall strength (the hump before planing)
+// Sail area (m²): the rig's force scales with area / AREA_REF. AREA_REF is a
+// big light-wind reference, so the beginner-intermediate default sits below it
+// — a docile ~cruise at the default wind, planing only with a bigger sail or
+// more breeze.
+const AREA_REF = 8.5;
+const SAIL_DEFAULT = 6.5;
 
 // ---- maneuver geometry (|beta| targets, radians) ----
 // A tack/gybe runs in two phases: SETUP auto-steers the bow to the ideal entry
@@ -283,7 +289,12 @@ export class WindsurfSim {
     // like a barn door on drag alone.
     const bA = Math.abs(betaApp);            // apparent wind angle off the bow, rad
     const bAdeg = absBetaAppDeg;
-    const q = (awSpeed / 10) ** 2;           // normalized dynamic pressure
+    // Normalized dynamic pressure, scaled by sail area: a bigger sail develops
+    // proportionally more force (drive AND heel/pull), so it planes in lighter
+    // wind and accelerates harder — but also overpowers you sooner. A smaller
+    // sail is docile and needs more wind to get going. AREA_REF is the area at
+    // which the base thrust applies.
+    const q = (awSpeed / 10) ** 2 * ((inputs.sailArea ?? SAIL_DEFAULT) / AREA_REF);
     // Lift needs attached flow: dies approaching head-to-wind AND approaching dead run.
     // The forward fade is deliberately wide (out to ~55deg apparent): as the board
     // accelerates the apparent wind swings toward the bow, lift collapses and the

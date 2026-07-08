@@ -17,6 +17,7 @@ export const STRINGS = {
     'settings.title': 'SETTINGS',
     'settings.units': 'BOARD SPEED UNITS',
     'settings.windunits': 'WIND SPEED UNITS',
+    'settings.sailsize': 'SAIL SIZE, m² <span class="ctl-hint">small = strong wind · big = light wind</span>',
     'settings.lang': 'LANGUAGE',
     'settings.howto': 'HOW TO PLAY',
 
@@ -187,6 +188,7 @@ export const STRINGS = {
     'settings.title': 'НАЛАШТУВАННЯ',
     'settings.units': 'ОДИНИЦІ ШВИДКОСТІ ДОШКИ',
     'settings.windunits': 'ОДИНИЦІ ШВИДКОСТІ ВІТРУ',
+    'settings.sailsize': 'РОЗМІР ВІТРИЛА, м² <span class="ctl-hint">мале = сильний вітер · велике = слабкий</span>',
     'settings.lang': 'МОВА',
     'settings.howto': 'ЯК ГРАТИ',
 

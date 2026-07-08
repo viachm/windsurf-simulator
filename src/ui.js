@@ -22,6 +22,13 @@ function loadWindUnits() {
   try { const u = localStorage.getItem('ws_windUnits'); if (u === 'kn' || u === 'kmh' || u === 'ms') return u; } catch { /* ignore */ }
   return 'ms'; // wind speed: m/s by default (the windsurfing convention)
 }
+// Selectable sail sizes (m²): small = strong-wind/wave, big = light-wind.
+const SAIL_SIZES = [4.0, 5.0, 6.5, 8.0, 9.5];
+const SAIL_DEFAULT = 6.5; // beginner-intermediate all-round
+function loadSailArea() {
+  try { const a = parseFloat(localStorage.getItem('ws_sailArea')); if (SAIL_SIZES.includes(a)) return a; } catch { /* ignore */ }
+  return SAIL_DEFAULT;
+}
 
 export class UI {
   constructor(sim, world = null) {
@@ -35,6 +42,7 @@ export class UI {
       dagger: true,
       harness: false,
       autotrim: true,   // beginner assist on by default (full autopilot)
+      sailArea: loadSailArea(),   // m²; scales rig power (see sim.js)
     };
     this.units = loadUnits();
     this.windUnits = loadWindUnits();
@@ -177,6 +185,11 @@ export class UI {
       this.setWindUnits(b.dataset.windunits);
     });
 
+    $('sailsize-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      this.setSailArea(parseFloat(b.dataset.sailarea));
+    });
+
     $('lang-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       setLang(b.dataset.lang);
@@ -185,6 +198,7 @@ export class UI {
     // initial state
     this.setUnits(this.units);
     this.setWindUnits(this.windUnits);
+    this.setSailArea(this.inputs.sailArea);
     this.#syncLangButtons();
     this.#refreshWindReadout();
   }
@@ -193,6 +207,16 @@ export class UI {
     this.units = (u === 'kn') ? 'kn' : 'kmh';
     try { localStorage.setItem('ws_units', this.units); } catch { /* ignore */ }
     for (const b of $('units-seg').children) b.classList.toggle('active', b.dataset.units === this.units);
+  }
+
+  // Set the rig size (m²). Persisted, reflected on the segment, and fed to the
+  // sim via inputs.sailArea. Also used by the demo director per tour.
+  setSailArea(a) {
+    if (!SAIL_SIZES.includes(a)) a = SAIL_DEFAULT;
+    this.inputs.sailArea = a;
+    try { localStorage.setItem('ws_sailArea', String(a)); } catch { /* ignore */ }
+    const seg = $('sailsize-seg');
+    if (seg) for (const b of seg.children) b.classList.toggle('active', parseFloat(b.dataset.sailarea) === a);
   }
 
   setWindUnits(u) {
