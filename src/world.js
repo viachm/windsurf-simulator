@@ -514,13 +514,16 @@ export class World {
   // and each one vanishes as it's passed, so you read your motion along them.
   // Fed world-space markers {x,z,angle,scale} by the director via setRoutePreview().
   #routePreview() {
-    // one flat chevron arrow, tip at shape +Y
+    // one flat, SLIM chevron (thin arms, ~like the tail-trail line behind),
+    // tip at shape +Y
     const s = new THREE.Shape();
-    s.moveTo(0, 0.62);
-    s.lineTo(0.5, -0.34);
-    s.lineTo(0, -0.02);
-    s.lineTo(-0.5, -0.34);
-    s.lineTo(0, 0.62);
+    s.moveTo(0, 0.5);        // outer tip
+    s.lineTo(0.42, -0.22);   // outer right arm
+    s.lineTo(0.33, -0.28);   // inner right arm
+    s.lineTo(0, 0.22);       // inner tip (close to the tip -> thin stroke)
+    s.lineTo(-0.33, -0.28);  // inner left arm
+    s.lineTo(-0.42, -0.22);  // outer left arm
+    s.lineTo(0, 0.5);
     const geo = new THREE.ShapeGeometry(s);
     geo.rotateX(Math.PI / 2);        // lay flat: shape +Y (tip) -> local +Z
     const mat = new THREE.MeshBasicMaterial({
