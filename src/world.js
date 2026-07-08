@@ -191,11 +191,6 @@ export class World {
           vec3 skyRef = vec3(0.62, 0.78, 0.88);
           vec3 col = mix(deep, shallow, clamp(vWorld.y * 2.2 + 0.4, 0.0, 1.0));
           col = mix(col, skyRef, fres * 0.75);
-          // sun glitter
-          vec3 hv = normalize(viewDir + sunDir);
-          float spec = pow(max(dot(n, hv), 0.0), 220.0);
-          float sparkle = sin(vWorld.x * 3.1 + uTime * 1.2) * sin(vWorld.z * 2.7 - uTime * 0.9);
-          col += vec3(1.0, 0.95, 0.8) * spec * (1.1 + 0.5 * sparkle);
           // exp2 fog
           float dist = length(camPos - vWorld);
           float f = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
