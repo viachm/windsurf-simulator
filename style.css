@@ -323,7 +323,14 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   #pos-val { font-size: 10px; line-height: 1.1; }
   .hud-sub { font-size: 7.5px; min-height: 0; line-height: 1.1; }
   #planing-badge { font-size: 7px; padding: 0 4px; }
-  .compass-box { display: none; }
+
+  /* ---- radar/compass: floating widget under the meters (no room in the HUD row) ---- */
+  .compass-box {
+    display: block; position: fixed; z-index: 15;
+    top: calc(92px + env(safe-area-inset-top)); left: 8px;
+    padding: 3px; min-width: 0; border-radius: 10px;
+  }
+  #compass { width: 88px; height: 88px; }
 
   /* ---- meters: one row, power (left) + balance (right) ---- */
   #meters {

@@ -489,19 +489,64 @@ export class UI {
     ctx.font = '9px monospace';
     ctx.fillText('WIND', wx - 12 + (wx < c ? -14 : 6), wy + (wy < c ? -4 : 10));
 
-    // board heading triangle
+    // ---- board (top-down windsurfer silhouette) ----
     const h = st.heading;
-    const [nx, ny] = pt(h, 20);
-    const [t1x, t1y] = pt(h + 150 * DEG, 12);
-    const [t2x, t2y] = pt(h - 150 * DEG, 12);
-    ctx.fillStyle = '#4fc3f7';
-    ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(t1x, t1y); ctx.lineTo(t2x, t2y); ctx.closePath(); ctx.fill();
-
-    // boom line (sail direction, to leeward)
     const side = st.beta >= 0 ? 1 : -1;
-    const boomA = h + Math.PI + side * (st.inputs.sheetDeg || 45) * DEG; // aft, swung leeward
-    const [sx, sy] = pt(boomA, 26);
-    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(c, c); ctx.lineTo(sx, sy); ctx.stroke();
+    const sheet = (st.inputs.sheetDeg || 45) * DEG;
+
+    // Drawn in a frame rotated to the heading: nose points to -y (up), tail +y.
+    ctx.save();
+    ctx.translate(c, c);
+    ctx.rotate(-h);
+
+    ctx.beginPath();
+    ctx.moveTo(0, -26);                          // pointed nose
+    ctx.bezierCurveTo(6, -20, 8, -2, 6.5, 10);   // right rail
+    ctx.quadraticCurveTo(5.5, 20, 0, 21);        // rounded tail
+    ctx.quadraticCurveTo(-5.5, 20, -6.5, 10);
+    ctx.bezierCurveTo(-8, -2, -6, -20, 0, -26);  // left rail back to nose
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(79,195,247,0.28)';
+    ctx.fill();
+    ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 1.6; ctx.stroke();
+
+    // centre stringer
+    ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(0, 18);
+    ctx.strokeStyle = 'rgba(79,195,247,0.5)'; ctx.lineWidth = 1; ctx.stroke();
+
+    // foot-strap ticks near the tail
+    ctx.strokeStyle = 'rgba(232,244,253,0.7)'; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.moveTo(-4.6, 10.5); ctx.lineTo(-1.6, 12.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(4.6, 10.5); ctx.lineTo(1.6, 12.5); ctx.stroke();
+
+    // fin off the tail
+    ctx.beginPath(); ctx.moveTo(0, 21); ctx.lineTo(0, 26);
+    ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 1.4; ctx.stroke();
+
+    ctx.restore();
+
+    // ---- rig: mast stepped forward, sail bellied to leeward, tinted by trim ----
+    const [mx, my] = pt(h, 8);                   // mast base, forward of centre
+    const boomA = h + Math.PI + side * sheet;    // clew swings aft + leeward
+    const clx = mx - Math.sin(boomA) * 30;
+    const cly = my - Math.cos(boomA) * 30;
+    const bellyA = boomA + side * 55 * DEG;       // bow the cloth to leeward
+    const bx = mx - Math.sin(bellyA) * 20;
+    const by = my - Math.cos(bellyA) * 20;
+
+    ctx.beginPath();
+    ctx.moveTo(mx, my);
+    ctx.quadraticCurveTo(bx, by, clx, cly);
+    ctx.closePath();
+    ctx.fillStyle = st.trim === 'good' ? 'rgba(102,187,106,0.35)'
+      : st.trim === 'stall' ? 'rgba(255,112,67,0.35)'
+        : 'rgba(255,255,255,0.16)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1.7;
+    ctx.beginPath(); ctx.moveTo(mx, my); ctx.quadraticCurveTo(bx, by, clx, cly); ctx.stroke();
+
+    // mast base dot
+    ctx.fillStyle = '#e8f4fd';
+    ctx.beginPath(); ctx.arc(mx, my, 2.2, 0, Math.PI * 2); ctx.fill();
   }
 }
