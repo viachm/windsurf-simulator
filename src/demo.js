@@ -9,7 +9,7 @@
 // carry the turns, and the rake steering is quantised to the five on-screen
 // buttons so the controls visibly "press" while it sails.
 
-import { t } from './i18n.js?b=27';
+import { t } from './i18n.js?b=28';
 
 const KN = 1.94384; // m/s -> knots
 const DEG = Math.PI / 180;
@@ -19,11 +19,12 @@ const DEG = Math.PI / 180;
 // (so the board always rides it) and re-fit chevrons to fixed world-distance
 // slots. To stop them JUMPING when the course bends, three things: (a) a slot's
 // stored position EASES toward its fresh target instead of snapping, so on a
-// straight it sits dead still and through a course change it glides; (b) the
-// preview is capped at an upcoming (not-yet-fired) turn, so no far tail is drawn
-// where the sim's real tack/gybe won't go; (c) the whole preview is hidden while
-// a tack/gybe is actually sweeping, then redraws fresh on the new tack. Each
-// chevron is consumed at the near end as the board passes it.
+// straight it sits dead still and through a course change it glides; (b) during
+// the APPROACH the preview is capped at an upcoming (not-yet-fired) turn, so no
+// far tail is drawn where the sim's real tack/gybe won't go; (c) once the turn is
+// actually sweeping, the preview is rebuilt by REPLAYING the sim's own maneuver
+// geometry, so the chevrons curve through the turn and onto the new tack instead
+// of blinking out. Each chevron is consumed at the near end as the board passes.
 const PDT = 0.2;            // prediction timestep, seconds
 const HORIZON = 8;          // seconds of route to predict ahead
 const STEER_RATE = 0.7;     // rad/s — how fast the pen swings onto a new course
@@ -173,12 +174,11 @@ export class DemoDirector {
     // target course, not a stale one, once the user lets go.
     this.dist += Math.abs(st.v) * dt;
     if (st.maneuver) {
-      // Mid tack/gybe the future route is being redetermined — a preview here
-      // would only swing around as the bow sweeps. Hide it and drop the chevrons
-      // so it redraws FRESH (in place, no jump) on the new tack once the turn
-      // resolves, instead of the old line snapping across to the new heading.
-      this.routeMarks = [];
-      this.ui.showRoutePreview(null);
+      // Mid tack/gybe: build the preview by replaying the sim's own turn geometry,
+      // so the chevrons curve through the turn and onto the new tack and never
+      // blink out. (During the APPROACH — before the turn fires — #buildMarkers
+      // still caps at the turn entry, since the turn's timing isn't known yet.)
+      this.ui.showRoutePreview(this.#predictManeuver(st));
     } else {
       this.ui.showRoutePreview(this.#buildMarkers(st));
     }
@@ -267,15 +267,57 @@ export class DemoDirector {
       pts.push({ x, z, along, h });
     }
 
-    // 2) re-fit chevrons to world-anchored slots each frame, but EASE each
-    // slot's stored world position toward its fresh target instead of snapping.
-    // Each slot k sits at absolute board-distance k*MARKER_SP, so on a straight
-    // its target is rock-steady frame-to-frame and the chevron sits still. It's
-    // only through a tack/gybe that the predicted far tail swings — and easing
-    // turns that swing into a smooth glide instead of the hard per-frame JUMP
-    // the old snap-every-frame produced. The board still rides the line because
-    // the targets are the accurate re-fit and the near slots track it closely.
-    const total = along;
+    // 2) re-fit chevrons to world slots + ease + render
+    return this.#fitMarks(pts);
+  }
+
+  // Predict the route THROUGH an in-progress tack/gybe, using the sim's own
+  // maneuver geometry (setup + turn phases, bell-shaped rate), then straight onto
+  // the new tack for the rest of the horizon. This is what keeps the chevrons on
+  // screen during the turn instead of blinking out: the real turn is happening
+  // now, so replaying its known rotation matches the board's actual arc closely.
+  #predictManeuver(st) {
+    const m = st.maneuver;
+    const pts = [{ x: st.pos.x, z: st.pos.z, along: 0, h: st.heading }];
+    let x = st.pos.x, z = st.pos.z, h = st.heading, along = 0;
+    let v = Math.max(1.2, Math.abs(st.v));
+    const vCruise = Math.min(12, Math.max(3, Math.abs(st.v)));
+    let phase = m.phase, tPhase = m.tPhase;
+    for (let t = 0; t < HORIZON; t += PDT) {
+      if (phase === 'setup') {
+        const s01 = Math.max(0, Math.min(1, tPhase / m.setupDur));
+        h += (m.setupDH / m.setupDur) * 6 * s01 * (1 - s01) * PDT;
+        v *= Math.pow(m.type === 'gybe' ? 0.97 : 0.9, PDT);
+        tPhase += PDT;
+        if (tPhase >= m.setupDur) { phase = 'turn'; tPhase = 0; }
+      } else if (phase === 'turn') {
+        const s01 = Math.max(0, Math.min(1, tPhase / m.turnDur));
+        h += (m.turnDH / m.turnDur) * 6 * s01 * (1 - s01) * PDT;
+        v *= Math.pow(m.type === 'tack' ? 0.5 : 0.75, PDT);
+        tPhase += PDT;
+        if (tPhase >= m.turnDur) phase = 'done';
+      } else {
+        // out of the turn: hold the new heading straight and let speed recover, so
+        // the preview extends onto the fresh tack.
+        v += (vCruise - v) * 0.15;
+      }
+      const vv = Math.max(0.6, v);
+      x += Math.sin(h) * vv * PDT; z += Math.cos(h) * vv * PDT; along += vv * PDT;
+      pts.push({ x, z, along, h });
+    }
+    return this.#fitMarks(pts);
+  }
+
+  // Re-fit chevrons to world-anchored slots each frame, but EASE each slot's
+  // stored world position toward its fresh target instead of snapping. Each slot k
+  // sits at absolute board-distance k*MARKER_SP, so on a straight its target is
+  // rock-steady frame-to-frame and the chevron sits still. Through a tack/gybe the
+  // predicted tail swings — easing turns that swing into a smooth glide instead of
+  // the hard per-frame JUMP a snap-every-frame would produce. The board still
+  // rides the line because the targets are the accurate re-fit and the near slots
+  // track it closely.
+  #fitMarks(pts) {
+    const total = pts.length ? pts[pts.length - 1].along : 0;
     const SP = MARKER_SP;
     const EASE = 0.12;         // per-frame glide of a slot toward its fresh target
     const kMin = Math.floor(this.dist / SP) + 1;                 // nearest slot ahead
@@ -306,7 +348,14 @@ export class DemoDirector {
         mk.angle += da * EASE;
       }
     }
-    // 3) render near -> far with a gentle size taper (index-based, not stored)
+    // render near -> far with a gentle size taper (index-based, not stored)
+    return this.#renderMarks();
+  }
+
+  // Sort the frozen chevrons near->far and map them to render instances with a
+  // gentle size taper. Used both after a re-fit (straight sailing) and, during a
+  // tack/gybe, to keep the already-placed chevrons on screen without rebuilding.
+  #renderMarks() {
     this.routeMarks.sort((p, q) => p.k - q.k);
     return this.routeMarks.map((mk, idx) => ({
       x: mk.x, z: mk.z, angle: mk.angle,
