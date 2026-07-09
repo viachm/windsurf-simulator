@@ -50,18 +50,22 @@ export class World {
     this.scene.fog = new THREE.FogExp2(0xbfdcec, 0.0032);
 
     this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 2000);
-    // Default view: over the tail, looking forward along the board's start
-    // heading, so we watch the rider from behind his back (and see where he's
-    // going). Start heading matches WindsurfSim.reset() (~100°); phones pull
-    // back a touch more for a wider view.
+    // Default view: a 3/4 rear angle. We sit ~45° off dead-astern toward the
+    // rider's (windward/starboard) side, looking forward along the board's start
+    // heading — so we watch the rider from behind his back AND peek at the
+    // concave "inside" face of the sail beyond him. Start heading matches
+    // WindsurfSim.reset() (~100°); phones pull back a touch more.
     const mobileZoom = matchMedia('(max-width: 768px)').matches ? 1.28 : 1;
     const startHeading = 100 * DEG;
     const nx = Math.sin(startHeading), nz = Math.cos(startHeading);   // nose direction
-    const back = 24 * mobileZoom, lift = 8.7 * mobileZoom, lat = 4;   // behind, above, slight starboard
+    const dist = 24 * mobileZoom, lift = 8.7 * mobileZoom;            // horizontal distance, height
+    const az = 45 * DEG;             // swing off dead-astern toward starboard (the rider's side)
+    const cb = Math.cos(az), sb = Math.sin(az);
+    // behind unit = (-nx,-nz); starboard unit = (-nz, nx)
     this.camera.position.set(
-      -nx * back + (-nz) * lat,   // behind the tail, offset toward starboard
+      dist * (cb * -nx + sb * -nz),
       1.4 + lift,
-      -nz * back + (nx) * lat,
+      dist * (cb * -nz + sb * nx),
     );
 
     this.controls = new OrbitControls(this.camera, canvas);
