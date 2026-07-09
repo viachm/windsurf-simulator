@@ -107,10 +107,7 @@
         </div>
         <div class="ctl">
           <div class="ctl-label" data-i18n="settings.lang">LANGUAGE</div>
-          <div class="seg" id="lang-seg">
-            <button data-lang="en">EN</button>
-            <button data-lang="uk">УКР</button>
-          </div>
+          <select id="lang-select" class="lang-select" aria-label="language"></select>
         </div>
         <button id="info-toggle" class="settings-action" title="how to play / як грати">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
@@ -315,9 +312,9 @@
        kills the English→localised flash. Its ?b token MUST stay in sync with
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script type="module">
-    import { applyStatic } from './src/i18n.js?b=15';
+    import { applyStatic } from './src/i18n.js?b=16';
     applyStatic();
   </script>
-  <script type="module" src="src/main.js?b=15"></script>
+  <script type="module" src="src/main.js?b=16"></script>
 </body>
 </html>

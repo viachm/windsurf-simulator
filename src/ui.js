@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange } from './i18n.js?b=15';
-import { DemoDirector } from './demo.js?b=15';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=16';
+import { DemoDirector } from './demo.js?b=16';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -118,8 +118,7 @@ export class UI {
   }
 
   #syncLangButtons() {
-    const cur = getLang();
-    for (const b of $('lang-seg').children) b.classList.toggle('active', b.dataset.lang === cur);
+    $('lang-select').value = getLang();
   }
 
   // ---------------- panel bindings ----------------
@@ -280,10 +279,13 @@ export class UI {
       this.setShowCaptions(b.dataset.democap === 'on');
     });
 
-    $('lang-seg').addEventListener('click', (e) => {
-      const b = e.target.closest('button'); if (!b) return;
-      setLang(b.dataset.lang);
-    });
+    const langSel = $('lang-select');
+    for (const { code, name } of LOCALES) {
+      const opt = document.createElement('option');
+      opt.value = code; opt.textContent = name;
+      langSel.appendChild(opt);
+    }
+    langSel.addEventListener('change', (e) => setLang(e.target.value));
 
     // initial state
     this.setUnits(this.units);
