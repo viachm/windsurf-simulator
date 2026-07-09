@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=16';
-import { DemoDirector } from './demo.js?b=16';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=17';
+import { DemoDirector } from './demo.js?b=17';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -200,6 +200,7 @@ export class UI {
     const place = () => {
       if (mq.matches) { $('app').appendChild(ctl); ctl.classList.add('wind-fader'); this.#sizeWindFader(); }
       else { $('panel-body').appendChild(ctl); ctl.classList.remove('wind-fader'); ctl.style.bottom = ''; $('windset').style.height = ''; }
+      this.#applyFramingShiftX();   // recompute the horizontal framing for the new fader state
     };
     mq.addEventListener('change', place);
     place();
@@ -594,12 +595,24 @@ export class UI {
   // insets, so it isn't pushed too high (which ignoring the top overlay did).
   #applyFramingLift() {
     if (!this.world) return;
+    this.#applyFramingShiftX();
     const collapsed = $('panel').classList.contains('collapsed');
     if (!this.#isMobile() || collapsed) { this.world.setFramingLift(0); return; }
     const H = innerHeight;
     const bottomInset = Math.max(0, H - $('panel').getBoundingClientRect().top);
     const topInset = $('meters').getBoundingClientRect().bottom;  // lowest top overlay edge
     this.world.setFramingLift((bottomInset - topInset) / H);
+  }
+
+  // Nudge the rider LEFT so it's centred in the water beside the wind fader
+  // (mobile), instead of behind it. The shift = the fader-occupied width as a
+  // fraction of the viewport; on desktop (no fader) there's no shift.
+  #applyFramingShiftX() {
+    if (!this.world) return;
+    const fader = document.querySelector('.wind-fader');
+    if (!this.#isMobile() || !fader) { this.world.setFramingShiftX(0); return; }
+    const rightInset = innerWidth - fader.getBoundingClientRect().left;
+    this.world.setFramingShiftX(rightInset / innerWidth);
   }
 
   // Press-and-hold the crash popup to read it: holding freezes the recovery

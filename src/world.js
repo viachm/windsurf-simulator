@@ -106,6 +106,8 @@ export class World {
     // of scene that's still visible above the sheet (instead of behind it).
     this._framingLift = 0;     // desired upward framing shift (fraction of height)
     this._lensY = 0;           // eased vertical projection offset (NDC)
+    this._framingShiftX = 0;   // desired leftward framing shift (fraction of width) — clears the wind fader
+    this._lensX = 0;           // eased horizontal projection offset (NDC)
 
     addEventListener('resize', () => {
       this.camera.aspect = innerWidth / innerHeight;
@@ -736,6 +738,12 @@ export class World {
     this._lensY += (targetLens - this._lensY) * Math.min(dt * 8, 1);
     this.camera.projectionMatrix.elements[9] = this._lensY;
 
+    // elements[8] is the horizontal off-centre term; positive nudges the subject
+    // LEFT on screen (by _lensX * halfWidth), keeping the rider centred in the
+    // water to the left of the wind fader — regardless of the orbit angle.
+    this._lensX += (this._framingShiftX - this._lensX) * Math.min(dt * 8, 1);
+    this.camera.projectionMatrix.elements[8] = this._lensX;
+
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -759,6 +767,12 @@ export class World {
   // rider up the screen so it stays centred between the HUD and the open sheet.
   setFramingLift(f) {
     this._framingLift = Math.max(-0.35, Math.min(0.85, f || 0));
+  }
+
+  // Horizontal framing offset (fraction of viewport width): positive shifts the
+  // rider left, so it stays centred in the water beside the wind fader.
+  setFramingShiftX(f) {
+    this._framingShiftX = Math.max(-0.4, Math.min(0.4, f || 0));
   }
 
   #poseSailor(state, t) {
