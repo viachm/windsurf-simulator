@@ -45,6 +45,9 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   border-radius: 10px; padding: 8px 16px; color: var(--text);
   min-width: 118px; text-align: center; backdrop-filter: blur(6px);
 }
+/* Speed box has no sub-line (gust/glide moved out), so it's shorter than the
+   others — center its label+value vertically instead of pinning them to the top. */
+#speed-box { display: flex; flex-direction: column; justify-content: center; }
 .hud-label { font-size: 9px; letter-spacing: 1.5px; color: var(--text-dim); }
 .hud-value { font-size: 22px; font-weight: 700; margin-top: 2px; }
 #pos-val { font-size: 15px; line-height: 1.7; }

@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=25';
-import { DemoDirector } from './demo.js?b=25';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=26';
+import { DemoDirector } from './demo.js?b=26';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -874,9 +874,9 @@ export class UI {
     const windUnit = this.#windUnitLabel();
     $('wind-val').textContent = this.#fmtWind(st.windKn);
     $('wind-unit').textContent = windUnit;
-    $('gust-val').textContent = st.gustKn > 0.8
-      ? t('hud.gust', { n: this.#fmtWind(st.gustKn), unit: windUnit })
-      : '';
+    // Always show the gust line (min +0) so the WIND box keeps a constant height
+    // and never jumps as gusts come and go.
+    $('gust-val').textContent = t('hud.gust', { n: this.#fmtWind(Math.max(0, st.gustKn)), unit: windUnit });
 
     // sheet readout + optimal marker
     $('sheet-val').textContent = `${Math.round(st.inputs.sheetDeg)}°`;
