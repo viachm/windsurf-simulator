@@ -216,18 +216,20 @@
       <div id="panel-body">
 
         <div class="ctl">
-          <div class="ctl-label" data-i18n-html="ctl.sheet">SAIL SHEET <span class="key-hint">W / S</span>
-            <span class="ctl-value" id="sheet-val">45°</span>
+          <div class="sheet-head">
+            <div class="ctl-label" data-i18n-html="ctl.sheet">SAIL SHEET <span class="key-hint">W / S</span>
+              <span class="ctl-value" id="sheet-val">45°</span>
+            </div>
+            <label class="toggle-row" id="autotrim-row">
+              <input type="checkbox" id="autotrim" />
+              <span data-i18n-html="ctl.autotrim">Auto-trim assist <span class="tr-note">(sheets for you)</span></span>
+            </label>
           </div>
-          <label class="toggle-row">
-            <input type="checkbox" id="autotrim" />
-            <span data-i18n="ctl.autotrim">Auto-trim assist (sheets for you)</span>
-          </label>
           <div class="slider-wrap">
             <input type="range" id="sheet" min="0" max="90" value="55" step="1" />
             <div id="sheet-optimal" title="optimal trim"></div>
           </div>
-          <div class="ctl-sub">
+          <div class="ctl-sub ctl-sub-soft">
             <span data-i18n="ctl.sheet.in">pulled in (0°)</span><span data-i18n="ctl.sheet.out">let out (90°)</span>
           </div>
         </div>
@@ -258,7 +260,7 @@
             <span class="ctl-value" id="lean-val">25%</span>
           </div>
           <input type="range" id="lean" min="0" max="100" value="25" step="1" />
-          <div class="ctl-sub"><span data-i18n="ctl.lean.upright">upright</span><span data-i18n="ctl.lean.out">hiked way out</span></div>
+          <div class="ctl-sub ctl-sub-soft"><span data-i18n="ctl.lean.upright">upright</span><span data-i18n="ctl.lean.out">hiked way out</span></div>
         </div>
 
         <div class="ctl toggles-row">
@@ -278,7 +280,7 @@
           <button id="btn-reset" class="action-btn subtle" data-i18n-html="btn.reset">RESET <span class="key-hint">R</span></button>
         </div>
 
-        <div class="ctl">
+        <div class="ctl" id="wind-ctl">
           <div class="ctl-label" data-i18n-html="ctl.truewind">TRUE WIND <span class="ctl-value" id="windset-val">14 kn</span></div>
           <input type="range" id="windset" min="2" max="15" value="7" step="0.5" />
         </div>
@@ -289,6 +291,6 @@
     <div id="help-note" data-i18n="help.note">drag to orbit the camera · scroll to zoom</div>
   </div>
 
-  <script type="module" src="src/main.js?b=5"></script>
+  <script type="module" src="src/main.js?b=6"></script>
 </body>
 </html>

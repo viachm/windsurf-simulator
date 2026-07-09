@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange } from './i18n.js?b=5';
-import { DemoDirector } from './demo.js?b=5';
+import { t, setLang, getLang, onLangChange } from './i18n.js?b=6';
+import { DemoDirector } from './demo.js?b=6';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -170,6 +170,26 @@ export class UI {
     if (this.#isMobile()) {
       this.setPanelCollapsed(false);
     }
+
+    // On phones the true-wind slider lives as a vertical fader on the sea's
+    // right edge (out of the sheet, so it fits + stays reachable when the sheet
+    // is collapsed). Desktop keeps it as the last row of the panel.
+    this.#placeWindFader();
+  }
+
+  // Move #wind-ctl between the panel (desktop) and the open sea (phones). Keeps
+  // one input node — #windset's listeners stay wired wherever it lands — and
+  // re-homes it on rotate/resize via matchMedia.
+  #placeWindFader() {
+    const ctl = $('wind-ctl');
+    if (!ctl) return;
+    const mq = window.matchMedia('(max-width: 768px)');
+    const place = () => {
+      if (mq.matches) { $('app').appendChild(ctl); ctl.classList.add('wind-fader'); }
+      else { $('panel-body').appendChild(ctl); ctl.classList.remove('wind-fader'); }
+    };
+    mq.addEventListener('change', place);
+    place();
   }
 
   // ---------------- settings popover ----------------

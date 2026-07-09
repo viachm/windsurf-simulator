@@ -62,7 +62,7 @@ export const STRINGS = {
     'ctl.sheet': 'SAIL SHEET <span class="key-hint">W / S</span><span class="ctl-value" id="sheet-val">45°</span>',
     'ctl.sheet.in': 'pulled in (0°)',
     'ctl.sheet.out': 'let out (90°)',
-    'ctl.autotrim': 'Auto-trim assist (sheets for you)',
+    'ctl.autotrim': 'Auto-trim assist <span class="tr-note">(sheets for you)</span>',
 
     'ctl.rake': 'MAST RAKE — steering <span class="key-hint">◀ ▶</span>',
     'rake.hardback': '⤒ hard back',
@@ -95,7 +95,7 @@ export const STRINGS = {
     'btn.gybe.t': 'turn away from the wind through downwind',
     'btn.reset': 'RESET <span class="key-hint">R</span>',
 
-    'ctl.truewind': 'TRUE WIND <span class="ctl-value" id="windset-val">7.0 m/s</span>',
+    'ctl.truewind': '<span class="wind-cap">TRUE WIND</span> <span class="ctl-value" id="windset-val">7.0 m/s</span>',
     'help.note': 'drag to orbit the camera · scroll to zoom',
 
     // --- points of sail ---
@@ -241,7 +241,7 @@ export const STRINGS = {
     'ctl.sheet': 'ШКОТ ВІТРИЛА <span class="key-hint">W / S</span><span class="ctl-value" id="sheet-val">45°</span>',
     'ctl.sheet.in': 'вибрано (0°)',
     'ctl.sheet.out': 'потравлено (90°)',
-    'ctl.autotrim': 'Автоналаштування шкота (працює за вас)',
+    'ctl.autotrim': 'Автоналаштування шкота <span class="tr-note">(працює за вас)</span>',
 
     'ctl.rake': 'НАХИЛ ЩОГЛИ — стернування <span class="key-hint">◀ ▶</span>',
     'rake.hardback': '⤒ різко назад',
@@ -274,7 +274,7 @@ export const STRINGS = {
     'btn.gybe.t': 'поворот фордевінд — відвернути від вітру через повний курс',
     'btn.reset': 'СКИНУТИ <span class="key-hint">R</span>',
 
-    'ctl.truewind': 'СПРАВЖНІЙ ВІТЕР <span class="ctl-value" id="windset-val">7.0 м/с</span>',
+    'ctl.truewind': '<span class="wind-cap">СПРАВЖНІЙ ВІТЕР</span> <span class="ctl-value" id="windset-val">7.0 м/с</span>',
     'help.note': 'тягніть, щоб обертати камеру · прокрутка — масштаб',
 
     // --- points of sail ---

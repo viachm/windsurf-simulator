@@ -341,7 +341,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
     position: absolute;
     left: 0; right: 0; top: auto; bottom: 0;
     width: 100%; max-width: 100%;
-    max-height: 46vh; max-height: 46dvh;   /* open sheet a touch taller; body scrolls */
+    max-height: 62vh; max-height: 62dvh;   /* generous cap — trimmed content fits without scrolling */
     border-radius: 16px 16px 0 0;
     border-left: 0; border-right: 0; border-bottom: 0;
     box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.45);
@@ -352,8 +352,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   .panel-header {
     position: relative;
     align-items: center;
-    padding: 9px 14px 8px;                                   /* ~30% thinner header */
-    padding-bottom: calc(8px + env(safe-area-inset-bottom)); /* clear the home bar */
+    padding: 7px 14px 6px;                                   /* squeezed header */
+    padding-bottom: calc(6px + env(safe-area-inset-bottom)); /* clear the home bar */
     border-radius: 16px 16px 0 0;
     cursor: pointer;
     font-size: 11px;
@@ -366,7 +366,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
     background: rgba(180, 220, 255, 0.4);
   }
   #panel-toggle {
-    width: 34px; height: 34px; font-size: 22px; line-height: 1;
+    width: 30px; height: 28px; font-size: 20px; line-height: 1;
     background: rgba(79, 195, 247, 0.16); border-color: var(--accent); color: var(--accent);
   }
   /* the open sheet doesn't need the header's home-bar padding — the body has it */
@@ -378,7 +378,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   }
 
   /* ---- controls ~2x more compact ---- */
-  .ctl { margin-bottom: 8px; }
+  .ctl { margin-bottom: 6px; }
   .ctl-label { font-size: 9px; margin-bottom: 3px; gap: 5px; }
   .ctl-value { font-size: 10px; }
   .ctl-sub { font-size: 8px; margin-top: 2px; }
@@ -389,8 +389,48 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   .btn-row { gap: 5px; }
   .toggle-row { padding: 3px 0; font-size: 10.5px; gap: 7px; }
   .toggle-row input { width: 16px; height: 16px; }
-  .toggles-row { gap: 0; }
   input[type="range"] { height: 20px; }
+
+  /* the two soft orientation hints are redundant on phones (the live value
+     already reads it out) — reclaim the vertical space. Rake's stays. */
+  .ctl-sub-soft { display: none; }
+
+  /* Auto-trim rides on the SAIL SHEET label line instead of its own row */
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 3px; }
+  .sheet-head .ctl-label { margin-bottom: 0; flex: 0 1 auto; min-width: 0; }
+  #autotrim-row { padding: 0; flex: none; font-size: 10px; white-space: nowrap; }
+  .tr-note { display: none; }               /* "(sheets for you)" — desktop only */
+
+  /* Daggerboard + Harness sit side by side, not stacked */
+  .toggles-row { flex-direction: row; gap: 12px; }
+  .toggles-row .toggle-row { flex: 1; min-width: 0; }
+
+  /* ---- TRUE WIND: vertical fader floating on the sea's right edge ---- */
+  .wind-fader {
+    position: absolute; z-index: 15; margin: 0;
+    right: calc(6px + env(safe-area-inset-right));
+    top: calc(150px + env(safe-area-inset-top));
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 9px 6px;
+    background: var(--panel-bg); border: 1px solid var(--panel-border);
+    border-radius: 12px; backdrop-filter: blur(6px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+  .wind-fader .ctl-label {
+    flex-direction: column; align-items: center; gap: 2px; margin: 0;
+    font-size: 7.5px; letter-spacing: 0.4px; text-align: center;
+  }
+  .wind-fader .wind-cap { display: none; }             /* glyph stands in for the caption */
+  .wind-fader .ctl-label::before { content: "💨"; font-size: 13px; line-height: 1; }
+  .wind-fader .ctl-value { margin: 0; font-size: 10px; }
+  .wind-fader input[type="range"] {
+    writing-mode: vertical-lr; direction: rtl;
+    -webkit-appearance: slider-vertical;   /* older iOS Safari fallback; modern uses writing-mode */
+    /* size to the sea band so the fader always ends above the ~fixed-height
+       sheet (its bottom = viewportH − sheet − top margin) */
+    width: 22px; height: calc(100dvh - 540px); min-height: 90px; max-height: 240px;
+    padding: 0; margin: 0;
+  }
 
   /* ---- top HUD: wide, flat boxes filling the row (compass dropped) ----
      Span from the left edge to just before the top-right buttons; flex:1 makes
