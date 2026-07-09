@@ -306,26 +306,34 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 #settings-panel.off { display: none; }
 #settings-card {
-  width: 300px; max-width: calc(100% - 48px); max-height: calc(100% - 48px);
+  width: 400px; max-width: calc(100% - 40px); max-height: calc(100% - 40px);
   overflow-y: auto; color: var(--text);
   background: var(--panel-bg); border: 1px solid var(--accent);
   border-radius: 16px; backdrop-filter: blur(10px);
   box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+  padding: 26px 32px;
 }
+/* centred title, same treatment as the About modal's .w-title */
+#settings-card .w-title {
+  font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--accent);
+  text-align: center; margin-bottom: 20px;
+}
+/* .settings-header is still used by the guided-demo popover (its own × close) */
 .settings-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 10px 14px; font-size: 11px; letter-spacing: 2px; color: var(--accent);
   border-bottom: 1px solid var(--panel-border);
 }
-/* keep the title + close button pinned while a long settings list scrolls */
-#settings-card .settings-header {
-  position: sticky; top: 0; background: var(--panel-bg); z-index: 1;
-}
-#settings-close {
-  background: none; border: 1px solid var(--panel-border); color: var(--text);
-  border-radius: 6px; width: 22px; height: 22px; cursor: pointer; font-size: 15px; line-height: 1;
-}
 .settings-body { padding: 14px; }
+/* the card owns the padding now; the settings body sits flush inside it */
+#settings-card .settings-body { padding: 0; }
+/* bottom CLOSE button — identical to the About modal's #about-close */
+#settings-close {
+  margin-top: 20px; width: 100%; background: var(--accent); color: #06121e; border: none;
+  border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800; letter-spacing: 2px;
+  cursor: pointer; font-family: inherit;
+}
+#settings-close:hover { filter: brightness(1.15); }
 .settings-action {
   display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
   margin-top: 4px; padding: 9px; background: rgba(255,255,255,0.06);
