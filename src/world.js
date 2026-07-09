@@ -632,14 +632,27 @@ export class World {
         const flip = THREE.MathUtils.smoothstep(m.turn01 || 0, 0.15, 0.85); // 0->1
         const manSide = m.s * (1 - 2 * flip);
         riderTargetSide = manSide;
-        // sail angle collapses to ~luff at the crossover, opens on the new side
-        sailYaw = manSide * sheetRad * (0.35 + 0.65 * Math.abs(1 - 2 * flip));
+        if (m.type === 'gybe') {
+          // GYBE: the rig FLIPS around the mast. The clew is released and the
+          // sail rotates the long way round the mast axis — sweeping FORWARD
+          // across the nose (through ~180°) to fill on the new side. It never
+          // feathers head-to-wind; it stays powered through the flip. So the
+          // yaw runs entry(+m.s·sheet) -> 180° at the crossover -> new side,
+          // instead of collapsing through 0° like a tack.
+          sailYaw = m.s * (sheetRad + flip * (2 * Math.PI - 2 * sheetRad));
+        } else {
+          // TACK: the sail feathers head-to-wind — the clew swings across the
+          // TAIL, collapsing through ~0° (dead aft) at the crossover, then opens
+          // on the new side.
+          sailYaw = manSide * sheetRad * (0.35 + 0.65 * Math.abs(1 - 2 * flip));
+        }
         // rake swing: a tack throws the rig back over the tail, a gybe throws it
         // forward across the nose. Peaks at the crossover.
         const swing = Math.sin(Math.PI * (m.turn01 || 0));
         this.rig.rotation.x = (m.type === 'tack' ? -0.55 : 0.6) * swing;
-        // sail flogs through the eye of the wind
-        maneuverLuff = Math.abs(1 - 2 * flip) < 0.5;
+        // A tack flogs head-to-wind through the eye; a gybe stays powered and
+        // just briefly depowers at the flip, so only the tack gets the flutter.
+        maneuverLuff = m.type === 'tack' && Math.abs(1 - 2 * flip) < 0.5;
         if (maneuverLuff) sailYaw += Math.sin(t * 24) * 0.06;
         this.rig.rotation.y = sailYaw;
         this.rig.rotation.z = -manSide * 0.10;
