@@ -321,9 +321,18 @@ export class World {
     this.board.add(mastBase);
 
     // ---- rig (mast + boom + sail) ----
+    // Two nested groups so a mast LEAN (rake/tilt) and the sail SPIN (sheet /
+    // gybe flip) don't corrupt each other:
+    //  - this.rig     : leans the whole rig — rake fore/aft (X), windward tilt
+    //                   (Z). Carries the mast. Never yaws, so "rake forward" is
+    //                   always forward in the BOARD frame, whatever the sheet.
+    //  - this.rigSpin : the boom + sail, spun around the mast axis (Y = sheet
+    //                   angle, and the through-the-front rotation of a gybe).
+    // (Before, sheet+rake shared one group, so at a gybe's 180° flip the "rake
+    // forward" inverted and drove the sail back THROUGH the rider.)
     this.rig = new THREE.Group();
     this.rig.position.set(0, 0.28, 0.45);     // mast foot
-    this.rig.rotation.order = 'YXZ';          // sheet (Y), then rake (X), then windward tilt (Z)
+    this.rig.rotation.order = 'YXZ';          // rake (X), then windward tilt (Z); no yaw here
     this.board.add(this.rig);
 
     const mast = new THREE.Mesh(
@@ -332,6 +341,10 @@ export class World {
     mast.position.y = 2.25;
     this.rig.add(mast);
 
+    // the sail assembly that spins around the mast (child of the leaning rig)
+    this.rigSpin = new THREE.Group();
+    this.rig.add(this.rigSpin);
+
     // boom: flattened torus around the sail at chest height
     const boom = new THREE.Mesh(
       new THREE.TorusGeometry(1.0, 0.035, 8, 24),
@@ -339,7 +352,7 @@ export class World {
     boom.rotation.x = Math.PI / 2;
     boom.scale.set(0.32, 1.0, 1);             // narrow across, long fore-aft
     boom.position.set(0, 1.55, -1.0);
-    this.rig.add(boom);
+    this.rigSpin.add(boom);
     this.boom = boom;
 
     // sail: mast edge vertical, curved leech. Shape in (x=aft distance? see rotate below, y=up)
@@ -355,7 +368,7 @@ export class World {
       side: THREE.DoubleSide, emissive: 0xbfd4e0, emissiveIntensity: 0.35,
     });
     this.sail = new THREE.Mesh(sailGeo, this.sailMat);
-    this.rig.add(this.sail);
+    this.rigSpin.add(this.sail);
 
     // colored panel on sail
     const panelShape = new THREE.Shape();
@@ -654,13 +667,13 @@ export class World {
         // just briefly depowers at the flip, so only the tack gets the flutter.
         maneuverLuff = m.type === 'tack' && Math.abs(1 - 2 * flip) < 0.5;
         if (maneuverLuff) sailYaw += Math.sin(t * 24) * 0.06;
-        this.rig.rotation.y = sailYaw;
+        this.rigSpin.rotation.y = sailYaw;   // spin around the (leaning) mast
         this.rig.rotation.z = -manSide * 0.10;
       }
     }
     if (!m || m.phase === 'setup') {
       if (state.trim === 'luff' && !state.crashed) sailYaw += Math.sin(t * 22) * 0.05; // flutter
-      this.rig.rotation.y = sailYaw;
+      this.rigSpin.rotation.y = sailYaw;
       if (!m) this.rig.rotation.x = (state.inputs.rake || 0) * 0.30;        // fwd = tilt to nose
       this.rig.rotation.z = -side * (0.10 + 0.22 * Math.min(state.eff01 || 0, 1)); // rake to windward
     }
@@ -852,9 +865,12 @@ export class World {
     P.cap.position.copy(headPos).add(V(0, 0.015, -0.01));
 
     // ---- arms: shoulder -> elbow -> hand on the boom ----
-    // boom grip points in board-local space (windward side of the boom torus)
-    const g1 = V(0, 1.55, -0.45).applyEuler(this.rig.rotation).add(this.rig.position);
-    const g2 = V(0, 1.55, -1.1).applyEuler(this.rig.rotation).add(this.rig.position);
+    // boom grip points in board-local space (windward side of the boom torus).
+    // The boom rides on rigSpin (the sail spin), inside rig (the mast lean), so
+    // apply the spin first, then the lean, then the mast-foot offset.
+    const grip = (z) => V(0, 1.55, z).applyEuler(this.rigSpin.rotation).applyEuler(this.rig.rotation).add(this.rig.position);
+    const g1 = grip(-0.45);
+    const g2 = grip(-1.1);
     const shoulderF = chest.clone().add(V(side * 0.12, 0.14, 0.08));
     const shoulderB = chest.clone().add(V(side * 0.12, 0.14, -0.08));
 
