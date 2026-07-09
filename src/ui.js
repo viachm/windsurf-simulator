@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange } from './i18n.js?b=6';
-import { DemoDirector } from './demo.js?b=6';
+import { t, setLang, getLang, onLangChange } from './i18n.js?b=7';
+import { DemoDirector } from './demo.js?b=7';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -57,7 +57,7 @@ export class UI {
     // rewind history: a ring buffer of recent states so the Rewind button can
     // jump the board back a few seconds (or to the start of the last maneuver).
     this._history = [];
-    this._histMax = 6;        // seconds of history kept
+    this._histMax = 8;        // seconds of history kept (rewind reaches back up to 6s)
     this._curManStart = null; // sim time the currently-active maneuver began
     this._prevManActive = false;
     this.paused = false;      // pause button: freezes the whole sim (see main.js)
@@ -301,8 +301,8 @@ export class UI {
   }
 
   // Record one restorable frame of state. Called every frame from updateHUD with
-  // the fresh sim state, so the Rewind button always has ~6s of history to jump
-  // back through.
+  // the fresh sim state, so the Rewind button always has several seconds of
+  // history to jump back through.
   #recordHistory(st) {
     if (!st || st.crashed) return;   // don't record while splashed (a rewind un-crashes)
     // track when the current maneuver began, so we can rewind to its start
@@ -328,23 +328,25 @@ export class UI {
   }
 
   // Jump the board back in time: to ~3s ago, or — if a tack/gybe happened in the
-  // last few seconds — to the START of that maneuver, but never further back than
-  // 4s. Un-crashes if we were splashed. The trail redraws itself (world.js clears
-  // it whenever sim time steps backwards).
+  // last few seconds — to ~1s BEFORE that maneuver started (so you rejoin the
+  // approach, not mid-turn), but never further back than 6s. Un-crashes if we
+  // were splashed. The trail redraws itself (world.js clears it whenever sim time
+  // steps backwards).
   rewind() {
     const buf = this._history;
     if (buf.length < 2) return;
     const now = buf[buf.length - 1].t;
-    const floor = now - 4;
+    const floor = now - 6;          // deepest rewind allowed
+    const PRE_MAN = 1;              // land this many seconds before a maneuver's start
 
     // most recent maneuver start inside the window (its start time is stored)
     let manStart = null;
     for (let i = buf.length - 1; i >= 0; i--) {
-      if (now - buf[i].t > 4.5) break;
+      if (now - buf[i].t > 6.5) break;
       if (buf[i].manActive) { manStart = buf[i].manStart; break; }
     }
 
-    let target = manStart != null ? manStart : now - 3;
+    let target = manStart != null ? manStart - PRE_MAN : now - 3;
     target = Math.max(floor, Math.min(target, now - 0.4));
 
     // pick the buffered frame closest to the target time
