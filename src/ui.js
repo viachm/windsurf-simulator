@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange } from './i18n.js?b=10';
-import { DemoDirector } from './demo.js?b=10';
+import { t, setLang, getLang, onLangChange } from './i18n.js?b=11';
+import { DemoDirector } from './demo.js?b=11';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -103,9 +103,12 @@ export class UI {
 
   #refreshWindReadout() {
     // Read the actual base wind (m/s) so the label is exact even when it doesn't
-    // land on a whole knot (e.g. 10 km/h ≈ 5.4 kn).
+    // land on a whole knot (e.g. 10 km/h ≈ 5.4 kn). Number + unit are separate
+    // spans so the phone fader can stack them (value on top, unit below) and the
+    // unit never breaks mid-string ("м/с", not "м/" + "с").
     const kn = this.sim.baseWind * 1.94384;
-    $('windset-val').textContent = `${this.#fmtWind(kn)} ${this.#windUnitLabel()}`;
+    $('windset-val').innerHTML =
+      `<span class="wf-num">${this.#fmtWind(kn)}</span> <span class="wf-unit">${this.#windUnitLabel()}</span>`;
   }
 
   #syncLangButtons() {
@@ -334,7 +337,7 @@ export class UI {
         : 'M6 5h4v14H6zM14 5h4v14h-4z');      // ⏸ pause
       btn.title = this.paused ? t('resume.title') : t('pause.title');
     }
-    if (this.paused) this.flashMsg(t('pause.flash'));
+    // (no toast — the amber pill on the pause button is feedback enough)
   }
 
   // Record one restorable frame of state. Called every frame from updateHUD with
@@ -407,20 +410,7 @@ export class UI {
 
     const btn = $('rewind-toggle');
     if (btn) { btn.classList.add('pulse'); setTimeout(() => btn.classList.remove('pulse'), 140); }
-    this.#flashRewind();
-  }
-
-  // Show the rewind confirmation in the shared bottom slot, briefly hiding the
-  // demo caption so the two don't stack, then restore the caption.
-  #flashRewind() {
-    this._capSuppressed = true;
-    $('demo-caption').classList.add('off');
-    this.#showToast(t('rewind.flash'), 1100);
-    clearTimeout(this._capRestoreTimer);
-    this._capRestoreTimer = setTimeout(() => {
-      this._capSuppressed = false;
-      if (this.demo.running && this._capText) this.#showCaption(this._capText);
-    }, 1250);
+    // (no toast — the button's pulse + the board jumping back are feedback enough)
   }
 
   #applyRewind(e) {

@@ -439,6 +439,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   .wind-fader .wind-cap { display: none; }             /* glyph stands in for the caption */
   .wind-fader .ctl-label::before { content: "💨"; font-size: 12px; line-height: 1; }
   .wind-fader .ctl-value { margin: 0; font-size: 8.5px; line-height: 1.1; }
+  /* value on top, unit below — and the unit never breaks mid-string */
+  .wind-fader .wf-num { display: block; font-size: 11px; font-weight: 700; color: var(--text); }
+  .wind-fader .wf-unit { display: block; white-space: nowrap; font-size: 8px; color: var(--text-dim); }
   .wind-fader input[type="range"] {
     writing-mode: vertical-lr; direction: rtl;
     -webkit-appearance: slider-vertical;   /* older iOS Safari fallback; modern uses writing-mode */
@@ -530,6 +533,13 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
 
   /* ---- orbit help note is irrelevant on touch ---- */
   #help-note { display: none; }
+
+  /* ---- it's a game UI, not a document: no text selection or the iOS
+     long-press callout anywhere on the page (sliders/buttons still work) ---- */
+  #app, #app * {
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+  }
 
   /* ---- overlays fit the viewport ---- */
   #welcome-card {

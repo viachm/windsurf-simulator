@@ -95,7 +95,7 @@ export const STRINGS = {
     'btn.gybe.t': 'turn away from the wind through downwind',
     'btn.reset': 'RESET <span class="key-hint">R</span>',
 
-    'ctl.truewind': '<span class="wind-cap">TRUE WIND</span> <span class="ctl-value" id="windset-val">7.0 m/s</span>',
+    'ctl.truewind': '<span class="wind-cap">TRUE WIND</span> <span class="ctl-value" id="windset-val"><span class="wf-num">7.0</span> <span class="wf-unit">m/s</span></span>',
     'help.note': 'drag to orbit the camera · scroll to zoom',
 
     // --- points of sail ---
@@ -274,7 +274,7 @@ export const STRINGS = {
     'btn.gybe.t': 'поворот фордевінд — відвернути від вітру через повний курс',
     'btn.reset': 'СКИНУТИ <span class="key-hint">R</span>',
 
-    'ctl.truewind': '<span class="wind-cap">СПРАВЖНІЙ ВІТЕР</span> <span class="ctl-value" id="windset-val">7.0 м/с</span>',
+    'ctl.truewind': '<span class="wind-cap">СПРАВЖНІЙ ВІТЕР</span> <span class="ctl-value" id="windset-val"><span class="wf-num">7.0</span> <span class="wf-unit">м/с</span></span>',
     'help.note': 'тягніть, щоб обертати камеру · прокрутка — масштаб',
 
     // --- points of sail ---
