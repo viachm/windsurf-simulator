@@ -14,6 +14,13 @@ open the link. Works on desktop and touch/mobile, in 20 UI languages.
 > ⚠️ It's a *learning toy*, not a certified trainer. The physics are a faithful simplification
 > meant to build intuition, not to replace time on the water.
 
+<p align="center">
+  <a href="https://viachm.github.io/windsurf-simulator/">
+    <img src="docs/screenshot-mobile.png" width="300"
+         alt="Windsurf Simulator running on a phone — the board planing on a beam reach, with the full instrument HUD" />
+  </a>
+</p>
+
 ## Run it locally
 
 Any static server works. From this directory:
