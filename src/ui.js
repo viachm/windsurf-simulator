@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange } from './i18n.js?b=7';
-import { DemoDirector } from './demo.js?b=7';
+import { t, setLang, getLang, onLangChange } from './i18n.js?b=8';
+import { DemoDirector } from './demo.js?b=8';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -76,7 +76,7 @@ export class UI {
     this.compassCtx = $('compass').getContext('2d');
 
     // keep the framing centred if the viewport changes (rotate / URL bar)
-    addEventListener('resize', () => this.#applyFramingLift());
+    addEventListener('resize', () => { this.#applyFramingLift(); this.#sizeWindFader(); });
 
     // Static markup (incl. the windset readout) is re-templated on language
     // change; re-sync the readouts that aren't refreshed every frame.
@@ -175,6 +175,7 @@ export class UI {
     // right edge (out of the sheet, so it fits + stays reachable when the sheet
     // is collapsed). Desktop keeps it as the last row of the panel.
     this.#placeWindFader();
+    this.#placeDemoTransport();
   }
 
   // Move #wind-ctl between the panel (desktop) and the open sea (phones). Keeps
@@ -185,8 +186,40 @@ export class UI {
     if (!ctl) return;
     const mq = window.matchMedia('(max-width: 768px)');
     const place = () => {
-      if (mq.matches) { $('app').appendChild(ctl); ctl.classList.add('wind-fader'); }
-      else { $('panel-body').appendChild(ctl); ctl.classList.remove('wind-fader'); }
+      if (mq.matches) { $('app').appendChild(ctl); ctl.classList.add('wind-fader'); this.#sizeWindFader(); }
+      else { $('panel-body').appendChild(ctl); ctl.classList.remove('wind-fader'); ctl.style.bottom = ''; $('windset').style.height = ''; }
+    };
+    mq.addEventListener('change', place);
+    place();
+  }
+
+  // Make the phone wind fader sit flush above the control sheet: its top is
+  // fixed (below the demo transport row), its bottom tracks the sheet, and the
+  // vertical slider fills whatever height is left. Recomputed on resize + when
+  // the sheet opens/closes.
+  #sizeWindFader() {
+    const ctl = $('wind-ctl');
+    if (!ctl || !ctl.classList.contains('wind-fader')) return;
+    const panelTop = $('panel').getBoundingClientRect().top;
+    ctl.style.bottom = `${Math.round(innerHeight - panelTop + 6)}px`;
+    const label = ctl.querySelector('.ctl-label');
+    // clientHeight now reflects the top/bottom anchors; subtract padding (16),
+    // the flex gap (5) and the label so the slider fills the rest.
+    const avail = ctl.clientHeight - 16 - 5 - label.offsetHeight;
+    $('windset').style.height = `${Math.max(70, Math.round(avail))}px`;
+  }
+
+  // On phones the rewind + pause (demo transport) buttons move out of the
+  // top-right cluster into #demo-transport — a row under the BALANCE meter,
+  // above the wind fader. Desktop keeps them in #top-buttons (before ▶ DEMO).
+  #placeDemoTransport() {
+    const rew = $('rewind-toggle'), pau = $('pause-toggle');
+    const tb = $('top-buttons'), dt = $('demo-transport'), demoBtn = $('demo-toggle');
+    if (!rew || !pau || !dt) return;
+    const mq = window.matchMedia('(max-width: 768px)');
+    const place = () => {
+      if (mq.matches) { dt.appendChild(rew); dt.appendChild(pau); }
+      else { tb.insertBefore(rew, demoBtn); tb.insertBefore(pau, demoBtn); }
     };
     mq.addEventListener('change', place);
     place();
@@ -441,6 +474,7 @@ export class UI {
     // the rewind + pause buttons live only inside a demo; leaving a demo also
     // lifts any pause (their only un-pause control would otherwise vanish).
     $('top-buttons').classList.toggle('demo-on', !!mode);
+    $('demo-transport').classList.toggle('demo-on', !!mode);  // phone home for the same buttons
     if (!mode && this.paused) this.setPaused(false);
     const path = btn.querySelector('svg path');
     const label = btn.querySelector('.demo-btn-label');
@@ -506,6 +540,7 @@ export class UI {
     p.classList.toggle('collapsed', collapsed);
     $('panel-toggle').textContent = collapsed ? '+' : '–';
     this.#applyFramingLift();
+    this.#sizeWindFader();   // the fader tracks the sheet's top edge
     // keep the demo caption sitting just above the sheet as it resizes
     const cap = $('demo-caption');
     if (!cap.classList.contains('off')) this.#positionAbovePanel(cap);

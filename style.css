@@ -148,6 +148,8 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 /* ---------- control panel ---------- */
 /* ---------- top-right buttons (info + settings) ---------- */
 #top-buttons { position: absolute; right: 366px; top: 14px; z-index: 30; display: flex; gap: 6px; }
+/* on desktop the rewind/pause buttons stay in #top-buttons; this holder is phone-only */
+#demo-transport { display: none; }
 #settings-toggle {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 8px; color: var(--text); backdrop-filter: blur(6px);
@@ -405,30 +407,42 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   .toggles-row { flex-direction: row; gap: 12px; }
   .toggles-row .toggle-row { flex: 1; min-width: 0; }
 
-  /* ---- TRUE WIND: vertical fader floating on the sea's right edge ---- */
+  /* ---- demo transport (rewind + pause): a row on the right, under the
+     BALANCE meter and above the wind fader (only while a demo runs) ---- */
+  #demo-transport {
+    position: absolute; z-index: 16; right: 8px;
+    top: calc(96px + env(safe-area-inset-top));
+    display: flex; gap: 5px;
+  }
+  #demo-transport .demo-only { display: none !important; }
+  #demo-transport.demo-on .demo-only { display: flex !important; }
+
+  /* ---- TRUE WIND: slim vertical fader on the sea's right edge ----
+     Top is fixed (clears the transport row); bottom + slider height are set in
+     JS so it always sits flush above the control sheet. */
   .wind-fader {
     position: absolute; z-index: 15; margin: 0;
     right: calc(6px + env(safe-area-inset-right));
-    top: calc(150px + env(safe-area-inset-top));
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    padding: 9px 6px;
+    top: calc(138px + env(safe-area-inset-top));
+    bottom: 84px;                        /* JS overrides to track the sheet */
+    width: 44px;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 8px 4px;
     background: var(--panel-bg); border: 1px solid var(--panel-border);
     border-radius: 12px; backdrop-filter: blur(6px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   }
   .wind-fader .ctl-label {
-    flex-direction: column; align-items: center; gap: 2px; margin: 0;
-    font-size: 7.5px; letter-spacing: 0.4px; text-align: center;
+    flex-direction: column; align-items: center; gap: 1px; margin: 0;
+    font-size: 7px; letter-spacing: 0.3px; text-align: center; line-height: 1.1;
   }
   .wind-fader .wind-cap { display: none; }             /* glyph stands in for the caption */
-  .wind-fader .ctl-label::before { content: "💨"; font-size: 13px; line-height: 1; }
-  .wind-fader .ctl-value { margin: 0; font-size: 10px; }
+  .wind-fader .ctl-label::before { content: "💨"; font-size: 12px; line-height: 1; }
+  .wind-fader .ctl-value { margin: 0; font-size: 8.5px; line-height: 1.1; }
   .wind-fader input[type="range"] {
     writing-mode: vertical-lr; direction: rtl;
     -webkit-appearance: slider-vertical;   /* older iOS Safari fallback; modern uses writing-mode */
-    /* size to the sea band so the fader always ends above the ~fixed-height
-       sheet (its bottom = viewportH − sheet − top margin) */
-    width: 22px; height: calc(100dvh - 540px); min-height: 90px; max-height: 240px;
+    width: 22px; min-height: 70px;         /* height set in JS to fill the fader */
     padding: 0; margin: 0;
   }
 
@@ -495,7 +509,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
   /* narration banner: full-width, just above the control sheet (bottom set in JS),
      same slot the toast uses so all transient messages share one place */
   #demo-caption {
-    left: 6px; right: 6px; top: auto; bottom: 78px; transform: none;
+    left: 6px; right: 56px; top: auto; bottom: 78px; transform: none;   /* clear the wind fader */
     max-width: none; text-align: center; padding: 7px 11px; border-radius: 9px;
   }
   #demo-cap { font-size: 10.5px; line-height: 1.32; }
