@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange } from './i18n.js?b=9';
-import { DemoDirector } from './demo.js?b=9';
+import { t, setLang, getLang, onLangChange } from './i18n.js?b=10';
+import { DemoDirector } from './demo.js?b=10';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -57,10 +57,14 @@ export class UI {
     // rewind history: a ring buffer of recent states so the Rewind button can
     // jump the board back a few seconds (or to the start of the last maneuver).
     this._history = [];
-    this._histMax = 8;        // seconds of history kept (rewind reaches back up to 6s)
+    this._histMax = 18;       // seconds of history kept (repeated rewinds step back through it)
+    this._recDt = 0.05;       // sample the history at ~20Hz (not every frame) to stay light
+    this._lastRecT = -1;      // sim time of the last recorded sample
     this._curManStart = null; // sim time the currently-active maneuver began
     this._prevManActive = false;
     this.paused = false;      // pause button: freezes the whole sim (see main.js)
+    this._capText = null;     // last demo caption text (restored after a rewind toast)
+    this._capSuppressed = false;
 
     // guided demo: an auto-tour director that steers while autotrim flies the rig
     this.demo = new DemoDirector(sim, this);
@@ -338,6 +342,10 @@ export class UI {
   // history to jump back through.
   #recordHistory(st) {
     if (!st || st.crashed) return;   // don't record while splashed (a rewind un-crashes)
+    // ~20Hz sampling: skip frames until recDt has elapsed (a full 60fps buffer is
+    // needless — rewind picks the nearest sample). Keeps ~360 tiny objects for 18s.
+    if (this._lastRecT >= 0 && st.t > this._lastRecT && st.t - this._lastRecT < this._recDt) return;
+    this._lastRecT = st.t;
     // track when the current maneuver began, so we can rewind to its start
     if (st.maneuver && !this._prevManActive) this._curManStart = st.t;
     if (!st.maneuver) this._curManStart = null;
@@ -392,10 +400,27 @@ export class UI {
     buf.length = bestI + 1;         // future frames are gone; next rewind steps further back
     this._prevManActive = false;
     this._curManStart = null;
+    this._lastRecT = best.t;        // resume sampling from the landed time
+
+    // Glide the camera to the rewound framing instead of snapping (no jerk).
+    if (this.world && this.world.beginRewindGlide) this.world.beginRewindGlide();
 
     const btn = $('rewind-toggle');
     if (btn) { btn.classList.add('pulse'); setTimeout(() => btn.classList.remove('pulse'), 140); }
-    this.flashMsg(t('rewind.flash'));
+    this.#flashRewind();
+  }
+
+  // Show the rewind confirmation in the shared bottom slot, briefly hiding the
+  // demo caption so the two don't stack, then restore the caption.
+  #flashRewind() {
+    this._capSuppressed = true;
+    $('demo-caption').classList.add('off');
+    this.#showToast(t('rewind.flash'), 1100);
+    clearTimeout(this._capRestoreTimer);
+    this._capRestoreTimer = setTimeout(() => {
+      this._capSuppressed = false;
+      if (this.demo.running && this._capText) this.#showCaption(this._capText);
+    }, 1250);
   }
 
   #applyRewind(e) {
@@ -495,12 +520,14 @@ export class UI {
   // The demo narration reuses the SAME slot as every other transient message —
   // low-centre on desktop, full-width just above the control sheet on phones.
   #showCaption(text) {
+    this._capText = text;   // remembered so a rewind toast can restore it afterwards
     const el = $('demo-caption');
-    if (text) {
+    if (text && !this._capSuppressed) {
       $('demo-cap').textContent = text;
       this.#positionAbovePanel(el);
       el.classList.remove('off');
     } else {
+      // no caption, or temporarily suppressed while a rewind toast owns the slot
       el.classList.add('off');
     }
   }
@@ -702,7 +729,7 @@ export class UI {
   // Transient toast explaining why an action was blocked (or a state change).
   // On phones it floats just above the control sheet so it isn't hidden behind
   // it; on desktop it sits low-centre. Fades after a moment or on the next tap.
-  #showToast(msg) {
+  #showToast(msg, dur = 3300) {
     const el = $('toast');
     el.textContent = msg;
     this.#positionAbovePanel(el);
@@ -710,7 +737,7 @@ export class UI {
 
     clearTimeout(this._toastTimer);
     const hide = () => { el.classList.remove('on'); clearTimeout(this._toastTimer); };
-    this._toastTimer = setTimeout(hide, 3300);
+    this._toastTimer = setTimeout(hide, dur);
     // dismiss on the next interaction — deferred so the triggering tap doesn't count
     setTimeout(() => addEventListener('pointerdown', hide, { once: true }), 0);
   }
