@@ -345,7 +345,16 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   padding: 4px 0; user-select: none;
 }
 .toggle-row input { accent-color: var(--accent); width: 15px; height: 15px; }
-.toggles-row { display: flex; flex-direction: column; gap: 2px; }
+/* Daggerboard (left) + Harness (right) share one row, spread to the edges so
+   the free space on the right is used instead of stacking them. Slightly
+   smaller so both labels — incl. the long ones (uk "Зачепитися в трапецію") —
+   fit side by side; longer translations wrap back to two lines gracefully. */
+.toggles-row {
+  display: flex; flex-direction: row; flex-wrap: wrap;
+  justify-content: space-between; align-items: center; gap: 4px 6px;
+}
+.toggles-row .toggle-row { font-size: 10.5px; gap: 7px; flex: 0 1 auto; white-space: nowrap; }
+.toggles-row .toggle-row input { width: 14px; height: 14px; }
 
 .btn-row { display: flex; gap: 6px; }
 .action-btn {
@@ -436,9 +445,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   #autotrim-row { padding: 0; flex: none; font-size: 10px; white-space: nowrap; }
   .tr-note { display: none; }               /* "(sheets for you)" — desktop only */
 
-  /* Daggerboard + Harness sit side by side, not stacked */
-  .toggles-row { flex-direction: row; gap: 12px; }
-  .toggles-row .toggle-row { flex: 1; min-width: 0; }
+  /* Daggerboard + Harness already share a row (base rule); nothing extra here. */
 
   /* ---- demo transport (rewind + pause): a row on the right, under the
      BALANCE meter and above the wind fader (only while a demo runs) ---- */
