@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=34';
-import { DemoDirector } from './demo.js?b=34';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=35';
+import { DemoDirector } from './demo.js?b=35';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -60,17 +60,8 @@ export class UI {
     this.keysHeld = new Set();
     this.flash = { msg: '', until: 0 };
 
-    // rewind history: a ring buffer of recent states so the Rewind button can
-    // jump the board back a few seconds (or to the start of the last maneuver).
-    this._history = [];
-    this._histMax = 18;       // seconds of history kept (repeated rewinds step back through it)
-    this._recDt = 0.05;       // sample the history at ~20Hz (not every frame) to stay light
-    this._lastRecT = -1;      // sim time of the last recorded sample
-    this._curManStart = null; // sim time the currently-active maneuver began
-    this._prevManActive = false;
     this.paused = false;      // pause button: freezes the whole sim (see main.js)
-    this._capText = null;     // last demo caption text (restored after a rewind toast)
-    this._capSuppressed = false;
+    this._capText = null;     // last demo caption text (restored when captions re-enabled)
 
     // guided demo: an auto-tour director that steers while autotrim flies the rig
     this.demo = new DemoDirector(sim, this);
@@ -79,7 +70,7 @@ export class UI {
 
     this.#bindPanel();
     this.#bindSettings();
-    this.#bindRewind();
+    this.#bindPause();
     this.#bindDemo();
     this.#bindKeys();
     this.#bindCrashHold();
@@ -234,14 +225,13 @@ export class UI {
     $('windset').style.height = `${Math.max(70, Math.round(avail))}px`;
   }
 
-  // The rewind + pause (demo transport) buttons live in #demo-transport on
-  // every viewport — CSS homes that holder (bottom-left on desktop, a row under
-  // the BALANCE meter on phones). Keeping them out of the top-right cluster stops
-  // that cluster from growing left into the centred HUD when a demo runs.
+  // The pause (demo transport) button lives in #demo-transport on every viewport
+  // — CSS homes that holder (bottom-left on desktop, a row under the BALANCE meter
+  // on phones). Keeping it out of the top-right cluster stops that cluster from
+  // growing left into the centred HUD when a demo runs.
   #placeDemoTransport() {
-    const rew = $('rewind-toggle'), pau = $('pause-toggle'), dt = $('demo-transport');
-    if (!rew || !pau || !dt) return;
-    dt.appendChild(rew);
+    const pau = $('pause-toggle'), dt = $('demo-transport');
+    if (!pau || !dt) return;
     dt.appendChild(pau);
   }
 
@@ -350,10 +340,8 @@ export class UI {
     this.#refreshWindReadout();
   }
 
-  // ---------------- rewind + pause (demo-only transport) ----------------
-  #bindRewind() {
-    const rw = $('rewind-toggle');
-    if (rw) rw.addEventListener('click', (e) => { e.stopPropagation(); this.rewind(); });
+  // ---------------- pause (demo-only transport) ----------------
+  #bindPause() {
     const pz = $('pause-toggle');
     if (pz) pz.addEventListener('click', (e) => { e.stopPropagation(); this.setPaused(!this.paused); });
   }
@@ -372,107 +360,6 @@ export class UI {
       btn.title = this.paused ? t('resume.title') : t('pause.title');
     }
     // (no toast — the amber pill on the pause button is feedback enough)
-  }
-
-  // Record one restorable frame of state. Called every frame from updateHUD with
-  // the fresh sim state, so the Rewind button always has several seconds of
-  // history to jump back through.
-  #recordHistory(st) {
-    if (!st || st.crashed) return;   // don't record while splashed (a rewind un-crashes)
-    // ~20Hz sampling: skip frames until recDt has elapsed (a full 60fps buffer is
-    // needless — rewind picks the nearest sample). Keeps ~360 tiny objects for 18s.
-    if (this._lastRecT >= 0 && st.t > this._lastRecT && st.t - this._lastRecT < this._recDt) return;
-    this._lastRecT = st.t;
-    // track when the current maneuver began, so we can rewind to its start
-    if (st.maneuver && !this._prevManActive) this._curManStart = st.t;
-    if (!st.maneuver) this._curManStart = null;
-    this._prevManActive = !!st.maneuver;
-
-    this._history.push({
-      t: st.t,
-      pos: { x: st.pos.x, z: st.pos.z },
-      heading: st.heading, v: st.v, u: st.u, yawVel: st.yawVel,
-      planing: st.planing,
-      manActive: !!st.maneuver,
-      manStart: st.maneuver ? this._curManStart : null,
-      inputs: {
-        sheetDeg: st.inputs.sheetDeg, rake: st.inputs.rake, stance: st.inputs.stance,
-        lean: st.inputs.lean, dagger: st.inputs.dagger, harness: st.inputs.harness,
-      },
-    });
-    // drop anything older than the retained window
-    const cutoff = st.t - this._histMax;
-    while (this._history.length && this._history[0].t < cutoff) this._history.shift();
-  }
-
-  // Jump the board back in time: to ~3s ago, or — if a tack/gybe happened in the
-  // last few seconds — to ~1s BEFORE that maneuver started (so you rejoin the
-  // approach, not mid-turn), but never further back than 6s. Un-crashes if we
-  // were splashed. The trail redraws itself (world.js clears it whenever sim time
-  // steps backwards).
-  rewind() {
-    const buf = this._history;
-    if (buf.length < 2) return;
-    const now = buf[buf.length - 1].t;
-    const floor = now - 6;          // deepest rewind allowed
-    const PRE_MAN = 1;              // land this many seconds before a maneuver's start
-
-    // most recent maneuver start inside the window (its start time is stored)
-    let manStart = null;
-    for (let i = buf.length - 1; i >= 0; i--) {
-      if (now - buf[i].t > 6.5) break;
-      if (buf[i].manActive) { manStart = buf[i].manStart; break; }
-    }
-
-    let target = manStart != null ? manStart - PRE_MAN : now - 3;
-    target = Math.max(floor, Math.min(target, now - 0.4));
-
-    // pick the buffered frame closest to the target time
-    let best = buf[0], bestI = 0;
-    for (let i = 0; i < buf.length; i++) {
-      if (Math.abs(buf[i].t - target) < Math.abs(best.t - target)) { best = buf[i]; bestI = i; }
-    }
-
-    this.#applyRewind(best);
-    buf.length = bestI + 1;         // future frames are gone; next rewind steps further back
-    this._prevManActive = false;
-    this._curManStart = null;
-    this._lastRecT = best.t;        // resume sampling from the landed time
-
-    // Glide the camera to the rewound framing instead of snapping (no jerk).
-    if (this.world && this.world.beginRewindGlide) this.world.beginRewindGlide();
-
-    const btn = $('rewind-toggle');
-    if (btn) { btn.classList.add('pulse'); setTimeout(() => btn.classList.remove('pulse'), 140); }
-    // (no toast — the button's pulse + the board jumping back are feedback enough)
-  }
-
-  #applyRewind(e) {
-    const s = this.sim;
-    s.t = e.t;
-    s.pos = { x: e.pos.x, z: e.pos.z };
-    s.heading = e.heading;
-    s.v = e.v; s.u = e.u; s.yawVel = e.yawVel;
-    s.planing = e.planing;
-    // land on a clean course: no partial turn, no crash, no built-up hazard
-    s.maneuver = null;
-    s.crashed = false; s.crashReason = ''; s.crashLesson = ''; s.crashTimer = 0; s.recoverHold = false;
-    s.stuckInIrons = false;
-    s.acc = { catapult: 0, backFall: 0, spinout: 0, pearl: 0 };
-
-    // restore the control positions to that moment (autotrim/demo re-derive the
-    // rig next frame; rake is the one the autopilot leaves to us, so it matters).
-    this.inputs.sheetDeg = e.inputs.sheetDeg;
-    this.inputs.lean = e.inputs.lean;
-    this.inputs.dagger = e.inputs.dagger;
-    this.inputs.harness = e.inputs.harness;
-    this.inputs.stance = e.inputs.stance;
-    this.setRake(e.inputs.rake);
-    $('sheet').value = e.inputs.sheetDeg;
-    $('lean').value = Math.round(e.inputs.lean);
-    $('dagger').checked = e.inputs.dagger;
-    $('harness').checked = e.inputs.harness;
-    for (const b of $('stance-seg').children) b.classList.toggle('active', b.dataset.stance === e.inputs.stance);
   }
 
   // ---------------- guided demo ----------------
@@ -520,9 +407,9 @@ export class UI {
   #setDemoState(mode) {
     const btn = $('demo-toggle');
     btn.classList.toggle('running', !!mode);
-    // the rewind + pause buttons live only inside a demo; leaving a demo also
-    // lifts any pause (their only un-pause control would otherwise vanish).
-    $('demo-transport').classList.toggle('demo-on', !!mode);  // holds the transport buttons on every viewport
+    // the pause button lives only inside a demo; leaving a demo also lifts any
+    // pause (its only un-pause control would otherwise vanish).
+    $('demo-transport').classList.toggle('demo-on', !!mode);  // holds the transport button on every viewport
     if (!mode && this.paused) this.setPaused(false);
     const path = btn.querySelector('svg path');
     const label = btn.querySelector('.demo-btn-label');
@@ -543,15 +430,14 @@ export class UI {
   // The demo narration reuses the SAME slot as every other transient message —
   // low-centre on desktop, full-width just above the control sheet on phones.
   #showCaption(text) {
-    this._capText = text;   // remembered so a rewind toast can restore it afterwards
+    this._capText = text;   // remembered so re-enabling captions can restore it
     const el = $('demo-caption');
-    if (text && this.showCaptions && !this._capSuppressed) {
+    if (text && this.showCaptions) {
       $('demo-cap').textContent = text;
       this.#positionAbovePanel(el);
       el.classList.remove('off');
     } else {
-      // no caption, or temporarily suppressed while a rewind toast owns the slot
-      el.classList.add('off');
+      el.classList.add('off');   // no caption, or captions turned off
     }
   }
 
@@ -868,7 +754,6 @@ export class UI {
 
   // ---------------- HUD ----------------
   updateHUD(st) {
-    this.#recordHistory(st);
     const unit = this.#unitLabel();
     $('speed-val').textContent = this.#conv(st.speedKn).toFixed(1);
     $('speed-unit').textContent = unit;

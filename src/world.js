@@ -92,14 +92,6 @@ export class World {
     this.sailorSide = 1;       // +1 = port (local +X); animated on tack/gybe
     this.prevBoardPos = new THREE.Vector3();
     this.cameraMode = 'free';  // 'free' = static world-locked (player controls); 'chase' = follows heading
-    // Rewind glide: when the board teleports back in time, we ease the whole view
-    // (camera + target, by the same vector) to the rewound framing instead of
-    // snapping — so the angle is preserved and there's no jerk. See beginRewindGlide.
-    this._glideActive = false;
-    this._glideCamOff = new THREE.Vector3();
-    this._glideTgtOff = new THREE.Vector3();
-    this._glideT = 0;
-    this._rewindTrail = false;   // next backward-time step is a rewind: keep the trail, don't wipe it
 
     // When the mobile control sheet covers the lower part of the screen, we
     // lens-shift the projection upward so the rider stays framed in the strip
@@ -716,45 +708,22 @@ export class World {
     //  - 'chase' : the camera swings around the board to track heading, so the
     //              over-the-shoulder view stays behind the rider through turns.
     if (this._prevHeading === undefined) this._prevHeading = state.heading;
-    if (this._glideActive) {
-      // Rewind glide: translate camera AND target by the same amount toward the
-      // rewound framing (offsets captured at rewind time). Equal shift = the view
-      // direction is untouched — only the position slides — so the ракурс is
-      // preserved and the cut becomes a short, smooth swoop to the earlier spot.
-      const camGoal = boardPos.clone().add(this._glideCamOff);
-      const tgtGoal = boardPos.clone().add(this._glideTgtOff);
-      const k = Math.min(dt * 6, 1);
-      this.camera.position.lerp(camGoal, k);
-      this.controls.target.lerp(tgtGoal, k);
-      this._glideT += dt;
-      const settled = this.camera.position.distanceTo(camGoal) < 0.05
-        && this.controls.target.distanceTo(tgtGoal) < 0.05;
-      if (settled || this._glideT > 0.8) {
-        this.camera.position.copy(camGoal);
-        this.controls.target.copy(tgtGoal);
-        this._glideActive = false;
-      }
-      this.prevBoardPos.copy(boardPos);
-      this._prevHeading = state.heading;   // don't let chase see this as a turn next frame
-      this.controls.update();
-    } else {
-      let dHeading = state.heading - this._prevHeading;
-      this._prevHeading = state.heading;
-      if (Math.abs(dHeading) > 0.5) dHeading = 0;   // ignore reset/recover teleports
-      if (dHeading && this.cameraMode === 'chase') {
-        const off = new THREE.Vector3().subVectors(this.camera.position, this.prevBoardPos);
-        const c = Math.cos(dHeading), s = Math.sin(dHeading);
-        const ox = off.x * c + off.z * s;         // rotate about +Y, same sense as board.rotation.y
-        const oz = -off.x * s + off.z * c;
-        off.set(ox, off.y, oz);
-        this.camera.position.copy(this.prevBoardPos).add(off);
-      }
-      const delta = new THREE.Vector3().subVectors(boardPos, this.prevBoardPos);
-      if (delta.lengthSq() < 100) this.camera.position.add(delta);
-      this.prevBoardPos.copy(boardPos);
-      this.controls.target.lerp(new THREE.Vector3(boardPos.x, boardPos.y + 1.4, boardPos.z), Math.min(dt * 6, 1));
-      this.controls.update();
+    let dHeading = state.heading - this._prevHeading;
+    this._prevHeading = state.heading;
+    if (Math.abs(dHeading) > 0.5) dHeading = 0;   // ignore reset/recover teleports
+    if (dHeading && this.cameraMode === 'chase') {
+      const off = new THREE.Vector3().subVectors(this.camera.position, this.prevBoardPos);
+      const c = Math.cos(dHeading), s = Math.sin(dHeading);
+      const ox = off.x * c + off.z * s;         // rotate about +Y, same sense as board.rotation.y
+      const oz = -off.x * s + off.z * c;
+      off.set(ox, off.y, oz);
+      this.camera.position.copy(this.prevBoardPos).add(off);
     }
+    const delta = new THREE.Vector3().subVectors(boardPos, this.prevBoardPos);
+    if (delta.lengthSq() < 100) this.camera.position.add(delta);
+    this.prevBoardPos.copy(boardPos);
+    this.controls.target.lerp(new THREE.Vector3(boardPos.x, boardPos.y + 1.4, boardPos.z), Math.min(dt * 6, 1));
+    this.controls.update();
 
     // Lens-shift the rider so it stays centred in the clear band between the
     // top overlays and the control sheet (mobile). Ease it so opening/closing
@@ -776,18 +745,6 @@ export class World {
   // 'free' (default): camera keeps a fixed world orientation, player owns the
   // angle via orbit. 'chase': camera swings to stay behind the board.
   setCameraMode(mode) { this.cameraMode = mode === 'chase' ? 'chase' : 'free'; }
-
-  // Called by UI.rewind() the instant the board jumps back in time. We capture
-  // the camera's CURRENT framing offsets (relative to the board's pre-rewind
-  // position) so the next few frames can glide the view — camera and target
-  // together, a pure translation — onto the rewound position without a jerk.
-  beginRewindGlide() {
-    this._glideCamOff.subVectors(this.camera.position, this.prevBoardPos);
-    this._glideTgtOff.subVectors(this.controls.target, this.prevBoardPos);
-    this._glideT = 0;
-    this._glideActive = true;
-    this._rewindTrail = true;   // truncate the trail to the rewound spot instead of wiping it
-  }
 
   // Vertical framing offset (fraction of viewport height): positive lifts the
   // rider up the screen so it stays centred between the HUD and the open sheet.
@@ -936,31 +893,13 @@ export class World {
     const tx = bx - fx * 1.25, tz = bz - fz * 1.25;
     const cur = new THREE.Vector3(tx, 0.12, tz);
 
-    // Backward clock = a rewind or a reset. Keying on the clock (not distance)
-    // means normal sailing — including the metres a board drifts while crashed —
-    // never falsely erases the trail.
+    // Backward clock = a reset (R): full restart at the origin — wipe the trace.
+    // Keying on the clock (not distance) means normal sailing — including the
+    // metres a board drifts while crashed — never falsely erases the trail.
     if (this.trailPrevT !== undefined && state.t < this.trailPrevT - 0.001) {
-      if (this._rewindTrail && this.trailPts.length) {
-        // Rewind: we jumped back to a spot the board already sailed, so the line
-        // up to there is still valid — keep it and drop only the part after it.
-        // Find the trail sample nearest the (rewound) tail and cut there, so the
-        // board rejoins the middle of its own trace instead of starting fresh.
-        let bi = 0, bd = Infinity;
-        for (let i = 0; i < this.trailPts.length; i++) {
-          const p = this.trailPts[i];
-          const d = (p.x - cur.x) * (p.x - cur.x) + (p.z - cur.z) * (p.z - cur.z);
-          if (d < bd) { bd = d; bi = i; }
-        }
-        this.trailPts.length = bi + 1;
-        this.trailLast = new THREE.Vector3(this.trailPts[bi].x, 0.12, this.trailPts[bi].z);
-        this.#rebuildTrailSmooth();
-      } else {
-        // Reset (R): full restart at the origin — wipe the trace.
-        this.trailPts.length = 0;
-        this.trailSmooth.length = 0;
-        this.trailLast = null;
-      }
-      this._rewindTrail = false;
+      this.trailPts.length = 0;
+      this.trailSmooth.length = 0;
+      this.trailLast = null;
     }
     this.trailPrevT = state.t;
 

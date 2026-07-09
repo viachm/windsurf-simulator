@@ -207,11 +207,11 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 /* ---------- control panel ---------- */
 /* ---------- top-right buttons (info + settings) ---------- */
 #top-buttons { position: absolute; right: 366px; top: 14px; z-index: 30; display: flex; gap: 6px; }
-/* Demo transport (rewind + pause). On BOTH desktop and phone these live here,
-   away from the top-right cluster — on desktop that cluster would otherwise grow
-   left into the centred HUD (WIND box + compass) whenever a demo runs. The holder
-   is a zero-size flex box until a demo un-hides its buttons. Desktop home: the
-   clear bottom-left corner; phones re-home it top-right (mobile block below). */
+/* Demo transport (pause). On BOTH desktop and phone this lives here, away from
+   the top-right cluster — on desktop that cluster would otherwise grow left into
+   the centred HUD (WIND box + compass) whenever a demo runs. The holder is a
+   zero-size flex box until a demo un-hides its button. Desktop home: the clear
+   bottom-left corner; phones re-home it top-right (mobile block below). */
 #demo-transport {
   position: absolute; z-index: 30; display: flex; gap: 6px;
   left: 14px; bottom: 14px;
@@ -226,17 +226,16 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #settings-toggle svg { display: block; }
 #settings-toggle:hover, #settings-toggle.open { border-color: var(--accent); color: var(--accent); }
 
-/* ---------- rewind + pause buttons (shown only while a demo runs) ---------- */
-#rewind-toggle, #pause-toggle {
+/* ---------- pause button (shown only while a demo runs) ---------- */
+#pause-toggle {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 8px; color: var(--text); backdrop-filter: blur(6px);
   cursor: pointer; font-family: inherit; font-weight: 700;
   padding: 6px 9px; display: flex; align-items: center; justify-content: center;
   transition: transform 0.12s ease;
 }
-#rewind-toggle svg, #pause-toggle svg { display: block; }
-#rewind-toggle:hover, #pause-toggle:hover { border-color: var(--accent); color: var(--accent); }
-#rewind-toggle:active, #rewind-toggle.pulse { transform: scale(0.86); }
+#pause-toggle svg { display: block; }
+#pause-toggle:hover { border-color: var(--accent); color: var(--accent); }
 /* the pause pill turns amber while everything is frozen */
 #pause-toggle.paused { border-color: var(--accent); color: var(--accent); }
 /* both are demo-only: hidden until #demo-transport is marked demo-on (they live
@@ -488,11 +487,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
 
   /* Daggerboard + Harness already share a row (base rule); nothing extra here. */
 
-  /* ---- demo transport (rewind + pause): a row on the right, tucked snug
-     under the BALANCE meter (which bottoms at ~77px) with a 6px gap, so no
-     dead space opens above it. The wind fader begins just below this row —
-     the region between the meter and the fader is exactly one button tall,
-     filled by these buttons while a demo runs. ---- */
+  /* ---- demo transport (pause): tucked snug under the BALANCE meter (which
+     bottoms at ~77px) with a 6px gap, so no dead space opens above it. The wind
+     fader begins just below this row — the region between the meter and the
+     fader is exactly one button tall, filled by the button while a demo runs. ---- */
   #demo-transport {
     position: absolute; z-index: 16; right: 8px; left: auto; bottom: auto;
     top: calc(83px + env(safe-area-inset-top));
@@ -581,8 +579,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   }
   #settings-toggle { padding: 0 11px; height: 38px; border-radius: 10px; }
   #settings-toggle svg { width: 19px; height: 19px; }
-  #rewind-toggle, #pause-toggle { padding: 0 11px; height: 38px; border-radius: 10px; }
-  #rewind-toggle svg, #pause-toggle svg { width: 18px; height: 18px; }
+  #pause-toggle { padding: 0 11px; height: 38px; border-radius: 10px; }
+  #pause-toggle svg { width: 18px; height: 18px; }
   #settings-panel {
     right: 8px; top: calc(50px + env(safe-area-inset-top));
     width: min(240px, calc(100vw - 16px));
