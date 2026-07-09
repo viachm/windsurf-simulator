@@ -168,7 +168,14 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 .about-name { font-size: 17px; font-weight: 700; }
 .about-email { color: var(--accent); text-decoration: none; font-size: 13px; }
 .about-email:hover { text-decoration: underline; }
-.about-thanks { color: var(--text-dim); margin: 0 0 4px; }
+.about-thanks { color: var(--text-dim); margin: 0 0 10px; }
+.about-github {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--text); text-decoration: none; font-size: 13px; font-weight: 600;
+  padding: 8px 16px; border: 1px solid var(--line, rgba(255,255,255,.18)); border-radius: 10px;
+}
+.about-github:hover { border-color: var(--accent); color: var(--accent); }
+.about-github svg { display: block; }
 #about-close {
   margin-top: 16px; width: 100%; background: var(--accent); color: #06121e; border: none;
   border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800; letter-spacing: 2px;

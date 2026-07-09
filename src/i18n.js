@@ -31,6 +31,7 @@ export const STRINGS = {
     'about.tagline': 'A free 3D game about the real physics of windsurfing.',
     'about.madeby': 'Made by',
     'about.thanks': 'Thanks for playing — fair winds! 🌬️',
+    'about.github': 'View on GitHub',
     'about.close': 'CLOSE',
 
     // --- HUD ---
@@ -219,6 +220,7 @@ export const STRINGS = {
     'about.tagline': 'Безкоштовна 3D-гра про справжню фізику віндсерфінгу.',
     'about.madeby': 'Автор',
     'about.thanks': 'Дякую, що граєте — попутного вітру! 🌬️',
+    'about.github': 'Переглянути на GitHub',
     'about.close': 'ЗАКРИТИ',
 
     // --- HUD ---
