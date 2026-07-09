@@ -148,6 +148,34 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 #welcome-close:hover { filter: brightness(1.15); }
 
+/* ---------- about overlay ---------- */
+#about-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(4, 16, 28, 0.55); z-index: 31;
+}
+#about-overlay.off { display: none; }
+#about-card {
+  background: var(--panel-bg); border: 1px solid var(--accent); border-radius: 16px;
+  padding: 26px 34px; color: var(--text); max-width: 400px; width: calc(100% - 48px);
+  backdrop-filter: blur(10px); text-align: center; font-size: 13px; line-height: 1.55;
+}
+#about-card .w-title { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--accent); margin-bottom: 16px; }
+.about-app { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 0 2px; }
+.about-app-name { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+.about-tagline { margin: 8px 0 18px; color: var(--text-dim); }
+.about-author { display: flex; flex-direction: column; gap: 3px; margin: 4px 0 14px; }
+.about-madeby { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); }
+.about-name { font-size: 17px; font-weight: 700; }
+.about-email { color: var(--accent); text-decoration: none; font-size: 13px; }
+.about-email:hover { text-decoration: underline; }
+.about-thanks { color: var(--text-dim); margin: 0 0 4px; }
+#about-close {
+  margin-top: 16px; width: 100%; background: var(--accent); color: #06121e; border: none;
+  border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800; letter-spacing: 2px;
+  cursor: pointer; font-family: inherit;
+}
+#about-close:hover { filter: brightness(1.15); }
+
 /* ---------- crash overlay ---------- */
 #crash-overlay {
   position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
@@ -357,6 +385,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   padding: 4px 0; user-select: none;
 }
 .toggle-row input { accent-color: var(--accent); width: 15px; height: 15px; }
+#autotrim-row { font-size: 12.5px; }   /* Autopilot label a touch larger than the rest */
 /* Daggerboard (left) + Harness (right) share one row, spread to the edges so
    the free space on the right is used instead of stacking them. Slightly
    smaller so both labels — incl. the long ones (uk "Зачепитися в трапецію") —
@@ -447,7 +476,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   /* Auto-trim rides on the SAIL SHEET label line instead of its own row */
   .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 3px; }
   .sheet-head .ctl-label { margin-bottom: 0; flex: 0 1 auto; min-width: 0; }
-  #autotrim-row { padding: 0; flex: none; font-size: 10px; white-space: nowrap; }
+  #autotrim-row { padding: 0; flex: none; font-size: 11px; white-space: nowrap; }
   .tr-note { display: none; }               /* "(sheets for you)" — desktop only */
 
   /* Daggerboard + Harness already share a row (base rule); nothing extra here. */

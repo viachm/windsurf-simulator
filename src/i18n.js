@@ -26,6 +26,12 @@ export const STRINGS = {
     'democap.off': 'Hide',
     'settings.lang': 'LANGUAGE',
     'settings.howto': 'HOW TO PLAY',
+    'settings.about': 'ABOUT',
+    'about.title': 'ABOUT',
+    'about.tagline': 'A free 3D game about the real physics of windsurfing.',
+    'about.madeby': 'Made by',
+    'about.thanks': 'Thanks for playing — fair winds! 🌬️',
+    'about.close': 'CLOSE',
 
     // --- HUD ---
     'hud.speed': 'BOARD SPEED',
@@ -208,6 +214,12 @@ export const STRINGS = {
     'democap.off': 'Сховати',
     'settings.lang': 'МОВА',
     'settings.howto': 'ЯК ГРАТИ',
+    'settings.about': 'ПРО ДОДАТОК',
+    'about.title': 'ПРО ДОДАТОК',
+    'about.tagline': 'Безкоштовна 3D-гра про справжню фізику віндсерфінгу.',
+    'about.madeby': 'Автор',
+    'about.thanks': 'Дякую, що граєте — попутного вітру! 🌬️',
+    'about.close': 'ЗАКРИТИ',
 
     // --- HUD ---
     'hud.speed': 'ШВИДКІСТЬ ДОШКИ',

@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=32';
-import { DemoDirector } from './demo.js?b=32';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=33';
+import { DemoDirector } from './demo.js?b=33';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -170,6 +170,18 @@ export class UI {
       $('welcome-overlay').classList.remove('off');
       $('settings-panel').classList.add('off');
       $('settings-toggle').classList.remove('open');
+    });
+
+    // "About" (in settings) — author credit popup
+    $('about-toggle').addEventListener('click', () => {
+      $('about-overlay').classList.remove('off');
+      $('settings-panel').classList.add('off');
+      $('settings-toggle').classList.remove('open');
+    });
+    $('about-close').addEventListener('click', () => $('about-overlay').classList.add('off'));
+    // tap the dark backdrop (outside the card) closes it
+    $('about-overlay').addEventListener('click', (e) => {
+      if (e.target === $('about-overlay')) $('about-overlay').classList.add('off');
     });
 
     // tapping anywhere on the header toggles — a bigger, touch-friendly target

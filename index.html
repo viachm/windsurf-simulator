@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
 
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-QZQ6CE9JLL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-QZQ6CE9JLL');
+  </script>
+
   <meta name="google-site-verification" content="MX0WDLeQJt4tvW0Fd-sBmfBJeTqpEsxQoi5MxKLOZ4A" />
 
   <title>Windsurf Simulator — Free 3D Windsurfing Physics Game</title>
@@ -51,7 +61,7 @@
   </script>
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M4 82 Q24 76 44 82 T84 82 T124 82' stroke='%2337a6e0' stroke-width='5' fill='none' stroke-linecap='round'/><path d='M2 90 Q26 84 50 90 T98 90' stroke='%237fd0f2' stroke-width='4' fill='none' stroke-linecap='round' opacity='0.8'/><path d='M14 80 Q50 71 82 79 Q50 88 14 80 Z' fill='%23ffd23f'/><path d='M72 10 Q96 30 92 46 Q74 50 50 66 Z' fill='%23ff5a4d'/><path d='M72 10 Q86 30 83 44 L64 55 Z' fill='%23ff8a3d'/><path d='M50 66 L72 9' stroke='%23ffffff' stroke-width='3.4' fill='none' stroke-linecap='round'/><path d='M56 42 L86 45' stroke='%23e8f6ff' stroke-width='2.6' fill='none' stroke-linecap='round'/><path d='M32 78 L34 60 M44 78 L38 60' stroke='%2312608a' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/><path d='M36 60 L33 44' stroke='%230e3a5c' stroke-width='7' fill='none' stroke-linecap='round'/><path d='M34 46 L57 43' stroke='%230e3a5c' stroke-width='5' fill='none' stroke-linecap='round'/><circle cx='31' cy='38' r='6.5' fill='%23f6b98a'/></svg>" />
-  <link rel="stylesheet" href="style.css?b=32" />
+  <link rel="stylesheet" href="style.css?b=33" />
   <script type="importmap">
     {
       "imports": {
@@ -162,6 +172,13 @@
           </svg>
           <span data-i18n="settings.howto">HOW TO PLAY</span>
         </button>
+        <button id="about-toggle" class="settings-action" title="about / про додаток">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9-9 4.03-9 9c0 1.6.42 3.1 1.15 4.4L3 21l4.6-1.15A8.94 8.94 0 0 0 12 21z" />
+          </svg>
+          <span data-i18n="settings.about">ABOUT</span>
+        </button>
       </div>
     </div>
 
@@ -256,6 +273,25 @@
     <script>
       try { if (localStorage.getItem('ws_welcomeSeen')) document.getElementById('welcome-overlay').classList.add('off'); } catch (e) {}
     </script>
+
+    <!-- About overlay (author credit) -->
+    <div id="about-overlay" class="off">
+      <div id="about-card">
+        <div class="w-title" data-i18n="about.title">ABOUT</div>
+        <div class="about-app">
+          <img src="docs/windsurfer.svg" width="46" height="46" alt="" />
+          <span class="about-app-name">Windsurf Simulator</span>
+        </div>
+        <p class="about-tagline" data-i18n="about.tagline">A free 3D game about the real physics of windsurfing.</p>
+        <div class="about-author">
+          <span class="about-madeby" data-i18n="about.madeby">Made by</span>
+          <span class="about-name">Viacheslav Mukha</span>
+          <a class="about-email" href="mailto:viacheslav.mukha@gmail.com">viacheslav.mukha@gmail.com</a>
+        </div>
+        <p class="about-thanks" data-i18n="about.thanks">Thanks for playing — fair winds! 🌬️</p>
+        <button id="about-close" data-i18n="about.close">CLOSE</button>
+      </div>
+    </div>
 
     <!-- Crash overlay -->
     <div id="crash-overlay">
@@ -357,9 +393,9 @@
        kills the English→localised flash. Its ?b token MUST stay in sync with
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script type="module">
-    import { applyStatic } from './src/i18n.js?b=32';
+    import { applyStatic } from './src/i18n.js?b=33';
     applyStatic();
   </script>
-  <script type="module" src="src/main.js?b=32"></script>
+  <script type="module" src="src/main.js?b=33"></script>
 </body>
 </html>
