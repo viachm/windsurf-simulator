@@ -14,7 +14,10 @@
 
 html, body { height: 100%; overflow: hidden; background: #06121e; }
 
-#app { position: relative; width: 100vw; height: 100vh; height: 100dvh; }
+/* touch-action: pan-y lets the panels scroll vertically but blocks the browser's
+   pinch-zoom and double-tap-zoom everywhere in the UI. The 3D canvas sets its own
+   touch-action:none (OrbitControls), so the water keeps its camera pinch. */
+#app { position: relative; width: 100vw; height: 100vh; height: 100dvh; touch-action: pan-y; }
 #scene { position: absolute; inset: 0; display: block; }
 
 /* ---------- top HUD ---------- */
@@ -289,7 +292,9 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 .ctl-sub { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-dim); margin-top: 3px; }
 
-input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; }
+/* sliders own their touch drag in both axes (esp. the vertical wind fader),
+   and swallow pinch so two fingers on a slider can't zoom the page either */
+input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; touch-action: none; }
 .slider-wrap { position: relative; }
 #sheet-optimal {
   position: absolute; top: -3px; width: 3px; height: 14px; background: var(--good);
