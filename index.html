@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <title>Windsurf Simulator</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏄</text></svg>" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?b=18" />
   <script type="importmap">
     {
       "imports": {
@@ -312,9 +312,9 @@
        kills the English→localised flash. Its ?b token MUST stay in sync with
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script type="module">
-    import { applyStatic } from './src/i18n.js?b=17';
+    import { applyStatic } from './src/i18n.js?b=18';
     applyStatic();
   </script>
-  <script type="module" src="src/main.js?b=17"></script>
+  <script type="module" src="src/main.js?b=18"></script>
 </body>
 </html>

@@ -34,11 +34,17 @@ The deploy flow, in order:
 ## Cache-bust token (`?b=N`)
 
 Every module import carries a shared `?b=N` build token (`index.html` script src
-plus all `import` statements in `src/main.js`, `src/ui.js`, `src/demo.js`). It
-MUST be identical everywhere — if it drifts, `i18n.js` loads as two instances
-and language state splits. Always bump it with the single `sed` above so all
-files stay in sync. This is what prevents the recurring "new HTML + stale JS"
-breakage on GitHub Pages / Safari.
+**and the `style.css` link**, plus all `import` statements in `src/main.js`,
+`src/ui.js`, `src/demo.js`). It MUST be identical everywhere — if it drifts,
+`i18n.js` loads as two instances and language state splits. Always bump it with
+the single `sed` above so all files stay in sync. This is what prevents the
+recurring "new HTML + stale JS/CSS" breakage on GitHub Pages / Safari.
+
+NB: `style.css` has no token of its own inside the file — its cache-bust lives
+in the `<link rel="stylesheet" href="style.css?b=N">` in `index.html`, which the
+`sed` updates. Without it, iOS Safari serves the **old cached CSS** even after a
+deploy, so CSS-only fixes silently don't take (this bit us: a fixed layout
+looked unchanged on the phone). Keep the token on the stylesheet link.
 
 ## Notes
 
