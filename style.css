@@ -488,27 +488,30 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
     left: 8px; right: 100px; transform: none; max-width: none;   /* clear the demo + gear cluster */
     gap: 6px; padding: 0; justify-content: flex-start;
   }
-  .hud-box { flex: 1; min-width: 0; max-width: none; padding: 3px 8px; border-radius: 8px; }
-  .hud-label { font-size: 7.5px; letter-spacing: 0.4px; line-height: 1.2; }
-  .hud-value { font-size: 14px; margin-top: 1px; line-height: 1.05; }
+  /* boxes stay flat AND a constant height (single-line labels, tight metrics,
+     min-height floors every box to the tallest state) so the row never grows or
+     shrinks as the gust / planing lines come and go — and never reaches the
+     meters row below it. */
+  .hud-box { flex: 1; min-width: 0; max-width: none; padding: 2px 8px; border-radius: 8px; min-height: 47px; }
+  .hud-label { font-size: 7px; letter-spacing: 0.2px; line-height: 1.1; white-space: nowrap; }
+  .hud-value { font-size: 14px; margin-top: 0; line-height: 1.0; }
   .hud-unit { font-size: 8px; margin-left: 2px; }
-  #pos-val { font-size: 10px; line-height: 1.1; }
-  .hud-sub { font-size: 7.5px; min-height: 0; line-height: 1.1; }
-  #planing-badge { font-size: 7px; padding: 0 4px; }
+  #pos-val { font-size: 10px; line-height: 1.05; }
+  .hud-sub { font-size: 7px; min-height: 0; line-height: 1.0; }
+  #planing-badge { font-size: 7px; padding: 0 4px; margin-top: 1px; }
 
   /* ---- radar/compass: floating widget under the meters (no room in the HUD row) ---- */
   .compass-box {
     display: block; position: fixed; z-index: 15;
-    top: calc(116px + env(safe-area-inset-top)); left: 8px;
+    top: calc(92px + env(safe-area-inset-top)); left: 8px;
     padding: 3px; min-width: 0; border-radius: 10px;
   }
   #compass { width: 88px; height: 88px; }
 
   /* ---- meters: one row, power (left) + balance (right) ----
-     top clears the HUD boxes, which run ~61px tall once the Ukrainian labels
-     wrap to two lines and the gust sub-line shows. */
+     just below the constant-height HUD row (which bottoms at ~52px). */
   #meters {
-    top: calc(74px + env(safe-area-inset-top));
+    top: calc(56px + env(safe-area-inset-top));
     left: 8px; right: 8px; width: auto;
     flex-direction: row; gap: 6px;
   }
