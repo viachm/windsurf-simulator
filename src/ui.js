@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange } from './i18n.js?b=12';
-import { DemoDirector } from './demo.js?b=12';
+import { t, setLang, getLang, onLangChange } from './i18n.js?b=13';
+import { DemoDirector } from './demo.js?b=13';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -33,6 +33,11 @@ function loadCameraMode() {
   try { const m = localStorage.getItem('ws_cameraMode'); if (m === 'free' || m === 'chase') return m; } catch { /* ignore */ }
   return 'free'; // static, player-controlled by default
 }
+function loadShowCaptions() {
+  try { const v = localStorage.getItem('ws_demoCaptions'); if (v === 'on' || v === 'off') return v === 'on'; } catch { /* ignore */ }
+  // default: shown on desktop, hidden on phones (the sheet already crowds the screen)
+  return !matchMedia('(max-width: 768px)').matches;
+}
 
 export class UI {
   constructor(sim, world = null) {
@@ -51,6 +56,7 @@ export class UI {
     this.units = loadUnits();
     this.windUnits = loadWindUnits();
     this.cameraMode = loadCameraMode();
+    this.showCaptions = loadShowCaptions();   // demo narration banner (settings-toggleable)
     this.keysHeld = new Set();
     this.flash = { msg: '', until: 0 };
 
@@ -269,6 +275,11 @@ export class UI {
       this.setCameraMode(b.dataset.camera);
     });
 
+    $('democap-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      this.setShowCaptions(b.dataset.democap === 'on');
+    });
+
     $('lang-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       setLang(b.dataset.lang);
@@ -279,8 +290,21 @@ export class UI {
     this.setWindUnits(this.windUnits);
     this.setSailArea(this.inputs.sailArea);
     this.setCameraMode(this.cameraMode);
+    this.setShowCaptions(this.showCaptions);
     this.#syncLangButtons();
     this.#refreshWindReadout();
+  }
+
+  // Show/hide the demo narration banner. Off by default on phones; the player can
+  // flip it here. Persisted, reflected on the segment, and applied immediately.
+  setShowCaptions(on) {
+    this.showCaptions = !!on;
+    try { localStorage.setItem('ws_demoCaptions', this.showCaptions ? 'on' : 'off'); } catch { /* ignore */ }
+    const seg = $('democap-seg');
+    if (seg) for (const b of seg.children) b.classList.toggle('active', (b.dataset.democap === 'on') === this.showCaptions);
+    // apply now: hide a live caption, or bring the current one back
+    if (this.showCaptions && this.demo.running && this._capText) this.#showCaption(this._capText);
+    else if (!this.showCaptions) $('demo-caption').classList.add('off');
   }
 
   setUnits(u) {
@@ -512,7 +536,7 @@ export class UI {
   #showCaption(text) {
     this._capText = text;   // remembered so a rewind toast can restore it afterwards
     const el = $('demo-caption');
-    if (text && !this._capSuppressed) {
+    if (text && this.showCaptions && !this._capSuppressed) {
       $('demo-cap').textContent = text;
       this.#positionAbovePanel(el);
       el.classList.remove('off');

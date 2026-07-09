@@ -21,6 +21,9 @@ export const STRINGS = {
     'settings.camera': 'CAMERA',
     'cam.free': 'Static (you control)',
     'cam.chase': 'Chase board',
+    'settings.democap': 'DEMO INSTRUCTIONS',
+    'democap.on': 'Show',
+    'democap.off': 'Hide',
     'settings.lang': 'LANGUAGE',
     'settings.howto': 'HOW TO PLAY',
 
@@ -200,6 +203,9 @@ export const STRINGS = {
     'settings.camera': 'КАМЕРА',
     'cam.free': 'Статична (ти керуєш)',
     'cam.chase': 'За дошкою',
+    'settings.democap': 'ПІДКАЗКИ ДЕМО',
+    'democap.on': 'Показувати',
+    'democap.off': 'Сховати',
     'settings.lang': 'МОВА',
     'settings.howto': 'ЯК ГРАТИ',
 
