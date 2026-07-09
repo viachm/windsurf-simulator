@@ -18,6 +18,9 @@ export const STRINGS = {
     'settings.units': 'BOARD SPEED UNITS',
     'settings.windunits': 'WIND SPEED UNITS',
     'settings.sailsize': 'SAIL SIZE, m² <span class="ctl-hint">small = strong wind · big = light wind</span>',
+    'settings.camera': 'CAMERA',
+    'cam.free': 'Static (you control)',
+    'cam.chase': 'Chase board',
     'settings.lang': 'LANGUAGE',
     'settings.howto': 'HOW TO PLAY',
 
@@ -189,6 +192,9 @@ export const STRINGS = {
     'settings.units': 'ОДИНИЦІ ШВИДКОСТІ ДОШКИ',
     'settings.windunits': 'ОДИНИЦІ ШВИДКОСТІ ВІТРУ',
     'settings.sailsize': 'РОЗМІР ВІТРИЛА, м² <span class="ctl-hint">мале = сильний вітер · велике = слабкий</span>',
+    'settings.camera': 'КАМЕРА',
+    'cam.free': 'Статична (ти керуєш)',
+    'cam.chase': 'За дошкою',
     'settings.lang': 'МОВА',
     'settings.howto': 'ЯК ГРАТИ',
 

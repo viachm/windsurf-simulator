@@ -87,6 +87,7 @@ export class World {
 
     this.sailorSide = 1;       // +1 = port (local +X); animated on tack/gybe
     this.prevBoardPos = new THREE.Vector3();
+    this.cameraMode = 'free';  // 'free' = static world-locked (player controls); 'chase' = follows heading
 
     // When the mobile control sheet covers the lower part of the screen, we
     // lens-shift the projection upward so the rider stays framed in the strip
@@ -668,16 +669,17 @@ export class World {
 
     // ---- camera follows ----
     const boardPos = this.board.position;
-    // Chase: swing the camera around the board to track heading changes, so the
-    // over-the-shoulder view stays BEHIND the rider through tacks & gybes
-    // (otherwise a 180° turn leaves the camera facing the rider's front). Manual
-    // orbit still works — the chosen angle simply rotates along with the board.
+    // Two modes (user-selectable in settings, default 'free'):
+    //  - 'free'  : the camera keeps a fixed world orientation and only slides
+    //              along with the board. It never turns on its own — the rider
+    //              rotates under it — and the player owns the angle via orbit.
+    //  - 'chase' : the camera swings around the board to track heading, so the
+    //              over-the-shoulder view stays behind the rider through turns.
     if (this._prevHeading === undefined) this._prevHeading = state.heading;
     let dHeading = state.heading - this._prevHeading;
     this._prevHeading = state.heading;
-    // ignore discontinuous jumps (reset / recover teleports the heading)
-    if (Math.abs(dHeading) > 0.5) dHeading = 0;
-    if (dHeading) {
+    if (Math.abs(dHeading) > 0.5) dHeading = 0;   // ignore reset/recover teleports
+    if (dHeading && this.cameraMode === 'chase') {
       const off = new THREE.Vector3().subVectors(this.camera.position, this.prevBoardPos);
       const c = Math.cos(dHeading), s = Math.sin(dHeading);
       const ox = off.x * c + off.z * s;         // rotate about +Y, same sense as board.rotation.y
@@ -701,6 +703,10 @@ export class World {
 
     this.renderer.render(this.scene, this.camera);
   }
+
+  // 'free' (default): camera keeps a fixed world orientation, player owns the
+  // angle via orbit. 'chase': camera swings to stay behind the board.
+  setCameraMode(mode) { this.cameraMode = mode === 'chase' ? 'chase' : 'free'; }
 
   // Vertical framing offset (fraction of viewport height): positive lifts the
   // rider up the screen so it stays centred between the HUD and the open sheet.

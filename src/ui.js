@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange } from './i18n.js?b=2';
-import { DemoDirector } from './demo.js?b=2';
+import { t, setLang, getLang, onLangChange } from './i18n.js?b=3';
+import { DemoDirector } from './demo.js?b=3';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -29,6 +29,10 @@ function loadSailArea() {
   try { const a = parseFloat(localStorage.getItem('ws_sailArea')); if (SAIL_SIZES.includes(a)) return a; } catch { /* ignore */ }
   return SAIL_DEFAULT;
 }
+function loadCameraMode() {
+  try { const m = localStorage.getItem('ws_cameraMode'); if (m === 'free' || m === 'chase') return m; } catch { /* ignore */ }
+  return 'free'; // static, player-controlled by default
+}
 
 export class UI {
   constructor(sim, world = null) {
@@ -46,6 +50,7 @@ export class UI {
     };
     this.units = loadUnits();
     this.windUnits = loadWindUnits();
+    this.cameraMode = loadCameraMode();
     this.keysHeld = new Set();
     this.flash = { msg: '', until: 0 };
 
@@ -190,6 +195,11 @@ export class UI {
       this.setSailArea(parseFloat(b.dataset.sailarea));
     });
 
+    $('camera-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      this.setCameraMode(b.dataset.camera);
+    });
+
     $('lang-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       setLang(b.dataset.lang);
@@ -199,6 +209,7 @@ export class UI {
     this.setUnits(this.units);
     this.setWindUnits(this.windUnits);
     this.setSailArea(this.inputs.sailArea);
+    this.setCameraMode(this.cameraMode);
     this.#syncLangButtons();
     this.#refreshWindReadout();
   }
@@ -217,6 +228,16 @@ export class UI {
     try { localStorage.setItem('ws_sailArea', String(a)); } catch { /* ignore */ }
     const seg = $('sailsize-seg');
     if (seg) for (const b of seg.children) b.classList.toggle('active', parseFloat(b.dataset.sailarea) === a);
+  }
+
+  // 'free' (default): the camera holds a fixed world angle and the player owns
+  // it via orbit. 'chase': the camera swings to stay behind the board.
+  setCameraMode(m) {
+    this.cameraMode = (m === 'chase') ? 'chase' : 'free';
+    try { localStorage.setItem('ws_cameraMode', this.cameraMode); } catch { /* ignore */ }
+    const seg = $('camera-seg');
+    if (seg) for (const b of seg.children) b.classList.toggle('active', b.dataset.camera === this.cameraMode);
+    if (this.world) this.world.setCameraMode(this.cameraMode);
   }
 
   setWindUnits(u) {
