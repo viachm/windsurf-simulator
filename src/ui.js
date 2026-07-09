@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=30';
-import { DemoDirector } from './demo.js?b=30';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=31';
+import { DemoDirector } from './demo.js?b=31';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -222,20 +222,15 @@ export class UI {
     $('windset').style.height = `${Math.max(70, Math.round(avail))}px`;
   }
 
-  // On phones the rewind + pause (demo transport) buttons move out of the
-  // top-right cluster into #demo-transport — a row under the BALANCE meter,
-  // above the wind fader. Desktop keeps them in #top-buttons (before ▶ DEMO).
+  // The rewind + pause (demo transport) buttons live in #demo-transport on
+  // every viewport — CSS homes that holder (bottom-left on desktop, a row under
+  // the BALANCE meter on phones). Keeping them out of the top-right cluster stops
+  // that cluster from growing left into the centred HUD when a demo runs.
   #placeDemoTransport() {
-    const rew = $('rewind-toggle'), pau = $('pause-toggle');
-    const tb = $('top-buttons'), dt = $('demo-transport'), demoBtn = $('demo-toggle');
+    const rew = $('rewind-toggle'), pau = $('pause-toggle'), dt = $('demo-transport');
     if (!rew || !pau || !dt) return;
-    const mq = window.matchMedia('(max-width: 768px)');
-    const place = () => {
-      if (mq.matches) { dt.appendChild(rew); dt.appendChild(pau); }
-      else { tb.insertBefore(rew, demoBtn); tb.insertBefore(pau, demoBtn); }
-    };
-    mq.addEventListener('change', place);
-    place();
+    dt.appendChild(rew);
+    dt.appendChild(pau);
   }
 
   // ---------------- settings popover ----------------
@@ -515,8 +510,7 @@ export class UI {
     btn.classList.toggle('running', !!mode);
     // the rewind + pause buttons live only inside a demo; leaving a demo also
     // lifts any pause (their only un-pause control would otherwise vanish).
-    $('top-buttons').classList.toggle('demo-on', !!mode);
-    $('demo-transport').classList.toggle('demo-on', !!mode);  // phone home for the same buttons
+    $('demo-transport').classList.toggle('demo-on', !!mode);  // holds the transport buttons on every viewport
     if (!mode && this.paused) this.setPaused(false);
     const path = btn.querySelector('svg path');
     const label = btn.querySelector('.demo-btn-label');

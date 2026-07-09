@@ -172,8 +172,16 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 /* ---------- control panel ---------- */
 /* ---------- top-right buttons (info + settings) ---------- */
 #top-buttons { position: absolute; right: 366px; top: 14px; z-index: 30; display: flex; gap: 6px; }
-/* on desktop the rewind/pause buttons stay in #top-buttons; this holder is phone-only */
-#demo-transport { display: none; }
+/* Demo transport (rewind + pause). On BOTH desktop and phone these live here,
+   away from the top-right cluster — on desktop that cluster would otherwise grow
+   left into the centred HUD (WIND box + compass) whenever a demo runs. The holder
+   is a zero-size flex box until a demo un-hides its buttons. Desktop home: the
+   clear bottom-left corner; phones re-home it top-right (mobile block below). */
+#demo-transport {
+  position: absolute; z-index: 30; display: flex; gap: 6px;
+  left: 14px; bottom: 14px;
+}
+#demo-transport.demo-on .demo-only { display: flex !important; }
 #settings-toggle {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 8px; color: var(--text); backdrop-filter: blur(6px);
@@ -196,9 +204,9 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #rewind-toggle:active, #rewind-toggle.pulse { transform: scale(0.86); }
 /* the pause pill turns amber while everything is frozen */
 #pause-toggle.paused { border-color: var(--accent); color: var(--accent); }
-/* both are demo-only: hidden until #top-buttons is marked demo-on */
+/* both are demo-only: hidden until #demo-transport is marked demo-on (they live
+   in that holder on every viewport — see #demo-transport above) */
 .demo-only { display: none !important; }
-#top-buttons.demo-on .demo-only { display: flex !important; }
 
 /* ---------- guided-demo button ---------- */
 #demo-toggle {
@@ -218,7 +226,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 
 /* ---------- demo popover ---------- */
 #demo-panel {
-  position: absolute; right: 14px; top: 52px; width: 280px; z-index: 30;
+  position: absolute; right: 366px; top: 52px; width: 280px; z-index: 30;
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 12px; color: var(--text); backdrop-filter: blur(8px);
   box-shadow: 0 12px 32px rgba(0,0,0,0.4); overflow: hidden;
@@ -256,7 +264,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 
 /* ---------- settings popover ---------- */
 #settings-panel {
-  position: absolute; right: 14px; top: 52px; width: 260px; z-index: 30;
+  position: absolute; right: 366px; top: 52px; width: 260px; z-index: 30;
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 12px; color: var(--text); backdrop-filter: blur(8px);
   box-shadow: 0 12px 32px rgba(0,0,0,0.4); overflow: hidden;
@@ -447,12 +455,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   /* ---- demo transport (rewind + pause): a row on the right, under the
      BALANCE meter and above the wind fader (only while a demo runs) ---- */
   #demo-transport {
-    position: absolute; z-index: 16; right: 8px;
+    position: absolute; z-index: 16; right: 8px; left: auto; bottom: auto;
     top: calc(96px + env(safe-area-inset-top));
     display: flex; gap: 5px;
   }
-  #demo-transport .demo-only { display: none !important; }
-  #demo-transport.demo-on .demo-only { display: flex !important; }
 
   /* ---- TRUE WIND: slim vertical fader on the sea's right edge ----
      Top is fixed (clears the transport row); bottom + slider height are set in
