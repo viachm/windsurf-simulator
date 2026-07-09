@@ -44,7 +44,7 @@ export const STRINGS = {
     // --- welcome overlay ---
     'welcome.title': '🏄 WINDSURF SIMULATOR',
     'welcome.intro': 'You are on a board with a sail. The <b>yellow arrow</b> on the compass is the wind. A sail can never drive you straight into it (the shaded <b>no-go wedge</b>) — sail across it.',
-    'welcome.step1': '<b>Trim the sail</b> — keep the sheet slider on the green tick (or turn on Auto-trim). Flapping = no power, over-pulled = stall.',
+    'welcome.step1': '<b>Trim the sail</b> — keep the sheet slider on the green tick (or turn on the Autopilot). Flapping = no power, over-pulled = stall.',
     'welcome.step2': '<b>Steer with the mast</b> — rake forward[[ ◀]] turns you downwind, rake back[[ ▶]] turns you upwind. No rudder!',
     'welcome.step3': '<b>Balance the pull</b> — the harder the sail pulls, the more you must lean windward. Keep the ◆ inside the yellow band or you swim.',
     'welcome.step4': '<b>Chase the plane</b> — enough speed and power and the board pops on top of the water. Then: feet in the straps[[ (3)]], daggerboard up[[ (D)]], hang on.',
@@ -62,7 +62,7 @@ export const STRINGS = {
     'ctl.sheet': 'SAIL SHEET <span class="key-hint">W / S</span><span class="ctl-value" id="sheet-val">45°</span>',
     'ctl.sheet.in': 'pulled in (0°)',
     'ctl.sheet.out': 'let out (90°)',
-    'ctl.autotrim': 'Auto-trim assist <span class="tr-note">(sheets for you)</span>',
+    'ctl.autotrim': 'Autopilot <span class="tr-note">(sails for you)</span>',
 
     'ctl.rake': 'MAST RAKE — steering <span class="key-hint">◀ ▶</span>',
     'rake.hardback': '⤒ hard back',
@@ -112,8 +112,8 @@ export const STRINGS = {
     'man.gybing': 'Gybing…',
 
     // --- flash messages (UI interlocks) ---
-    'flash.autotrimOff': 'Auto-trim off — you have the boom now.',
-    'flash.manual': 'Auto-trim off — you have the controls now.',
+    'flash.autotrimOff': 'Autopilot off — you have the boom now.',
+    'flash.manual': 'Autopilot off — you have the controls now.',
     'flash.noBackStraps': 'Not enough speed for the back straps — the tail would sink. Get moving first!',
     'flash.unhookFront': 'Unhooked from the harness — you cannot stay hooked in standing at the mast.',
     'flash.unhookUpright': 'Stood upright — the harness line went slack and unhooked.',
@@ -223,7 +223,7 @@ export const STRINGS = {
     // --- welcome overlay ---
     'welcome.title': '🏄 СИМУЛЯТОР ВІНДСЕРФІНГУ',
     'welcome.intro': 'Ви на дошці з вітрилом. <b>Жовта стрілка</b> на компасі — це вітер. Вітрило ніколи не повезе вас прямо проти нього (затінений <b>сектор левентика</b>) — ідіть упоперек.',
-    'welcome.step1': '<b>Налаштуйте вітрило</b> — тримайте повзунок шкота на зеленій позначці (або ввімкніть Автоналаштування). Полоще = немає тяги, перебрано = зрив потоку.',
+    'welcome.step1': '<b>Налаштуйте вітрило</b> — тримайте повзунок шкота на зеленій позначці (або ввімкніть Автопілот). Полоще = немає тяги, перебрано = зрив потоку.',
     'welcome.step2': '<b>Стернуйте щоглою</b> — нахил вперед[[ ◀]] уводить під вітер, нахил назад[[ ▶]] приводить до вітру. Стерна немає!',
     'welcome.step3': '<b>Врівноважуйте тягу</b> — що сильніше тягне вітрило, то більше треба нахилятися на вітер. Тримайте ◆ у жовтій смузі, інакше скупаєтесь.',
     'welcome.step4': '<b>Виходьте на глісування</b> — досить швидкості й тяги, і дошка вискакує на поверхню води. Тоді: ноги в петлі[[ (3)]], шверт угору[[ (D)]], тримайтеся.',
@@ -241,7 +241,7 @@ export const STRINGS = {
     'ctl.sheet': 'ШКОТ ВІТРИЛА <span class="key-hint">W / S</span><span class="ctl-value" id="sheet-val">45°</span>',
     'ctl.sheet.in': 'вибрано (0°)',
     'ctl.sheet.out': 'потравлено (90°)',
-    'ctl.autotrim': 'Автоналаштування шкота <span class="tr-note">(працює за вас)</span>',
+    'ctl.autotrim': 'Автопілот <span class="tr-note">(веде за вас)</span>',
 
     'ctl.rake': 'НАХИЛ ЩОГЛИ — стернування <span class="key-hint">◀ ▶</span>',
     'rake.hardback': '⤒ різко назад',
@@ -291,8 +291,8 @@ export const STRINGS = {
     'man.gybing': 'Джайб…',
 
     // --- flash messages (UI interlocks) ---
-    'flash.autotrimOff': 'Автоналаштування вимкнено — гік тепер ваш.',
-    'flash.manual': 'Автоналаштування вимкнено — керування у ваших руках.',
+    'flash.autotrimOff': 'Автопілот вимкнено — гік тепер ваш.',
+    'flash.manual': 'Автопілот вимкнено — керування у ваших руках.',
     'flash.noBackStraps': 'Замало швидкості для задніх петель — корма провалиться. Спершу розженіться!',
     'flash.unhookFront': 'Відчепилися від трапеції — не можна лишатися зачепленим, стоячи біля щогли.',
     'flash.unhookUpright': 'Випросталися — трос трапеції ослаб і від’єднався.',
