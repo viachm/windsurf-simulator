@@ -38,7 +38,7 @@ export const STRINGS = {
     'hud.gust': 'GUST +{n} {unit}',
 
     // --- meters ---
-    'meter.power': 'SAIL POWER <span id="trim-state"></span>',
+    'meter.power': 'SAIL POWER <span id="planing-badge">PLANING!</span><span id="trim-state"></span>',
     'meter.balance': 'BALANCE <span class="meter-hint">(diamond = your lean, band = what the sail demands)</span>',
     'trim.luff': 'LUFFING',
     'trim.good': 'DRIVING',
@@ -220,7 +220,7 @@ export const STRINGS = {
     'hud.gust': 'ПОРИВ +{n} {unit}',
 
     // --- meters ---
-    'meter.power': 'ТЯГА ВІТРИЛА <span id="trim-state"></span>',
+    'meter.power': 'ТЯГА ВІТРИЛА <span id="planing-badge">ГЛІСУВАННЯ!</span><span id="trim-state"></span>',
     'meter.balance': 'БАЛАНС <span class="meter-hint">(ромб = ваш нахил, смуга = чого вимагає вітрило)</span>',
     'trim.luff': 'ПОЛОЩЕ',
     'trim.good': 'ТЯГНЕ',

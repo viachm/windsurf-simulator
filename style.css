@@ -50,10 +50,12 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #pos-val { font-size: 15px; line-height: 1.7; }
 .hud-unit { font-size: 11px; margin-left: 3px; color: var(--text-dim); }
 .hud-sub { font-size: 10px; color: var(--text-dim); margin-top: 1px; min-height: 12px; }
+/* Planing indicator lives in the SAIL POWER meter title (right side, where the
+   trim word normally sits) — keeps it out of the compact HUD speed box. */
 #planing-badge {
-  display: none; font-size: 10px; font-weight: 700; color: #06121e;
-  background: var(--accent2); border-radius: 4px; padding: 1px 6px; margin-top: 3px;
-  animation: pulse 0.8s infinite alternate;
+  display: none; float: right; font-size: 9px; font-weight: 700; color: #06121e;
+  background: var(--accent2); border-radius: 4px; padding: 0 5px; margin-left: 6px;
+  letter-spacing: 0.5px; animation: pulse 0.8s infinite alternate;
 }
 #planing-badge.on { display: inline-block; }
 @keyframes pulse { from { opacity: 0.75; } to { opacity: 1; } }
@@ -385,8 +387,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   .panel-header {
     position: relative;
     align-items: center;
-    padding: 7px 14px 6px;                                   /* squeezed header */
-    padding-bottom: calc(6px + env(safe-area-inset-bottom)); /* clear the home bar */
+    padding: 5px 14px 4px;                                   /* thinner header */
+    padding-bottom: calc(4px + env(safe-area-inset-bottom)); /* clear the home bar */
     border-radius: 16px 16px 0 0;
     cursor: pointer;
     font-size: 11px;
@@ -399,7 +401,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
     background: rgba(180, 220, 255, 0.4);
   }
   #panel-toggle {
-    width: 30px; height: 28px; font-size: 20px; line-height: 1;
+    width: 26px; height: 22px; font-size: 17px; line-height: 1;
     background: rgba(79, 195, 247, 0.16); border-color: var(--accent); color: var(--accent);
   }
   /* the open sheet doesn't need the header's home-bar padding — the body has it */
@@ -492,26 +494,26 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
      min-height floors every box to the tallest state) so the row never grows or
      shrinks as the gust / planing lines come and go — and never reaches the
      meters row below it. */
-  .hud-box { flex: 1; min-width: 0; max-width: none; padding: 2px 8px; border-radius: 8px; min-height: 47px; }
+  .hud-box { flex: 1; min-width: 0; max-width: none; padding: 2px 8px; border-radius: 8px; min-height: 36px; }
   .hud-label { font-size: 7px; letter-spacing: 0.2px; line-height: 1.1; white-space: nowrap; }
   .hud-value { font-size: 14px; margin-top: 0; line-height: 1.0; }
   .hud-unit { font-size: 8px; margin-left: 2px; }
   #pos-val { font-size: 10px; line-height: 1.05; }
   .hud-sub { font-size: 7px; min-height: 0; line-height: 1.0; }
-  #planing-badge { font-size: 7px; padding: 0 4px; margin-top: 1px; }
+  #planing-badge { font-size: 7px; padding: 0 4px; margin-left: 4px; }
 
   /* ---- radar/compass: floating widget under the meters (no room in the HUD row) ---- */
   .compass-box {
     display: block; position: fixed; z-index: 15;
-    top: calc(92px + env(safe-area-inset-top)); left: 8px;
+    top: calc(80px + env(safe-area-inset-top)); left: 8px;
     padding: 3px; min-width: 0; border-radius: 10px;
   }
   #compass { width: 88px; height: 88px; }
 
   /* ---- meters: one row, power (left) + balance (right) ----
-     just below the constant-height HUD row (which bottoms at ~52px). */
+     just below the constant-height HUD row (which bottoms at ~42px). */
   #meters {
-    top: calc(56px + env(safe-area-inset-top));
+    top: calc(45px + env(safe-area-inset-top));
     left: 8px; right: 8px; width: auto;
     flex-direction: row; gap: 6px;
   }

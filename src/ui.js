@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=19';
-import { DemoDirector } from './demo.js?b=19';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=20';
+import { DemoDirector } from './demo.js?b=20';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -886,8 +886,10 @@ export class UI {
     // power meter
     $('power-fill').style.width = `${Math.min(100, st.power01 * 100)}%`;
     const trimEl = $('trim-state');
-    trimEl.textContent = { luff: t('trim.luff'), good: t('trim.good'), stall: t('trim.stall') }[st.trim] || '';
-    trimEl.className = st.trim;
+    // planing takes over the meter-title's right slot (see #planing-badge); hide
+    // the trim word while it shows so the two don't stack.
+    trimEl.textContent = st.planing ? '' : ({ luff: t('trim.luff'), good: t('trim.good'), stall: t('trim.stall') }[st.trim] || '');
+    trimEl.className = st.planing ? '' : st.trim;
 
     // balance meter: band = required lean (with tolerance), diamond = effective
     // lean. Both are clamped to the track, so a very high required lean (strong

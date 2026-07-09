@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <title>Windsurf Simulator</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏄</text></svg>" />
-  <link rel="stylesheet" href="style.css?b=19" />
+  <link rel="stylesheet" href="style.css?b=20" />
   <script type="importmap">
     {
       "imports": {
@@ -152,7 +152,6 @@
       <div class="hud-box" id="speed-box">
         <div class="hud-label" data-i18n="hud.speed">BOARD SPEED</div>
         <div class="hud-value"><span id="speed-val">0.0</span><span class="hud-unit" id="speed-unit">kn</span></div>
-        <div id="planing-badge" data-i18n="hud.planing">PLANING!</div>
       </div>
       <div class="hud-box" id="pos-box">
         <div class="hud-label" data-i18n="hud.pos">POINT OF SAIL</div>
@@ -312,9 +311,9 @@
        kills the English→localised flash. Its ?b token MUST stay in sync with
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script type="module">
-    import { applyStatic } from './src/i18n.js?b=19';
+    import { applyStatic } from './src/i18n.js?b=20';
     applyStatic();
   </script>
-  <script type="module" src="src/main.js?b=19"></script>
+  <script type="module" src="src/main.js?b=20"></script>
 </body>
 </html>
