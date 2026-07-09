@@ -9,7 +9,7 @@
 // carry the turns, and the rake steering is quantised to the five on-screen
 // buttons so the controls visibly "press" while it sails.
 
-import { t } from './i18n.js?b=28';
+import { t } from './i18n.js?b=29';
 
 const KN = 1.94384; // m/s -> knots
 const DEG = Math.PI / 180;
@@ -17,14 +17,13 @@ const DEG = Math.PI / 180;
 // ---- route preview (world-anchored chevrons the board sails through) ----
 // Each frame we predict the route forward in TIME from the board's real state
 // (so the board always rides it) and re-fit chevrons to fixed world-distance
-// slots. To stop them JUMPING when the course bends, three things: (a) a slot's
-// stored position EASES toward its fresh target instead of snapping, so on a
-// straight it sits dead still and through a course change it glides; (b) during
-// the APPROACH the preview is capped at an upcoming (not-yet-fired) turn, so no
-// far tail is drawn where the sim's real tack/gybe won't go; (c) once the turn is
-// actually sweeping, the preview is rebuilt by REPLAYING the sim's own maneuver
-// geometry, so the chevrons curve through the turn and onto the new tack instead
-// of blinking out. Each chevron is consumed at the near end as the board passes.
+// slots. The prediction is ONE continuous line that curves through any upcoming
+// OR in-progress tack/gybe (a shortest-arc sweep onto the new tack's settle
+// course), so the route is drawn all the way through a turn and never blinks out.
+// To stop the chevrons JUMPING as the course bends, a slot's stored position
+// EASES toward its fresh target instead of snapping — so on a straight it sits
+// dead still, and through a turn it glides. Each chevron is consumed at the near
+// end as the board passes it.
 const PDT = 0.2;            // prediction timestep, seconds
 const HORIZON = 8;          // seconds of route to predict ahead
 const STEER_RATE = 0.7;     // rad/s — how fast the pen swings onto a new course
@@ -171,17 +170,11 @@ export class DemoDirector {
 
     // route preview: chevrons pinned to world positions the board sails through.
     // The timeline keeps advancing during an override so we rejoin the CURRENT
-    // target course, not a stale one, once the user lets go.
+    // target course, not a stale one, once the user lets go. #buildMarkers draws
+    // ONE continuous line through any upcoming or in-progress turn, so the route
+    // never blinks out and doesn't jump as a tack/gybe starts or ends.
     this.dist += Math.abs(st.v) * dt;
-    if (st.maneuver) {
-      // Mid tack/gybe: build the preview by replaying the sim's own turn geometry,
-      // so the chevrons curve through the turn and onto the new tack and never
-      // blink out. (During the APPROACH — before the turn fires — #buildMarkers
-      // still caps at the turn entry, since the turn's timing isn't known yet.)
-      this.ui.showRoutePreview(this.#predictManeuver(st));
-    } else {
-      this.ui.showRoutePreview(this.#buildMarkers(st));
-    }
+    this.ui.showRoutePreview(this.#buildMarkers(st));
 
     const held = this.overriding;   // user has the helm for a moment
 
@@ -230,82 +223,68 @@ export class DemoDirector {
   // the near end; through course changes the easing glides them instead of
   // letting the predicted tail snap frame-to-frame.
   #buildMarkers(st) {
-    // 1) forward prediction in time, mirroring the director's own logic
-    const wa = st.windFromAngle;
-    const pts = [{ x: st.pos.x, z: st.pos.z, along: 0, h: st.heading }];
-    let x = st.pos.x, z = st.pos.z, h = st.heading, along = 0;
-    let s = st.beta >= 0 ? 1 : -1, i = this.i, segT = this.segT, turned = this.turned, arc = 0;
-    const v = Math.min(12, Math.max(2.2, Math.abs(st.v)));
-    for (let t = 0; t < HORIZON; t += PDT) {
-      const seg = this.script[i % this.script.length];
-      if (arc) {
-        // sweeping through a tack/gybe
-        const dh = Math.sign(arc) * Math.min(Math.abs(arc), ARC_RATE * PDT);
-        h += dh; arc -= dh;
-        if (Math.abs(arc) < 1e-3) { arc = 0; i++; segT = 0; turned = false; }
-      } else {
-        segT += PDT;
-        if (seg.turn && !turned && segT > 0.3) {
-          // A turn is coming but hasn't fired yet. Don't extrapolate the preview
-          // ACROSS it: the kinematic arc can't match the sim's real tack/gybe, so
-          // a far tail drawn past here would swing wildly the instant the real
-          // turn fires (a chevron leaping tens of metres). Cap the preview at the
-          // turn entry; it extends onto the new tack once the turn has resolved.
-          break;
-        } else {
-          // steer toward the target course for this point of sail
-          const th = wa - s * seg.beta * DEG;
-          let dh = wrapAngle(th - h);
-          const mx = STEER_RATE * PDT;
-          if (dh > mx) dh = mx; else if (dh < -mx) dh = -mx;
-          h += dh;
-          if (!seg.turn && segT >= seg.dur) { i++; segT = 0; turned = false; }
-        }
-      }
-      const vv = arc ? v * 0.7 : v;          // ease off through the turns
-      x += Math.sin(h) * vv * PDT; z += Math.cos(h) * vv * PDT; along += vv * PDT;
-      pts.push({ x, z, along, h });
-    }
-
-    // 2) re-fit chevrons to world slots + ease + render
-    return this.#fitMarks(pts);
+    return this.#fitMarks(this.#predictRoute(st));
   }
 
-  // Predict the route THROUGH an in-progress tack/gybe, using the sim's own
-  // maneuver geometry (setup + turn phases, bell-shaped rate), then straight onto
-  // the new tack for the rest of the horizon. This is what keeps the chevrons on
-  // screen during the turn instead of blinking out: the real turn is happening
-  // now, so replaying its known rotation matches the board's actual arc closely.
-  #predictManeuver(st) {
-    const m = st.maneuver;
+  // ONE continuous forward prediction that curves smoothly through any upcoming
+  // OR in-progress tack/gybe — no cap, no hide, no separate maneuver path. Both
+  // an approaching turn and a live one are drawn with the same shortest-arc sweep
+  // onto the new tack's settle course, so the line never blinks out at the turn
+  // and doesn't jump as the real turn starts or ends (the geometry is identical
+  // before, during, and after). The board still rides it because the prediction
+  // starts from the board's true state and the near slots track it closely.
+  #predictRoute(st) {
+    const wa = st.windFromAngle;
+    const EXIT = { tack: 52, gybe: 130 };   // deg — new-tack settle angle, mirrors sim
     const pts = [{ x: st.pos.x, z: st.pos.z, along: 0, h: st.heading }];
     let x = st.pos.x, z = st.pos.z, h = st.heading, along = 0;
-    let v = Math.max(1.2, Math.abs(st.v));
+    let v = Math.min(12, Math.max(1.4, Math.abs(st.v)));
     const vCruise = Math.min(12, Math.max(3, Math.abs(st.v)));
-    let phase = m.phase, tPhase = m.tPhase;
+    let i = this.i, segT = this.segT, turned = this.turned;
+    let s = st.beta >= 0 ? 1 : -1;
+
+    // if a tack/gybe is already sweeping, seed the arc straight away — steering the
+    // live heading onto the NEW tack's settle course (m.s is the entry tack sign).
+    let inTurn = false, turnTargetH = 0, turnSign = s;
+    if (st.maneuver) {
+      const m = st.maneuver;
+      turnSign = -m.s;
+      turnTargetH = wa - turnSign * EXIT[m.type] * DEG;
+      inTurn = true;
+    }
+
     for (let t = 0; t < HORIZON; t += PDT) {
-      if (phase === 'setup') {
-        const s01 = Math.max(0, Math.min(1, tPhase / m.setupDur));
-        h += (m.setupDH / m.setupDur) * 6 * s01 * (1 - s01) * PDT;
-        v *= Math.pow(m.type === 'gybe' ? 0.97 : 0.9, PDT);
-        tPhase += PDT;
-        if (tPhase >= m.setupDur) { phase = 'turn'; tPhase = 0; }
-      } else if (phase === 'turn') {
-        const s01 = Math.max(0, Math.min(1, tPhase / m.turnDur));
-        h += (m.turnDH / m.turnDur) * 6 * s01 * (1 - s01) * PDT;
-        v *= Math.pow(m.type === 'tack' ? 0.5 : 0.75, PDT);
-        tPhase += PDT;
-        if (tPhase >= m.turnDur) phase = 'done';
+      const seg = this.script[i % this.script.length];
+      // begin an upcoming turn the moment the prediction reaches its segment
+      if (!inTurn && seg.turn && !turned) {
+        turnSign = -s;
+        turnTargetH = wa - turnSign * EXIT[seg.turn] * DEG;
+        inTurn = true;
+      }
+      if (inTurn) {
+        // shortest-arc sweep onto the new tack (up through the eye for a tack,
+        // down through the run for a gybe — the short way round is the right way)
+        const dh = wrapAngle(turnTargetH - h);
+        h += Math.sign(dh) * Math.min(Math.abs(dh), ARC_RATE * PDT);
+        v *= Math.pow(0.72, PDT);              // scrub speed through the carve
+        if (Math.abs(wrapAngle(turnTargetH - h)) < 0.04) {
+          inTurn = false; s = turnSign;        // settled on the new tack
+          i++; segT = 0; turned = false;       // move on to the next leg
+        }
       } else {
-        // out of the turn: hold the new heading straight and let speed recover, so
-        // the preview extends onto the fresh tack.
-        v += (vCruise - v) * 0.15;
+        // steer toward the target course for this point of sail
+        const th = wa - s * seg.beta * DEG;
+        const dh = wrapAngle(th - h);
+        h += Math.sign(dh) * Math.min(Math.abs(dh), STEER_RATE * PDT);
+        v += (vCruise - v) * 0.1;              // rebuild speed on the straight
+        segT += PDT;
+        if (segT >= seg.dur) { i++; segT = 0; turned = false; }
       }
       const vv = Math.max(0.6, v);
       x += Math.sin(h) * vv * PDT; z += Math.cos(h) * vv * PDT; along += vv * PDT;
       pts.push({ x, z, along, h });
     }
-    return this.#fitMarks(pts);
+    return pts;
   }
 
   // Re-fit chevrons to world-anchored slots each frame, but EASE each slot's
