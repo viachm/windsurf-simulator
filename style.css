@@ -406,13 +406,6 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
     cursor: pointer;
     font-size: 11px;
   }
-  /* grab-handle affordance at the very top of the bar */
-  .panel-header::before {
-    content: ""; position: absolute; top: 4px; left: 50%;
-    transform: translateX(-50%);
-    width: 46px; height: 5px; border-radius: 3px;
-    background: rgba(180, 220, 255, 0.4);
-  }
   #panel-toggle {
     width: 26px; height: 22px; font-size: 17px; line-height: 1;
     background: rgba(79, 195, 247, 0.16); border-color: var(--accent); color: var(--accent);
