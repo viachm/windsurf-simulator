@@ -452,21 +452,25 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
 
   /* Daggerboard + Harness already share a row (base rule); nothing extra here. */
 
-  /* ---- demo transport (rewind + pause): a row on the right, under the
-     BALANCE meter and above the wind fader (only while a demo runs) ---- */
+  /* ---- demo transport (rewind + pause): a row on the right, tucked snug
+     under the BALANCE meter (which bottoms at ~77px) with a 6px gap, so no
+     dead space opens above it. The wind fader begins just below this row —
+     the region between the meter and the fader is exactly one button tall,
+     filled by these buttons while a demo runs. ---- */
   #demo-transport {
     position: absolute; z-index: 16; right: 8px; left: auto; bottom: auto;
-    top: calc(96px + env(safe-area-inset-top));
+    top: calc(83px + env(safe-area-inset-top));
     display: flex; gap: 5px;
   }
 
   /* ---- TRUE WIND: slim vertical fader on the sea's right edge ----
-     Top is fixed (clears the transport row); bottom + slider height are set in
-     JS so it always sits flush above the control sheet. */
+     Top is fixed just below the transport-button row (83 + 38 + 6 = 127px);
+     bottom + slider height are set in JS so it always sits flush above the
+     control sheet — so its height scales with the phone's display height. */
   .wind-fader {
     position: absolute; z-index: 15; margin: 0;
     right: calc(6px + env(safe-area-inset-right));
-    top: calc(138px + env(safe-area-inset-top));
+    top: calc(127px + env(safe-area-inset-top));
     bottom: 84px;                        /* JS overrides to track the sheet */
     width: 44px;
     display: flex; flex-direction: column; align-items: center; gap: 5px;
