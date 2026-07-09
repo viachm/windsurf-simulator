@@ -16,6 +16,12 @@
   </script>
 </head>
 <body>
+  <!-- Boot loader — covers the app until the JS graph (Three.js from the CDN)
+       has loaded and the static markup has been localised, so the UI never
+       flashes English before switching to the resolved language. Removed by
+       main.js once the scene and UI are built. -->
+  <div id="boot-loader"><div class="boot-spinner"></div></div>
+
   <div id="app">
     <canvas id="scene"></canvas>
 
@@ -303,6 +309,15 @@
     <div id="help-note" data-i18n="help.note">drag to orbit the camera · scroll to zoom</div>
   </div>
 
-  <script type="module" src="src/main.js?b=13"></script>
+  <!-- Localise the static markup as early as possible. This module depends
+       only on the tiny i18n.js, so it runs the moment that file downloads —
+       long before the heavy Three.js graph in main.js resolves. That is what
+       kills the English→localised flash. Its ?b token MUST stay in sync with
+       main.js (same module instance) — the shared sed bump keeps it aligned. -->
+  <script type="module">
+    import { applyStatic } from './src/i18n.js?b=14';
+    applyStatic();
+  </script>
+  <script type="module" src="src/main.js?b=14"></script>
 </body>
 </html>

@@ -373,11 +373,30 @@ export const STRINGS = {
   },
 };
 
-let lang = 'uk'; // Ukrainian is the default; a saved choice overrides it
-try {
-  const saved = localStorage.getItem('ws_lang');
-  if (saved && STRINGS[saved]) lang = saved;
-} catch { /* localStorage may be unavailable */ }
+// Pick the initial language, in priority order:
+//   1. a previously saved choice (localStorage);
+//   2. the browser / device language — navigator.languages, matched by base
+//      code so 'de-AT', 'pt-BR', 'zh-Hans' all resolve to 'de' / 'pt' / 'zh';
+//   3. English as the universal fallback.
+function detectLang() {
+  try {
+    const saved = localStorage.getItem('ws_lang');
+    if (saved && STRINGS[saved]) return saved;
+  } catch { /* localStorage may be unavailable */ }
+  try {
+    const prefs = (navigator.languages && navigator.languages.length)
+      ? navigator.languages
+      : [navigator.language];
+    for (const p of prefs) {
+      if (!p) continue;
+      const base = p.toLowerCase().split('-')[0];
+      if (STRINGS[base]) return base;
+    }
+  } catch { /* navigator may be unavailable */ }
+  return 'en';
+}
+
+let lang = detectLang();
 
 const listeners = new Set();
 

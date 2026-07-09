@@ -20,6 +20,21 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #app { position: relative; width: 100vw; height: 100vh; height: 100dvh; touch-action: pan-y; }
 #scene { position: absolute; inset: 0; display: block; }
 
+/* ---------- boot loader ---------- */
+#boot-loader {
+  position: fixed; inset: 0; z-index: 100; display: flex;
+  align-items: center; justify-content: center; background: #06121e;
+  transition: opacity 0.35s ease;
+}
+#boot-loader.off { opacity: 0; pointer-events: none; }
+.boot-spinner {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 3px solid rgba(120, 200, 255, 0.2);
+  border-top-color: var(--accent);
+  animation: boot-spin 0.8s linear infinite;
+}
+@keyframes boot-spin { to { transform: rotate(360deg); } }
+
 /* ---------- top HUD ---------- */
 #hud-top {
   position: absolute; top: 14px; left: 50%; transform: translateX(-50%);

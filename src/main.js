@@ -1,7 +1,7 @@
-import { WindsurfSim } from './sim.js?b=13';
-import { World } from './world.js?b=13';
-import { UI } from './ui.js?b=13';
-import { t, applyStatic } from './i18n.js?b=13';
+import { WindsurfSim } from './sim.js?b=14';
+import { World } from './world.js?b=14';
+import { UI } from './ui.js?b=14';
+import { t, applyStatic } from './i18n.js?b=14';
 
 applyStatic(); // localise the static markup for the saved/default language
 
@@ -44,6 +44,13 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+
+// Scene + UI are built and localised — fade out the boot loader.
+const bootLoader = document.getElementById('boot-loader');
+if (bootLoader) {
+  bootLoader.classList.add('off');
+  setTimeout(() => bootLoader.remove(), 400);
+}
 
 console.log('[windsurf-sim] started');
 // debug handles
