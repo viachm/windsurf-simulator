@@ -99,6 +99,7 @@ export class World {
     this._glideCamOff = new THREE.Vector3();
     this._glideTgtOff = new THREE.Vector3();
     this._glideT = 0;
+    this._rewindTrail = false;   // next backward-time step is a rewind: keep the trail, don't wipe it
 
     // When the mobile control sheet covers the lower part of the screen, we
     // lens-shift the projection upward so the rider stays framed in the strip
@@ -751,6 +752,7 @@ export class World {
     this._glideTgtOff.subVectors(this.controls.target, this.prevBoardPos);
     this._glideT = 0;
     this._glideActive = true;
+    this._rewindTrail = true;   // truncate the trail to the rewound spot instead of wiping it
   }
 
   // Vertical framing offset (fraction of viewport height): positive lifts the
@@ -880,13 +882,31 @@ export class World {
     const tx = bx - fx * 1.25, tz = bz - fz * 1.25;
     const cur = new THREE.Vector3(tx, 0.12, tz);
 
-    // Reset detection: sim.reset() rewinds the clock to 0. Keying the wipe on the
-    // clock (not on distance) means normal sailing — including the metres a board
-    // drifts while crashed — never falsely erases the trail.
+    // Backward clock = a rewind or a reset. Keying on the clock (not distance)
+    // means normal sailing — including the metres a board drifts while crashed —
+    // never falsely erases the trail.
     if (this.trailPrevT !== undefined && state.t < this.trailPrevT - 0.001) {
-      this.trailPts.length = 0;
-      this.trailSmooth.length = 0;
-      this.trailLast = null;
+      if (this._rewindTrail && this.trailPts.length) {
+        // Rewind: we jumped back to a spot the board already sailed, so the line
+        // up to there is still valid — keep it and drop only the part after it.
+        // Find the trail sample nearest the (rewound) tail and cut there, so the
+        // board rejoins the middle of its own trace instead of starting fresh.
+        let bi = 0, bd = Infinity;
+        for (let i = 0; i < this.trailPts.length; i++) {
+          const p = this.trailPts[i];
+          const d = (p.x - cur.x) * (p.x - cur.x) + (p.z - cur.z) * (p.z - cur.z);
+          if (d < bd) { bd = d; bi = i; }
+        }
+        this.trailPts.length = bi + 1;
+        this.trailLast = new THREE.Vector3(this.trailPts[bi].x, 0.12, this.trailPts[bi].z);
+        this.#rebuildTrailSmooth();
+      } else {
+        // Reset (R): full restart at the origin — wipe the trace.
+        this.trailPts.length = 0;
+        this.trailSmooth.length = 0;
+        this.trailLast = null;
+      }
+      this._rewindTrail = false;
     }
     this.trailPrevT = state.t;
 
