@@ -1,10 +1,20 @@
 # 🏄 Windsurf Simulator
 
-A 3D browser game that teaches the real mechanics of windsurfing. You control the same
+A 3D browser game that teaches the **real mechanics of windsurfing**. You control the same
 levers a real windsurfer has — sheet angle, mast rake, foot stance, body lean, daggerboard,
-harness — and the board responds the way a real one would.
+harness — and the board responds the way a real one would. No rudder, no arcade shortcuts:
+you steer by trimming the sail, you plane when the physics say you can, and you get catapulted
+when you get greedy with the power.
 
-## Run it
+**▶ Play it in your browser: <https://viachm.github.io/windsurf-simulator/>**
+
+It's a static, no-build web app (three.js + vanilla JS). Nothing to install to play — just
+open the link. Works on desktop and touch/mobile, in 20 UI languages.
+
+> ⚠️ It's a *learning toy*, not a certified trainer. The physics are a faithful simplification
+> meant to build intuition, not to replace time on the water.
+
+## Run it locally
 
 Any static server works. From this directory:
 
@@ -50,14 +60,45 @@ and explain why in the hint bar.
 
 ## Language
 
-English and Ukrainian (Українська). Use the language button in the bottom-left
-corner to switch; the choice is remembered in `localStorage`. All strings live in
-`src/i18n.js` — add a new language by adding another entry to `STRINGS`.
+**20 languages**: English, Українська, Deutsch, Français, Español, Italiano, Português,
+Nederlands, Polski, Čeština, Svenska, Dansk, Suomi, Ελληνικά, Türkçe, Bahasa Indonesia,
+Русский, 中文, 日本語, 한국어. The app picks your browser language on first load; the
+button in the bottom-left corner switches it, and the choice is remembered in `localStorage`.
+
+All strings live in `src/i18n.js` — add a language by adding another entry to `STRINGS`.
+English and Ukrainian are hand-written; the other 18 are AI-translated and not yet
+reviewed by native speakers, so corrections via pull request are very welcome.
 
 ## Files
 
 - `src/sim.js` — physics: apparent wind, sail lift curve, points of sail, planing, balance, crashes
 - `src/world.js` — three.js scene: sea shader, wind streaks, board/rig/sailor, splash & wake
 - `src/ui.js` — control panel, interlock rules, HUD meters, compass
+- `src/i18n.js` — translation tables (20 languages) + language toggle
+- `src/demo.js` — the guided auto-sailing demo tour
 - `src/main.js` — game loop
-- `src/i18n.js` — translation tables (EN/UK) + language toggle
+
+## Built with
+
+- [three.js](https://threejs.org/) (r160, via CDN) for the WebGL scene
+- Plain ES modules — **no build step, no bundler, no framework**. Edit a file, reload the page.
+- Deployed as static files on GitHub Pages.
+
+## Contributing
+
+Issues and pull requests are welcome — especially:
+
+- **Translation fixes** for any of the 18 AI-translated languages (see `src/i18n.js`).
+- Physics tweaks that make a mechanic feel more true to life.
+
+There's no build to run; open `index.html` through any static server and edit.
+
+## License
+
+Released under the [MIT License](LICENSE) — free to use, modify, and build on,
+including in commercial projects. The only condition is to keep the copyright
+notice. Do whatever you like with it; a mention is appreciated but not required.
+
+## Author
+
+Made by **Viacheslav Mukha**, with help from Claude (Anthropic).
