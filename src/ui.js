@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange } from './i18n.js?b=3';
-import { DemoDirector } from './demo.js?b=3';
+import { t, setLang, getLang, onLangChange } from './i18n.js?b=4';
+import { DemoDirector } from './demo.js?b=4';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -54,6 +54,14 @@ export class UI {
     this.keysHeld = new Set();
     this.flash = { msg: '', until: 0 };
 
+    // rewind history: a ring buffer of recent states so the Rewind button can
+    // jump the board back a few seconds (or to the start of the last maneuver).
+    this._history = [];
+    this._histMax = 6;        // seconds of history kept
+    this._curManStart = null; // sim time the currently-active maneuver began
+    this._prevManActive = false;
+    this.paused = false;      // pause button: freezes the whole sim (see main.js)
+
     // guided demo: an auto-tour director that steers while autotrim flies the rig
     this.demo = new DemoDirector(sim, this);
     this.demo.onCaption = (text) => this.#showCaption(text);
@@ -61,6 +69,7 @@ export class UI {
 
     this.#bindPanel();
     this.#bindSettings();
+    this.#bindRewind();
     this.#bindDemo();
     this.#bindKeys();
     this.#bindCrashHold();
@@ -247,6 +256,121 @@ export class UI {
     this.#refreshWindReadout();
   }
 
+  // ---------------- rewind + pause (demo-only transport) ----------------
+  #bindRewind() {
+    const rw = $('rewind-toggle');
+    if (rw) rw.addEventListener('click', (e) => { e.stopPropagation(); this.rewind(); });
+    const pz = $('pause-toggle');
+    if (pz) pz.addEventListener('click', (e) => { e.stopPropagation(); this.setPaused(!this.paused); });
+  }
+
+  // Freeze / resume the whole simulation (main.js skips its update while paused).
+  // The button toggles between the ⏸ pause and ▶ play glyphs.
+  setPaused(on) {
+    this.paused = !!on;
+    const btn = $('pause-toggle');
+    if (btn) {
+      btn.classList.toggle('paused', this.paused);
+      const path = btn.querySelector('svg path');
+      if (path) path.setAttribute('d', this.paused
+        ? 'M8 5v14l11-7z'                    // ▶ resume
+        : 'M6 5h4v14H6zM14 5h4v14h-4z');      // ⏸ pause
+      btn.title = this.paused ? t('resume.title') : t('pause.title');
+    }
+    if (this.paused) this.flashMsg(t('pause.flash'));
+  }
+
+  // Record one restorable frame of state. Called every frame from updateHUD with
+  // the fresh sim state, so the Rewind button always has ~6s of history to jump
+  // back through.
+  #recordHistory(st) {
+    if (!st || st.crashed) return;   // don't record while splashed (a rewind un-crashes)
+    // track when the current maneuver began, so we can rewind to its start
+    if (st.maneuver && !this._prevManActive) this._curManStart = st.t;
+    if (!st.maneuver) this._curManStart = null;
+    this._prevManActive = !!st.maneuver;
+
+    this._history.push({
+      t: st.t,
+      pos: { x: st.pos.x, z: st.pos.z },
+      heading: st.heading, v: st.v, u: st.u, yawVel: st.yawVel,
+      planing: st.planing,
+      manActive: !!st.maneuver,
+      manStart: st.maneuver ? this._curManStart : null,
+      inputs: {
+        sheetDeg: st.inputs.sheetDeg, rake: st.inputs.rake, stance: st.inputs.stance,
+        lean: st.inputs.lean, dagger: st.inputs.dagger, harness: st.inputs.harness,
+      },
+    });
+    // drop anything older than the retained window
+    const cutoff = st.t - this._histMax;
+    while (this._history.length && this._history[0].t < cutoff) this._history.shift();
+  }
+
+  // Jump the board back in time: to ~3s ago, or — if a tack/gybe happened in the
+  // last few seconds — to the START of that maneuver, but never further back than
+  // 4s. Un-crashes if we were splashed. The trail redraws itself (world.js clears
+  // it whenever sim time steps backwards).
+  rewind() {
+    const buf = this._history;
+    if (buf.length < 2) return;
+    const now = buf[buf.length - 1].t;
+    const floor = now - 4;
+
+    // most recent maneuver start inside the window (its start time is stored)
+    let manStart = null;
+    for (let i = buf.length - 1; i >= 0; i--) {
+      if (now - buf[i].t > 4.5) break;
+      if (buf[i].manActive) { manStart = buf[i].manStart; break; }
+    }
+
+    let target = manStart != null ? manStart : now - 3;
+    target = Math.max(floor, Math.min(target, now - 0.4));
+
+    // pick the buffered frame closest to the target time
+    let best = buf[0], bestI = 0;
+    for (let i = 0; i < buf.length; i++) {
+      if (Math.abs(buf[i].t - target) < Math.abs(best.t - target)) { best = buf[i]; bestI = i; }
+    }
+
+    this.#applyRewind(best);
+    buf.length = bestI + 1;         // future frames are gone; next rewind steps further back
+    this._prevManActive = false;
+    this._curManStart = null;
+
+    const btn = $('rewind-toggle');
+    if (btn) { btn.classList.add('pulse'); setTimeout(() => btn.classList.remove('pulse'), 140); }
+    this.flashMsg(t('rewind.flash'));
+  }
+
+  #applyRewind(e) {
+    const s = this.sim;
+    s.t = e.t;
+    s.pos = { x: e.pos.x, z: e.pos.z };
+    s.heading = e.heading;
+    s.v = e.v; s.u = e.u; s.yawVel = e.yawVel;
+    s.planing = e.planing;
+    // land on a clean course: no partial turn, no crash, no built-up hazard
+    s.maneuver = null;
+    s.crashed = false; s.crashReason = ''; s.crashLesson = ''; s.crashTimer = 0; s.recoverHold = false;
+    s.stuckInIrons = false;
+    s.acc = { catapult: 0, backFall: 0, spinout: 0, pearl: 0 };
+
+    // restore the control positions to that moment (autotrim/demo re-derive the
+    // rig next frame; rake is the one the autopilot leaves to us, so it matters).
+    this.inputs.sheetDeg = e.inputs.sheetDeg;
+    this.inputs.lean = e.inputs.lean;
+    this.inputs.dagger = e.inputs.dagger;
+    this.inputs.harness = e.inputs.harness;
+    this.inputs.stance = e.inputs.stance;
+    this.setRake(e.inputs.rake);
+    $('sheet').value = e.inputs.sheetDeg;
+    $('lean').value = Math.round(e.inputs.lean);
+    $('dagger').checked = e.inputs.dagger;
+    $('harness').checked = e.inputs.harness;
+    for (const b of $('stance-seg').children) b.classList.toggle('active', b.dataset.stance === e.inputs.stance);
+  }
+
   // ---------------- guided demo ----------------
   #bindDemo() {
     const panel = $('demo-panel');
@@ -292,6 +416,10 @@ export class UI {
   #setDemoState(mode) {
     const btn = $('demo-toggle');
     btn.classList.toggle('running', !!mode);
+    // the rewind + pause buttons live only inside a demo; leaving a demo also
+    // lifts any pause (their only un-pause control would otherwise vanish).
+    $('top-buttons').classList.toggle('demo-on', !!mode);
+    if (!mode && this.paused) this.setPaused(false);
     const path = btn.querySelector('svg path');
     const label = btn.querySelector('.demo-btn-label');
     if (mode) {
@@ -306,7 +434,6 @@ export class UI {
     for (const b of $('demo-panel').querySelectorAll('.demo-mode')) {
       b.classList.toggle('active', b.dataset.mode === mode);
     }
-    $('demo-tag').textContent = mode ? t(`demo.mode.${mode}`) : '';
   }
 
   // The demo narration reuses the SAME slot as every other transient message —
@@ -327,7 +454,7 @@ export class UI {
   #positionAbovePanel(el) {
     if (this.#isMobile()) {
       const panelTop = $('panel').getBoundingClientRect().top;
-      el.style.bottom = `${Math.round(innerHeight - panelTop + 10)}px`;
+      el.style.bottom = `${Math.round(innerHeight - panelTop + 4)}px`;
     } else {
       el.style.bottom = '';
     }
@@ -622,6 +749,7 @@ export class UI {
 
   // ---------------- HUD ----------------
   updateHUD(st) {
+    this.#recordHistory(st);
     const unit = this.#unitLabel();
     $('speed-val').textContent = this.#conv(st.speedKn).toFixed(1);
     $('speed-unit').textContent = unit;

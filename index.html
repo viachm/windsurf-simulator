@@ -21,6 +21,18 @@
 
     <!-- Top-right buttons: guided demo + settings (units, language, how-to) -->
     <div id="top-buttons">
+      <button id="rewind-toggle" class="demo-only" title="rewind" data-i18n-title="rewind.title" aria-label="rewind">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 4v6h6" />
+          <path d="M3.5 10a9 9 0 1 1-1.1 5" />
+        </svg>
+      </button>
+      <button id="pause-toggle" class="demo-only" title="pause" data-i18n-title="pause.title" aria-label="pause">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none" aria-hidden="true">
+          <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+        </svg>
+      </button>
       <button id="demo-toggle" title="guided demo / демо-тур" aria-label="guided demo">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="none" aria-hidden="true">
           <path d="M8 5v14l11-7z" />
@@ -117,7 +129,6 @@
 
     <!-- Demo narration banner (what the board is demonstrating right now) -->
     <div id="demo-caption" class="off">
-      <span id="demo-tag"></span>
       <span id="demo-cap"></span>
     </div>
 
@@ -278,6 +289,6 @@
     <div id="help-note" data-i18n="help.note">drag to orbit the camera · scroll to zoom</div>
   </div>
 
-  <script type="module" src="src/main.js?b=3"></script>
+  <script type="module" src="src/main.js?b=4"></script>
 </body>
 </html>

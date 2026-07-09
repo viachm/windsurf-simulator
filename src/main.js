@@ -1,7 +1,7 @@
-import { WindsurfSim } from './sim.js?b=3';
-import { World } from './world.js?b=3';
-import { UI } from './ui.js?b=3';
-import { t, applyStatic } from './i18n.js?b=3';
+import { WindsurfSim } from './sim.js?b=4';
+import { World } from './world.js?b=4';
+import { UI } from './ui.js?b=4';
+import { t, applyStatic } from './i18n.js?b=4';
 
 applyStatic(); // localise the static markup for the saved/default language
 
@@ -13,6 +13,10 @@ let last = performance.now();
 let wasCrashed = false;
 
 function frame(now) {
+  // Pause button: freeze everything. Keep `last` current so resuming doesn't
+  // integrate one giant catch-up step.
+  if (ui.paused) { last = now; requestAnimationFrame(frame); return; }
+
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
 

@@ -152,6 +152,11 @@ export const STRINGS = {
     // --- guided demo ---
     'demo.btn': 'DEMO',
     'demo.stopbtn': 'STOP',
+    'rewind.title': 'Rewind — jump back a few seconds (or to the start of the last turn)',
+    'rewind.flash': 'Rewound a few seconds',
+    'pause.title': 'Pause — freeze everything',
+    'resume.title': 'Resume',
+    'pause.flash': 'Paused',
     'demo.title': 'GUIDED DEMO',
     'demo.intro': 'Sit back — the board sails a teaching route on its own, working every control. Touch anything to take over.',
     'demo.mode.beginner': 'Beginner lesson',
@@ -326,6 +331,11 @@ export const STRINGS = {
     // --- guided demo ---
     'demo.btn': 'ДЕМО',
     'demo.stopbtn': 'СТОП',
+    'rewind.title': 'Назад — перемотати на кілька секунд (або на початок останнього повороту)',
+    'rewind.flash': 'Перемотано на кілька секунд',
+    'pause.title': 'Пауза — зупинити все',
+    'resume.title': 'Продовжити',
+    'pause.flash': 'Пауза',
     'demo.title': 'ДЕМО-ТУР',
     'demo.intro': 'Відкиньтеся — дошка сама пройде навчальний маршрут і покаже роботу всіх керувань. Торкніться будь-чого, щоб перехопити.',
     'demo.mode.beginner': 'Урок для новачка',
