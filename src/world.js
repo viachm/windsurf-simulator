@@ -781,7 +781,18 @@ export class World {
     const crashed = state.crashed;
 
     // stance -> fore/aft feet placement (board local: nose +Z, mast foot at z=0.45)
-    const stanceZ = { front: 0.1, mid: -0.4, back: -0.85 }[state.inputs.stance || 'mid'];
+    let stanceZ = { front: 0.1, mid: -0.4, back: -0.85 }[state.inputs.stance || 'mid'];
+    // During a tack the rider steps FORWARD around the front of the mast, then
+    // crosses to the new side — an arc around the mast foot, not a straight
+    // sideways slide. The step peaks at the crossover and eases back to stance.
+    // (A gybe walks a smaller arc, staying more aft.)
+    const m = state.maneuver;
+    let stepUp = 0;
+    if (m && m.phase === 'turn' && !crashed) {
+      const arc = Math.sin(Math.PI * (m.turn01 || 0));    // 0 at the ends, 1 at crossover
+      stanceZ += (m.type === 'tack' ? 0.62 : 0.30) * arc; // toward the nose / mast foot
+      stepUp = 0.06 * arc;                                // light weight-shift bob as he steps
+    }
     const lean = crashed ? 0.1 : (state.inputs.lean || 0) / 100;
 
     const deckY = 0.27;
@@ -790,7 +801,7 @@ export class World {
     const fBack = new THREE.Vector3(footX * 1.2, deckY, stanceZ - 0.25);
 
     // pelvis: above feet, offset to windward as the rider hikes out
-    const hipHeight = 0.85 - lean * 0.25;
+    const hipHeight = 0.85 - lean * 0.25 + stepUp;
     const hipOut = side * (0.1 + lean * 0.55);
     const pelvis = new THREE.Vector3(footX + hipOut, deckY + hipHeight, stanceZ);
     const chest = new THREE.Vector3(footX + hipOut * 1.5, pelvis.y + 0.5 - lean * 0.1, stanceZ + 0.12);
