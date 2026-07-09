@@ -297,17 +297,29 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #demo-cap { font-size: 13px; line-height: 1.4; color: var(--text); }
 
 /* ---------- settings popover ---------- */
+/* Settings is a full-screen centred modal (same pattern as #about-overlay):
+   a dim backdrop + a card. #settings-panel is the backdrop, #settings-card the card. */
 #settings-panel {
-  position: absolute; right: 366px; top: 52px; width: 260px; z-index: 30;
-  background: var(--panel-bg); border: 1px solid var(--panel-border);
-  border-radius: 12px; color: var(--text); backdrop-filter: blur(8px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.4); overflow: hidden;
+  position: absolute; inset: 0; z-index: 31;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(4, 16, 28, 0.55);
 }
 #settings-panel.off { display: none; }
+#settings-card {
+  width: 300px; max-width: calc(100% - 48px); max-height: calc(100% - 48px);
+  overflow-y: auto; color: var(--text);
+  background: var(--panel-bg); border: 1px solid var(--accent);
+  border-radius: 16px; backdrop-filter: blur(10px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+}
 .settings-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 10px 14px; font-size: 11px; letter-spacing: 2px; color: var(--accent);
   border-bottom: 1px solid var(--panel-border);
+}
+/* keep the title + close button pinned while a long settings list scrolls */
+#settings-card .settings-header {
+  position: sticky; top: 0; background: var(--panel-bg); z-index: 1;
 }
 #settings-close {
   background: none; border: 1px solid var(--panel-border); color: var(--text);
@@ -581,10 +593,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   #settings-toggle svg { width: 19px; height: 19px; }
   #pause-toggle { padding: 0 11px; height: 38px; border-radius: 10px; }
   #pause-toggle svg { width: 18px; height: 18px; }
-  #settings-panel {
-    right: 8px; top: calc(50px + env(safe-area-inset-top));
-    width: min(240px, calc(100vw - 16px));
-  }
+  /* #settings-panel is a full-screen modal on every viewport (base rule) — no
+     mobile-specific positioning needed. */
 
   /* demo button: icon-only to fit the tight top-right cluster */
   #demo-toggle { padding: 0 11px; height: 38px; border-radius: 10px; gap: 0; }

@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=35';
-import { DemoDirector } from './demo.js?b=35';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=37';
+import { DemoDirector } from './demo.js?b=37';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -247,10 +247,8 @@ export class UI {
       panel.classList.contains('off') ? open() : close();
     });
     $('settings-close').addEventListener('click', close);
-    // tap outside the popover closes it
-    addEventListener('click', (e) => {
-      if (!panel.classList.contains('off') && !panel.contains(e.target) && !btn.contains(e.target)) close();
-    });
+    // click the dim backdrop (outside the card) closes it — same as the About modal
+    panel.addEventListener('click', (e) => { if (e.target === panel) close(); });
 
     $('units-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
