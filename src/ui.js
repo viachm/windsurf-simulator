@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange } from './i18n.js?b=14';
-import { DemoDirector } from './demo.js?b=14';
+import { t, setLang, getLang, onLangChange } from './i18n.js?b=15';
+import { DemoDirector } from './demo.js?b=15';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -874,12 +874,16 @@ export class UI {
     trimEl.textContent = { luff: t('trim.luff'), good: t('trim.good'), stall: t('trim.stall') }[st.trim] || '';
     trimEl.className = st.trim;
 
-    // balance meter: band = required lean (with tolerance), diamond = effective lean
+    // balance meter: band = required lean (with tolerance), diamond = effective
+    // lean. Both are clamped to the track, so a very high required lean (strong
+    // wind) pegs the band at the right edge instead of spilling out of the meter.
     const req = Math.min(1.25, st.required01 || 0);
     const band = $('required-band');
-    band.style.left = `${Math.max(0, (req - 0.3) / 1.3) * 100}%`;
-    band.style.width = `${(0.6 / 1.3) * 100}%`;
-    $('lean-marker').style.left = `${Math.min(1.3, st.eff01 || 0) / 1.3 * 100}%`;
+    const bandW = (0.6 / 1.3) * 100;                             // fixed tolerance width
+    const bandLeft = Math.max(0, (req - 0.3) / 1.3) * 100;
+    band.style.left = `${Math.min(bandLeft, 100 - bandW)}%`;     // keep the band inside the track
+    band.style.width = `${bandW}%`;
+    $('lean-marker').style.left = `${Math.min(1, Math.max(0, (st.eff01 || 0) / 1.3)) * 100}%`;
     $('lean-marker').style.background = st.danger > 0.4 ? '#ff7043' : '#4fc3f7';
 
     // hint bar: sim coaching warnings (flash/interlock messages go to the toast).
