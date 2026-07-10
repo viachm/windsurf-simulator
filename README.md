@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/icon.png" width="120" alt="Windsurf Simulator app icon" />
+</p>
+
 # 🏄 Windsurf Simulator
 
 A 3D browser game that teaches the **real mechanics of windsurfing**. You control the same

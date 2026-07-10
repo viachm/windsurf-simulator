@@ -1,7 +1,7 @@
-import { WindsurfSim } from './sim.js?b=39';
-import { World } from './world.js?b=39';
-import { UI } from './ui.js?b=39';
-import { t, applyStatic } from './i18n.js?b=39';
+import { WindsurfSim } from './sim.js?b=40';
+import { World } from './world.js?b=40';
+import { UI } from './ui.js?b=40';
+import { t, applyStatic } from './i18n.js?b=40';
 
 applyStatic(); // localise the static markup for the saved/default language
 
