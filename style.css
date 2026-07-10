@@ -3,7 +3,7 @@
 :root {
   --panel-bg: rgba(10, 25, 40, 0.82);
   --panel-border: rgba(120, 200, 255, 0.25);
-  --sidebar-w: 442px;   /* desktop right column; the sea is everything left of it */
+  --sidebar-w: 486px;   /* desktop right column; the sea is everything left of it */
   --accent: #4fc3f7;
   --accent2: #ffd54f;
   --danger: #ff7043;
@@ -413,6 +413,17 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   border-radius: 6px; width: 22px; height: 22px; cursor: pointer; font-size: 14px; line-height: 1;
 }
 #panel-body { padding: 11px 15px 12px; }
+
+/* Desktop only: the control panel grows to the bottom of the sidebar and its
+   rows spread out to fill the height — a bit more breathing room per row. */
+@media (min-width: 769px) {
+  #panel { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+  #panel-body {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: space-between; gap: 6px;
+  }
+  #panel-body .ctl { margin-bottom: 0; }   /* spacing comes from gap + space-between */
+}
 #panel.collapsed #panel-body { display: none; }
 
 .ctl { margin-bottom: 11px; }
