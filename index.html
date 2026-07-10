@@ -25,9 +25,13 @@
   <meta name="description" content="A free 3D browser game that teaches real windsurfing physics. Trim the sail, read the apparent wind, get planing, and avoid the catapult — no install, 20 languages, works on mobile." />
   <meta name="keywords" content="windsurf simulator, windsurfing game, learn windsurfing, sailing physics, sail trim, planing, apparent wind, points of sail, 3d browser game, watersports" />
   <meta name="author" content="Viacheslav Mukha" />
-  <meta name="robots" content="index, follow" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
   <meta name="theme-color" content="#0a2540" />
   <link rel="canonical" href="https://windsurfsimulator.com/" />
+
+  <!-- Warm the CDN that serves three.js so the first paint isn't blocked on DNS/TLS -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
 
   <!-- Open Graph (Facebook, Telegram, Discord, LinkedIn…) -->
   <meta property="og:type" content="website" />
@@ -38,13 +42,34 @@
   <meta property="og:image" content="https://windsurfsimulator.com/og-cover.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="A windsurfer planing on a beam reach, shown on a phone with the full instrument HUD" />
   <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="uk_UA" />
+  <meta property="og:locale:alternate" content="de_DE" />
+  <meta property="og:locale:alternate" content="fr_FR" />
+  <meta property="og:locale:alternate" content="es_ES" />
+  <meta property="og:locale:alternate" content="it_IT" />
+  <meta property="og:locale:alternate" content="pt_PT" />
+  <meta property="og:locale:alternate" content="nl_NL" />
+  <meta property="og:locale:alternate" content="pl_PL" />
+  <meta property="og:locale:alternate" content="cs_CZ" />
+  <meta property="og:locale:alternate" content="sv_SE" />
+  <meta property="og:locale:alternate" content="da_DK" />
+  <meta property="og:locale:alternate" content="fi_FI" />
+  <meta property="og:locale:alternate" content="el_GR" />
+  <meta property="og:locale:alternate" content="tr_TR" />
+  <meta property="og:locale:alternate" content="id_ID" />
+  <meta property="og:locale:alternate" content="ru_RU" />
+  <meta property="og:locale:alternate" content="zh_CN" />
+  <meta property="og:locale:alternate" content="ja_JP" />
+  <meta property="og:locale:alternate" content="ko_KR" />
 
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Windsurf Simulator — Free 3D Windsurfing Physics Game" />
   <meta name="twitter:description" content="Learn real windsurfing physics in your browser. Trim the sail, get planing, avoid the catapult. Free, no install, 20 languages." />
   <meta name="twitter:image" content="https://windsurfsimulator.com/og-cover.png" />
+  <meta name="twitter:image:alt" content="A windsurfer planing on a beam reach, shown on a phone with the full instrument HUD" />
 
   <!-- Structured data: tells Google this is a free, playable game -->
   <script type="application/ld+json">
@@ -55,13 +80,18 @@
     "url": "https://windsurfsimulator.com/",
     "description": "A free 3D browser game that teaches real windsurfing physics: sail trim, apparent wind, points of sail, planing, and balance.",
     "image": "https://windsurfsimulator.com/og-cover.png",
-    "author": { "@type": "Person", "name": "Viacheslav Mukha" },
+    "screenshot": "https://windsurfsimulator.com/og-cover.png",
+    "author": { "@type": "Person", "name": "Viacheslav Mukha", "url": "https://github.com/viachm" },
+    "sameAs": ["https://github.com/viachm/windsurf-simulator"],
     "genre": ["Simulation", "Sports", "Educational"],
     "gamePlatform": "Web browser",
     "applicationCategory": "Game",
     "operatingSystem": "Any (web browser)",
+    "browserRequirements": "Requires JavaScript and WebGL",
     "inLanguage": ["en", "uk", "de", "fr", "es", "it", "pt", "nl", "pl", "cs", "sv", "da", "fi", "el", "tr", "id", "ru", "zh", "ja", "ko"],
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    "datePublished": "2026-07-08",
+    "dateModified": "2026-07-10",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" }
   }
   </script>
 
