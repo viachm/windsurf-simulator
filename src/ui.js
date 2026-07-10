@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=64';
-import { DemoDirector } from './demo.js?b=64';
-import { track, trackDebounced } from './analytics.js?b=64';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=65';
+import { DemoDirector } from './demo.js?b=65';
+import { track, trackDebounced } from './analytics.js?b=65';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -699,6 +699,9 @@ export class UI {
     this.inputs.autotrim = false;
     $('autotrim').checked = false;
     this.flashMsg(t('flash.manual'));
+    // grabbing a control is the main way people leave the beginner autopilot —
+    // count it too, or `assist {on:false}` only ever sees the explicit checkbox.
+    track('assist', { on: false });
   }
 
   // Transient toast explaining why an action was blocked (or a state change).
