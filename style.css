@@ -424,6 +424,8 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   #panel-body .ctl:last-child { margin-bottom: 0; }
   /* wind icon on the TRUE WIND label, like the mobile wind fader */
   #wind-ctl .ctl-label::before { content: "💨"; font-size: 13px; line-height: 1; }
+  /* the SPLASH! crash card centres in the SEA (viewport minus the sidebar), like the boat */
+  #crash-overlay { padding-right: var(--sidebar-w); }
 }
 #panel.collapsed #panel-body { display: none; }
 
