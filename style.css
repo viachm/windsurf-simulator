@@ -50,7 +50,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   position: absolute; top: 0; right: 0; bottom: 0; width: var(--sidebar-w); z-index: 20;
   display: flex; flex-direction: column; gap: 8px;
   padding: 14px;                    /* demo/settings live on the sea, left of here */
-  overflow: hidden;                 /* everything is sized to fit — no scroll */
+  overflow-y: auto; overflow-x: hidden;   /* natural height; only scrolls if a short screen can't fit it */
 }
 
 /* Desktop: HUD lives at the top of the right sidebar — speed/wind/point-of-sail
@@ -416,15 +416,12 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 #panel-body { padding: 11px 15px 12px; }
 
-/* Desktop only: the control panel grows to the bottom of the sidebar and its
-   rows spread out to fill the height — a bit more breathing room per row. */
+/* Desktop only: the panel sits at its natural height (it does NOT stretch to the
+   bottom — that made huge gaps on tall screens). Each row gets a fixed, roomy
+   spacing instead, the same on every screen size. */
 @media (min-width: 769px) {
-  #panel { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-  #panel-body {
-    flex: 1; display: flex; flex-direction: column;
-    justify-content: space-between; gap: 6px;
-  }
-  #panel-body .ctl { margin-bottom: 0; }   /* spacing comes from gap + space-between */
+  #panel-body .ctl { margin-bottom: 15px; }
+  #panel-body .ctl:last-child { margin-bottom: 0; }
   /* wind icon on the TRUE WIND label, like the mobile wind fader */
   #wind-ctl .ctl-label::before { content: "💨"; font-size: 13px; line-height: 1; }
 }
@@ -456,7 +453,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
 .seg { display: flex; gap: 4px; }
 .seg button {
   flex: 1; background: rgba(255,255,255,0.06); color: var(--text-dim);
-  border: 1px solid var(--panel-border); border-radius: 6px; padding: 8px 3px;
+  border: 1px solid var(--panel-border); border-radius: 6px; padding: 11px 3px;
   font-size: 11.5px; cursor: pointer; font-family: inherit;
 }
 .seg button:hover { background: rgba(255,255,255,0.12); }
@@ -468,10 +465,12 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   padding: 5px 0; user-select: none;
 }
 .toggle-row input { accent-color: var(--accent); width: 17px; height: 17px; }
-/* Autopilot rides on the SAIL SHEET label line, pushed to the right (same as mobile). */
 .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .sheet-head .ctl-label { margin-bottom: 0; flex: 0 1 auto; min-width: 0; }
 #autotrim-row { font-size: 14px; flex: none; padding: 0; white-space: nowrap; }   /* Autopilot label a touch larger than the rest */
+/* Autopilot is its own row at the very top of the panel, set off from the manual
+   controls below it. */
+#autotrim-ctl { border-bottom: 1px solid var(--panel-border); padding-bottom: 10px; }
 /* Daggerboard (left) + Harness (right) share one row, spread to the edges so
    the free space on the right is used instead of stacking them. Slightly
    smaller so both labels — incl. the long ones (uk "Зачепитися в трапецію") —
@@ -486,7 +485,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
 .btn-row { display: flex; gap: 6px; }
 .action-btn {
   flex: 1; background: rgba(79, 195, 247, 0.15); border: 1px solid var(--accent);
-  color: var(--accent); border-radius: 8px; padding: 10px 4px; font-size: 13px;
+  color: var(--accent); border-radius: 8px; padding: 13px 4px; font-size: 13px;
   font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 1px;
 }
 .action-btn:hover { background: rgba(79, 195, 247, 0.3); }
