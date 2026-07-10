@@ -161,6 +161,8 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 #about-card .w-title { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--accent); margin-bottom: 16px; }
 .about-app { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 0 2px; }
+/* Light chip so the colored (transparent-bg) windsurfer mark reads on the dark card */
+.about-app img { background: linear-gradient(#f4faff, #d7eefb); border-radius: 12px; padding: 4px; }
 .about-app-name { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
 .about-tagline { margin: 8px 0 18px; color: var(--text-dim); }
 .about-author { display: flex; flex-direction: column; gap: 3px; margin: 4px 0 14px; }
