@@ -24,8 +24,9 @@ function hreflangBlock(indent = '  ') {
 function buildPage(tpl, lang) {
   const L = L10N[lang];
   const tag = tagOf(lang);
-  const title = esc(`${L.docTitle} — ${stripEnd(tag)}`);
-  const desc = esc(tag);
+  const title = esc(`${L.docTitle} — ${stripEnd(tag)}`); // SEO <title> (keyword-rich)
+  const ogTitle = esc(L.docTitle);                        // social card title = app name only
+  const desc = esc(tag);                                  // social description = the tagline
   const url = `${ORIGIN}/${lang}/`;
   const img = `${ORIGIN}/og/og-cover-${lang}.png?v=3`;
   let h = tpl;
@@ -35,7 +36,7 @@ function buildPage(tpl, lang) {
   h = h.replace(/(<meta name="description" content=")[^"]*(")/, `$1${desc}$2`);
   h = h.replace('<link rel="canonical" href="https://windsurfsimulator.com/" />',
     `<link rel="canonical" href="${url}" />\n${hreflangBlock()}`);
-  h = h.replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${title}$2`);
+  h = h.replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${ogTitle}$2`);
   h = h.replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${desc}$2`);
   h = h.replace('<meta property="og:url" content="https://windsurfsimulator.com/" />',
     `<meta property="og:url" content="${url}" />`);
@@ -43,7 +44,7 @@ function buildPage(tpl, lang) {
   h = h.replace(/(<meta property="og:image:alt" content=")[^"]*(")/, `$1${desc}$2`);
   h = h.replace('<meta property="og:locale" content="en_US" />',
     `<meta property="og:locale" content="${L.ogLocale}" />`);
-  h = h.replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${title}$2`);
+  h = h.replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${ogTitle}$2`);
   h = h.replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${desc}$2`);
   h = h.replace(/(<meta name="twitter:image" content=")[^"]*(")/, `$1${img}$2`);
   h = h.replace(/(<meta name="twitter:image:alt" content=")[^"]*(")/, `$1${desc}$2`);
