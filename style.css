@@ -92,9 +92,9 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #planing-badge.on { display: inline-block; }
 @keyframes pulse { from { opacity: 0.75; } to { opacity: 1; } }
 .compass-box { padding: 4px; min-width: 0; display: flex; align-items: center; justify-content: center; }
-/* Radar fills the full height of the top section (HUD row + meters row) and stays
-   square, so it always fits perfectly no matter the meter/label sizes. */
-#compass { display: block; height: 100%; width: auto; aspect-ratio: 1 / 1; }
+/* Radar is sized in JS (#sizeRadar) to a square matching the HUD+meters column
+   height, so it fits perfectly with no leftover gap under the meters. */
+#compass { display: block; }
 
 /* ---------- meters ---------- */
 /* Desktop: SAIL POWER + BALANCE side by side, in the sidebar flow. */

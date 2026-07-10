@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=52';
-import { DemoDirector } from './demo.js?b=52';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=53';
+import { DemoDirector } from './demo.js?b=53';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -77,9 +77,11 @@ export class UI {
     this.compassCtx = $('compass').getContext('2d');
 
     // keep the framing centred if the viewport changes (rotate / URL bar)
-    addEventListener('resize', () => { this.#applyFramingLift(); this.#sizeWindFader(); });
+    addEventListener('resize', () => { this.#applyFramingLift(); this.#sizeWindFader(); this.#sizeRadar(); });
     // apply the desktop sidebar / mobile fader framing shift on first paint too
     this.#applyFramingShiftX();
+    // size the radar to the HUD+meters column once layout settles
+    requestAnimationFrame(() => this.#sizeRadar());
 
     // Static markup (incl. the windset readout) is re-templated on language
     // change; re-sync the readouts that aren't refreshed every frame.
@@ -87,6 +89,7 @@ export class UI {
       this.#refreshWindReadout();
       this.#syncLangButtons();
       this.demo.refresh();   // re-render the live caption in the new language
+      requestAnimationFrame(() => this.#sizeRadar());   // label lengths can change the row height
     });
   }
 
@@ -516,6 +519,24 @@ export class UI {
     if (!rightEl) { this.world.setFramingShiftX(0); return; }
     const rightInset = innerWidth - rightEl.getBoundingClientRect().left;
     this.world.setFramingShiftX(rightInset / innerWidth);
+  }
+
+  // Desktop: size the radar to an exact square matching the height of the HUD +
+  // meters column beside it, so it never sticks out below the meters (which
+  // would open a gap before the control panel). Measured from the two rows'
+  // own geometry so an oversized radar can't inflate what we read. Mobile keeps
+  // its fixed CSS size (inline styles cleared).
+  #sizeRadar() {
+    const c = $('compass');
+    if (!c) return;
+    if (this.#isMobile()) { c.style.width = ''; c.style.height = ''; return; }
+    const top = $('hud-top')?.getBoundingClientRect();
+    const met = $('meters')?.getBoundingClientRect();
+    if (!top || !met) return;
+    const contentH = met.bottom - top.top;      // HUD row + gap + meters row
+    const size = Math.max(40, Math.round(contentH - 8));   // minus .compass-box padding (4px×2)
+    c.style.width = `${size}px`;
+    c.style.height = `${size}px`;
   }
 
   // Press-and-hold the crash popup to read it: holding freezes the recovery
