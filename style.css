@@ -573,7 +573,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   /* Auto-trim rides on the SAIL SHEET label line instead of its own row */
   .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 3px; }
   .sheet-head .ctl-label { margin-bottom: 0; flex: 0 1 auto; min-width: 0; }
-  #autotrim-row { padding: 0; flex: none; font-size: 11px; white-space: nowrap; }
+  #autotrim-row { padding: 0; flex: none; font-size: 12px; white-space: nowrap; }
   .tr-note { display: none; }               /* "(sheets for you)" — desktop only */
 
   /* Daggerboard + Harness already share a row (base rule); nothing extra here. */
