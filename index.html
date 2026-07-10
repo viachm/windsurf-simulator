@@ -1,8 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <!-- The app ships its own 20-language UI. Setting <html lang> to the chosen
+       language makes Chrome offer to auto-translate the page back — and its
+       translator then fights the HUD, which mutates text ~60×/s, freezing the
+       tab. Tell the browser not to translate; we localise ourselves. -->
+  <meta name="google" content="notranslate" />
 
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-QZQ6CE9JLL"></script>
@@ -61,9 +66,9 @@
   </script>
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='100' height='100'><ellipse cx='50' cy='87' rx='31' ry='5.6' fill='%23ffd23f'/><path d='M50 11 Q87 40 72 82 L50 84 Z' fill='%23ff6b4d'/><path d='M50 16 Q72 40 65 78 L50 80 Z' fill='%23ff9a52'/><line x1='50' y1='9' x2='50' y2='85' stroke='%230a2540' stroke-width='3.4' stroke-linecap='round'/><g fill='none' stroke='%230a2540' stroke-linecap='round'><path d='M44 84 L45 62' stroke-width='7'/><path d='M56 84 L45 62' stroke-width='7'/><path d='M45 63 L37 44' stroke-width='7.5'/><path d='M38 47 L62 42' stroke-width='6'/><path d='M39 52 L62 49' stroke-width='6'/></g><circle cx='34.5' cy='38' r='7.3' fill='%230a2540'/></svg>" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=56" />
-  <link rel="manifest" href="site.webmanifest?b=56" />
-  <link rel="stylesheet" href="style.css?b=56" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=58" />
+  <link rel="manifest" href="site.webmanifest?b=58" />
+  <link rel="stylesheet" href="style.css?b=58" />
   <script type="importmap">
     {
       "imports": {
@@ -238,7 +243,7 @@
       <div id="about-card">
         <div class="w-title" data-i18n="about.title">ABOUT</div>
         <div class="about-app">
-          <img src="docs/app-icon.png?b=56" width="54" height="54" alt="" />
+          <img src="docs/app-icon.png?b=58" width="54" height="54" alt="" />
           <span class="about-app-name">Windsurf Simulator</span>
         </div>
         <p class="about-tagline" data-i18n="about.tagline">A 3D game about the real physics of windsurfing.</p>
@@ -298,7 +303,7 @@
         <!-- Meters -->
         <div id="meters">
           <div class="meter-block">
-            <div class="meter-title" data-i18n-html="meter.power">SAIL POWER <span id="trim-state"></span></div>
+            <div class="meter-title"><span data-i18n="meter.power">SAIL POWER</span><span id="planing-badge" data-i18n="meter.planing">PLANING!</span><span id="trim-state"></span></div>
             <div class="meter-track"><div class="meter-fill" id="power-fill"></div></div>
           </div>
           <div class="meter-block">
@@ -329,7 +334,7 @@
 
         <div class="ctl">
           <div class="sheet-head">
-            <div class="ctl-label" data-i18n-html="ctl.sheet">SAIL SHEET <span class="key-hint">W / S</span>
+            <div class="ctl-label"><span data-i18n="ctl.sheet">SAIL SHEET</span> <span class="key-hint">W / S</span>
               <span class="ctl-value" id="sheet-val">45°</span>
             </div>
           </div>
@@ -364,7 +369,7 @@
         </div>
 
         <div class="ctl">
-          <div class="ctl-label" data-i18n-html="ctl.lean">WINDWARD LEAN <span class="key-hint">Q / E</span>
+          <div class="ctl-label"><span data-i18n="ctl.lean">WINDWARD LEAN</span> <span class="key-hint">Q / E</span>
             <span class="ctl-value" id="lean-val">25%</span>
           </div>
           <input type="range" id="lean" min="0" max="100" value="25" step="1" />
@@ -389,7 +394,7 @@
         </div>
 
         <div class="ctl" id="wind-ctl">
-          <div class="ctl-label" data-i18n-html="ctl.truewind">TRUE WIND <span class="ctl-value" id="windset-val">14 kn</span></div>
+          <div class="ctl-label"><span data-i18n="ctl.truewind">TRUE WIND</span> <span class="ctl-value" id="windset-val">14 kn</span></div>
           <input type="range" id="windset" min="2" max="15" value="7" step="0.5" />
         </div>
 
@@ -406,9 +411,9 @@
        kills the English→localised flash. Its ?b token MUST stay in sync with
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script type="module">
-    import { applyStatic } from './src/i18n.js?b=56';
+    import { applyStatic } from './src/i18n.js?b=58';
     applyStatic();
   </script>
-  <script type="module" src="src/main.js?b=56"></script>
+  <script type="module" src="src/main.js?b=58"></script>
 </body>
 </html>

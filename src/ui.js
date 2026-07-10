@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=56';
-import { DemoDirector } from './demo.js?b=56';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=58';
+import { DemoDirector } from './demo.js?b=58';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -789,7 +789,7 @@ export class UI {
     const unit = this.#unitLabel();
     $('speed-val').textContent = this.#conv(st.speedKn).toFixed(1);
     $('speed-unit').textContent = unit;
-    $('planing-badge').classList.toggle('on', st.planing);
+    $('planing-badge')?.classList.toggle('on', st.planing);
     $('pos-val').textContent = st.maneuver
       ? (st.maneuver.type === 'tack' ? t('man.tacking') : t('man.gybing'))
       : t(st.pointOfSailKey);

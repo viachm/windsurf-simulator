@@ -1,7 +1,7 @@
-import { WindsurfSim } from './sim.js?b=56';
-import { World } from './world.js?b=56';
-import { UI } from './ui.js?b=56';
-import { t, applyStatic } from './i18n.js?b=56';
+import { WindsurfSim } from './sim.js?b=58';
+import { World } from './world.js?b=58';
+import { UI } from './ui.js?b=58';
+import { t, applyStatic } from './i18n.js?b=58';
 
 applyStatic(); // localise the static markup for the saved/default language
 
@@ -20,32 +20,37 @@ function frame(now) {
   // damping — it needs controls.update() every frame) and the renderer live.
   // Re-render the last frozen state with dt=0 so nothing moves, yet the player
   // can still orbit/zoom while paused and resuming doesn't jump the camera.
-  if (ui.paused) {
-    if (sim.lastState) world.update(sim.lastState, 0);
-    requestAnimationFrame(frame);
-    return;
-  }
+  // Keep the render loop alive no matter what — a per-frame exception (e.g. a
+  // missing HUD element from a bad locale) must never stop scheduling frames,
+  // or the whole app appears to "freeze".
+  try {
+    if (ui.paused) {
+      if (sim.lastState) world.update(sim.lastState, 0);
+    } else {
+      const inputs = ui.tickInputs(dt, sim.lastState);
+      const state = sim.update(dt, inputs);
 
-  const inputs = ui.tickInputs(dt, sim.lastState);
-  const state = sim.update(dt, inputs);
+      // crash just happened -> splash + drop the rig-dependent inputs
+      if (state.crashed && !wasCrashed) {
+        world.triggerSplash(state.pos.x, 0.3, state.pos.z);
+        if (inputs.harness) ui.setHarness(false);
+        ui.setRake(0);
+      }
+      // recovered -> sensible restart posture
+      if (!state.crashed && wasCrashed) {
+        ui.resetInputs();
+        ui.inputs.sheetDeg = 70;
+        document.getElementById('sheet').value = 70;
+        ui.flashMsg(t('main.recovered'));
+      }
+      wasCrashed = state.crashed;
 
-  // crash just happened -> splash + drop the rig-dependent inputs
-  if (state.crashed && !wasCrashed) {
-    world.triggerSplash(state.pos.x, 0.3, state.pos.z);
-    if (inputs.harness) ui.setHarness(false);
-    ui.setRake(0);
+      world.update(state, dt);
+      ui.updateHUD(state);
+    }
+  } catch (e) {
+    console.error('[windsurf-sim] frame error', e);
   }
-  // recovered -> sensible restart posture
-  if (!state.crashed && wasCrashed) {
-    ui.resetInputs();
-    ui.inputs.sheetDeg = 70;
-    document.getElementById('sheet').value = 70;
-    ui.flashMsg(t('main.recovered'));
-  }
-  wasCrashed = state.crashed;
-
-  world.update(state, dt);
-  ui.updateHUD(state);
 
   requestAnimationFrame(frame);
 }
