@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=41';
-import { DemoDirector } from './demo.js?b=41';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=42';
+import { DemoDirector } from './demo.js?b=42';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -225,14 +225,19 @@ export class UI {
     $('windset').style.height = `${Math.max(70, Math.round(avail))}px`;
   }
 
-  // The pause (demo transport) button lives in #demo-transport on every viewport
-  // — CSS homes that holder (bottom-left on desktop, a row under the BALANCE meter
-  // on phones). Keeping it out of the top-right cluster stops that cluster from
-  // growing left into the centred HUD when a demo runs.
+  // Home the pause (demo transport) button per viewport, re-homing on resize:
+  //  · desktop → joins the top-right cluster, ahead of the DEMO/STOP button, so
+  //    pause sits next to stop + settings (the HUD now lives down the left edge,
+  //    so the cluster is free to hold it).
+  //  · phones  → its own holder, a row under the BALANCE meter, to keep the tight
+  //    top-right corner uncluttered.
   #placeDemoTransport() {
-    const pau = $('pause-toggle'), dt = $('demo-transport');
-    if (!pau || !dt) return;
-    dt.appendChild(pau);
+    const pau = $('pause-toggle'), dt = $('demo-transport'), tb = $('top-buttons');
+    if (!pau || !dt || !tb) return;
+    const mq = window.matchMedia('(max-width: 768px)');
+    const place = () => { (mq.matches ? dt.appendChild(pau) : tb.prepend(pau)); };
+    mq.addEventListener('change', place);
+    place();
   }
 
   // ---------------- settings popover ----------------
@@ -407,7 +412,7 @@ export class UI {
     btn.classList.toggle('running', !!mode);
     // the pause button lives only inside a demo; leaving a demo also lifts any
     // pause (its only un-pause control would otherwise vanish).
-    $('demo-transport').classList.toggle('demo-on', !!mode);  // holds the transport button on every viewport
+    $('app').classList.toggle('demo-running', !!mode);  // reveals the pause button wherever it's homed
     if (!mode && this.paused) this.setPaused(false);
     const path = btn.querySelector('svg path');
     const label = btn.querySelector('.demo-btn-label');

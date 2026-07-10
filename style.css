@@ -35,10 +35,15 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 @keyframes boot-spin { to { transform: rotate(360deg); } }
 
-/* ---------- top HUD ---------- */
+/* ---------- top HUD ----------
+   Desktop: a vertical column down the LEFT edge, tucked under the meters.
+   Keeping it off-centre frees the top-right corner for the demo/settings
+   cluster, which used to overlap the radar. (Phones re-flow it into a flat
+   horizontal row — see the mobile block.) */
 #hud-top {
-  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 10px; align-items: stretch; pointer-events: none;
+  position: absolute; top: 138px; left: 14px; width: 240px;
+  display: flex; flex-direction: column; gap: 8px; align-items: stretch;
+  pointer-events: none;
 }
 .hud-box {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
@@ -64,7 +69,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #planing-badge.on { display: inline-block; }
 @keyframes pulse { from { opacity: 0.75; } to { opacity: 1; } }
 .compass-box { padding: 4px; min-width: 0; }
-#compass { display: block; }
+#compass { display: block; margin: 0 auto; }   /* centred inside the full-width column box */
 
 /* ---------- meters ---------- */
 #meters {
@@ -161,8 +166,8 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 #about-card .w-title { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--accent); margin-bottom: 16px; }
 .about-app { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 0 2px; }
-/* Light chip so the colored (transparent-bg) windsurfer mark reads on the dark card */
-.about-app img { background: linear-gradient(#f4faff, #d7eefb); border-radius: 12px; padding: 4px; }
+/* App-icon tile (its own light-sky background baked in) */
+.about-app img { border-radius: 13px; }
 .about-app-name { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
 .about-tagline { margin: 8px 0 18px; color: var(--text-dim); }
 .about-author { display: flex; flex-direction: column; gap: 3px; margin: 4px 0 14px; }
@@ -218,7 +223,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   position: absolute; z-index: 30; display: flex; gap: 6px;
   left: 14px; bottom: 14px;
 }
-#demo-transport.demo-on .demo-only { display: flex !important; }
+#app.demo-running .demo-only { display: flex !important; }
 #settings-toggle {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 8px; color: var(--text); backdrop-filter: blur(6px);
@@ -557,7 +562,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
      the three boxes wide, which also lets the labels sit on one line (flatter). */
   #hud-top {
     top: calc(6px + env(safe-area-inset-top));
-    left: 8px; right: 100px; transform: none; max-width: none;   /* clear the demo + gear cluster */
+    left: 8px; right: 100px; width: auto; transform: none; max-width: none;   /* clear the demo + gear cluster */
+    flex-direction: row;                                          /* undo the desktop column */
     gap: 6px; padding: 0; justify-content: flex-start;
   }
   /* boxes stay flat AND a constant height (single-line labels, tight metrics,

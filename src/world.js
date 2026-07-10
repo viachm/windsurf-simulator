@@ -265,13 +265,13 @@ export class World {
     const hullGeo = new THREE.ExtrudeGeometry(hs, { depth: 0.13, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 2 });
     hullGeo.rotateX(Math.PI / 2);             // shape +y -> world +Z (nose forward), thickness downward
     hullGeo.translate(0, 0.19, 0);
-    const hull = new THREE.Mesh(hullGeo, new THREE.MeshStandardMaterial({ color: 0xf4f6f7, roughness: 0.35 }));
+    const hull = new THREE.Mesh(hullGeo, new THREE.MeshStandardMaterial({ color: 0xffd23f, roughness: 0.35 })); // icon yellow
     this.board.add(hull);
 
     // deck pad
     const pad = new THREE.Mesh(
       new THREE.BoxGeometry(0.5, 0.02, 1.7),
-      new THREE.MeshStandardMaterial({ color: 0x2f9e8f, roughness: 0.9 }));
+      new THREE.MeshStandardMaterial({ color: 0x14324f, roughness: 0.9 })); // dark grip so the yellow hull reads
     pad.position.set(0, 0.24, -0.45);
     this.board.add(pad);
 
@@ -356,8 +356,8 @@ export class World {
     const sailGeo = new THREE.ShapeGeometry(sailShape, 12);
     sailGeo.rotateY(Math.PI / 2);             // shape +x -> world -z?? R_y(90): +X -> -Z (aft) ✓
     this.sailMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff, roughness: 0.6, transparent: true, opacity: 0.88,
-      side: THREE.DoubleSide, emissive: 0xbfd4e0, emissiveIntensity: 0.35,
+      color: 0xff6b4d, roughness: 0.6, transparent: true, opacity: 0.9,   // icon sail (warm)
+      side: THREE.DoubleSide, emissive: 0xff8a5a, emissiveIntensity: 0.2,
     });
     this.sail = new THREE.Mesh(sailGeo, this.sailMat);
     this.rigSpin.add(this.sail);
@@ -372,15 +372,15 @@ export class World {
     panelGeo.rotateY(Math.PI / 2);
     panelGeo.translate(0.004, 0, 0);
     const panel = new THREE.Mesh(panelGeo, new THREE.MeshStandardMaterial({
-      color: 0x00acc1, roughness: 0.6, transparent: true, opacity: 0.7, side: THREE.DoubleSide,
-      emissive: 0x00838f, emissiveIntensity: 0.4,
+      color: 0xff9a52, roughness: 0.6, transparent: true, opacity: 0.72, side: THREE.DoubleSide, // icon inner sail
+      emissive: 0xffb36a, emissiveIntensity: 0.2,
     }));
     this.sail.add(panel);
 
     // battens
     for (const [y0, y1, x1] of [[1.2, 1.35, 1.75], [2.2, 2.3, 1.35], [3.1, 3.15, 0.9]]) {
       const b = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.03, x1),
-        new THREE.MeshStandardMaterial({ color: 0xff7043 }));
+        new THREE.MeshStandardMaterial({ color: 0x0a2540 })); // navy battens, like the icon's linework
       b.position.set(0.006, (y0 + y1) / 2, -x1 / 2);
       this.sail.add(b);
     }
@@ -389,7 +389,7 @@ export class World {
   #sailor() {
     const skin = new THREE.MeshStandardMaterial({ color: 0xd9a184, roughness: 0.65 });
     const suit = new THREE.MeshStandardMaterial({ color: 0x1c2e4a, roughness: 0.85 }); // wetsuit navy
-    const suit2 = new THREE.MeshStandardMaterial({ color: 0xff7043, roughness: 0.8 });  // vest/rash top
+    const suit2 = new THREE.MeshStandardMaterial({ color: 0x0fb7c4, roughness: 0.8 });  // teal vest/rash top — contrasts the warm sail
     const dark = new THREE.MeshStandardMaterial({ color: 0x222b36, roughness: 0.9 });   // cap / booties
     const harnessMat = new THREE.MeshStandardMaterial({ color: 0x11161d, roughness: 0.7, metalness: 0.2 });
 
