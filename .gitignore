@@ -1,3 +1,6 @@
 .playwright-mcp/
 .DS_Store
 __pycache__/
+
+# Local handoff notes — contains live credentials, must never be committed
+HANDOFF.md
