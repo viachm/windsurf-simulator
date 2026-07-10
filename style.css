@@ -468,7 +468,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   padding: 5px 0; user-select: none;
 }
 .toggle-row input { accent-color: var(--accent); width: 17px; height: 17px; }
-#autotrim-row { font-size: 14px; }   /* Autopilot label a touch larger than the rest */
+/* Autopilot rides on the SAIL SHEET label line, pushed to the right (same as mobile). */
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sheet-head .ctl-label { margin-bottom: 0; flex: 0 1 auto; min-width: 0; }
+#autotrim-row { font-size: 14px; flex: none; padding: 0; white-space: nowrap; }   /* Autopilot label a touch larger than the rest */
 /* Daggerboard (left) + Harness (right) share one row, spread to the edges so
    the free space on the right is used instead of stacking them. Slightly
    smaller so both labels — incl. the long ones (uk "Зачепитися в трапецію") —
