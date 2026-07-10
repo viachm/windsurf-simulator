@@ -373,8 +373,8 @@ export class WindsurfSim {
     // "get planing" move. Onset needs real speed AND power so it can't trigger
     // the instant the sail loads up.
     if (!this.planing) {
-      if (this.v > 5.0 && power01 > 0.34 && absBetaDeg > 70 && absBetaDeg < 162 && trim === 'good') this.planing = true;
-    } else if (this.v < 4.5 || power01 < 0.20) {
+      if (this.v > 5.2 && power01 > 0.36 && absBetaDeg > 70 && absBetaDeg < 162 && trim === 'good') this.planing = true;
+    } else if (this.v < 4.7 || power01 < 0.21) {
       this.planing = false;
     }
 
@@ -382,8 +382,10 @@ export class WindsurfSim {
     let drag;
     if (this.planing) {
       // Semi-planing ramp: a freshly-released hull still drags its tail through
-      // the water; only at speed does it skim on the clean 2.4-ish coefficient.
-      const cPlane = 4.0 - 1.6 * smoothstep(4, 7, this.v);
+      // the water; only at speed does it skim on the clean ~3.0 coefficient. This
+      // floor sets top speed for a given wind — a 6.5m freeride board tops out
+      // well short of a speed-board, so 50 km/h stays a strong-wind achievement.
+      const cPlane = 4.6 - 1.6 * smoothstep(4, 7.5, this.v);
       drag = cPlane * this.v * Math.abs(this.v);
       if (inputs.stance === 'mid') drag *= 1.4;           // not in the straps
       if (inputs.dagger) drag *= 1.5;                     // board wants to rail over
@@ -416,7 +418,7 @@ export class WindsurfSim {
     // build (not a jerk) — full drive by ~3 m/s, so top speed is unaffected.
     const flowRamp = 0.4 + 0.6 * smoothstep(0.2, 3.2, Math.abs(this.v));
     const thrust = clamp(drive01, 0, THRUST_CLAMP) * THRUST_N * flowRamp;
-    const mass = 97; // rider + board + rig
+    const mass = 108; // rider + board + rig (a touch heavier -> planing builds over a few seconds, not ~1s)
     this.v += ((thrust - drag) / mass) * dt;
 
     // stuck in irons: luffing sail in the no-go zone drifts you backwards
