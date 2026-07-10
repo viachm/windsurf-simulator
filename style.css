@@ -218,6 +218,8 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 .about-github:hover { border-color: var(--accent); color: var(--accent); }
 .about-github svg { display: block; }
+/* Quiet "Made in Ukraine 🇺🇦" line — small and dim so it reads as a footnote. */
+.about-madein { margin-top: 14px; font-size: 11px; letter-spacing: 0.5px; color: var(--text-dim); opacity: 0.7; }
 #about-close {
   margin-top: 16px; width: 100%; background: var(--accent); color: #06121e; border: none;
   border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800; letter-spacing: 2px;

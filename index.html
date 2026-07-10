@@ -117,11 +117,11 @@
 
   <!-- Real, crawlable favicon files. Google can't use a data: URI favicon
        (that is why search showed a generic globe) — use actual PNG files. -->
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?b=67" />
-  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?b=67" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=67" />
-  <link rel="manifest" href="site.webmanifest?b=67" />
-  <link rel="stylesheet" href="style.css?b=67" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?b=68" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?b=68" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=68" />
+  <link rel="manifest" href="site.webmanifest?b=68" />
+  <link rel="stylesheet" href="style.css?b=68" />
   <script type="importmap">
     {
       "imports": {
@@ -296,7 +296,7 @@
       <div id="about-card">
         <div class="w-title" data-i18n="about.title">ABOUT</div>
         <div class="about-app">
-          <img src="docs/app-icon.png?b=67" width="54" height="54" alt="" />
+          <img src="docs/app-icon.png?b=68" width="54" height="54" alt="" />
           <span class="about-app-name">Windsurf Simulator</span>
         </div>
         <p class="about-tagline" data-i18n="about.tagline">A 3D game about the real physics of windsurfing.</p>
@@ -312,6 +312,7 @@
           </svg>
           <span data-i18n="about.github">View on GitHub</span>
         </a>
+        <div class="about-madein"><span data-i18n="about.madein">Made in Ukraine</span> 🇺🇦</div>
         <button id="about-close" data-i18n="about.close">CLOSE</button>
       </div>
     </div>
@@ -461,9 +462,9 @@
        kills the English→localised flash. Its ?b token MUST stay in sync with
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script type="module">
-    import { applyStatic } from './src/i18n.js?b=67';
+    import { applyStatic } from './src/i18n.js?b=68';
     applyStatic();
   </script>
-  <script type="module" src="src/main.js?b=67"></script>
+  <script type="module" src="src/main.js?b=68"></script>
 </body>
 </html>
