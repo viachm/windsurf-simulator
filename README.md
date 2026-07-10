@@ -6,7 +6,7 @@ harness — and the board responds the way a real one would. No rudder, no arcad
 you steer by trimming the sail, you plane when the physics say you can, and you get catapulted
 when you get greedy with the power.
 
-**▶ Play it in your browser: <https://viachm.github.io/windsurf-simulator/>**
+**▶ Play it in your browser: <https://windsurfsimulator.com/>**
 
 It's a static, no-build web app (three.js + vanilla JS). Nothing to install to play — just
 open the link. Works on desktop and touch/mobile, in 20 UI languages.
@@ -15,7 +15,7 @@ open the link. Works on desktop and touch/mobile, in 20 UI languages.
 > meant to build intuition, not to replace time on the water.
 
 <p align="center">
-  <a href="https://viachm.github.io/windsurf-simulator/">
+  <a href="https://windsurfsimulator.com/">
     <img src="docs/screenshot-mobile.png" width="300"
          alt="Windsurf Simulator running on a phone — the board planing on a beam reach, with the full instrument HUD" />
   </a>
