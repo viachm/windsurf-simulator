@@ -46,22 +46,19 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
    controls. The sea gets the whole left of the screen; the boat is lens-shifted
    left to sit centred in it (see ui.js #applyFramingShiftX). */
 #sidebar {
-  position: absolute; top: 0; right: 0; bottom: 0; width: 384px; z-index: 20;
-  display: flex; flex-direction: column; gap: 10px;
-  padding: 52px 14px 14px;          /* top clears the demo/settings buttons */
-  overflow-y: auto; overflow-x: hidden;
-  scrollbar-width: thin;
+  position: absolute; top: 0; right: 0; bottom: 0; width: 442px; z-index: 20;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px;                    /* demo/settings live on the sea, left of here */
+  overflow: hidden;                 /* everything is sized to fit — no scroll */
 }
 
 /* Desktop: HUD lives at the top of the right sidebar — speed/wind/point-of-sail
    on the left, the radar spanning the right (top-right). */
 #hud-top {
   width: 100%;
-  display: grid; gap: 8px;
-  grid-template-columns: 1fr 1fr 118px;
-  grid-template-areas:
-    "speed wind  radar"
-    "pos   pos   radar";
+  display: grid; gap: 6px;
+  grid-template-columns: 84px 1fr 1fr 1fr;
+  grid-template-areas: "radar speed wind pos";
 }
 #speed-box { grid-area: speed; }
 #wind-box  { grid-area: wind; }
@@ -69,18 +66,19 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 .compass-box { grid-area: radar; align-self: stretch; }
 .hud-box {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
-  border-radius: 10px; padding: 8px 12px; color: var(--text);
+  border-radius: 10px; padding: 6px 6px; color: var(--text);
   min-width: 0; text-align: center; backdrop-filter: blur(6px);
+  display: flex; flex-direction: column; justify-content: center;
 }
 /* Speed box has no sub-line (gust/glide moved out). Keep its label pinned to the
    top (in line with the WIND label) but center the value in the space below. */
 #speed-box { display: flex; flex-direction: column; }
 #speed-box .hud-value { margin-top: auto; margin-bottom: auto; }
-.hud-label { font-size: 10px; letter-spacing: 1.4px; color: var(--text-dim); }
-.hud-value { font-size: 24px; font-weight: 700; margin-top: 2px; }
-#pos-val { font-size: 16px; line-height: 1.4; }
-.hud-unit { font-size: 12px; margin-left: 3px; color: var(--text-dim); }
-.hud-sub { font-size: 11px; color: var(--text-dim); margin-top: 1px; min-height: 12px; }
+.hud-label { font-size: 8.5px; letter-spacing: 0.8px; color: var(--text-dim); white-space: nowrap; }
+.hud-value { font-size: 18px; font-weight: 700; margin-top: 1px; }
+#pos-val { font-size: 12.5px; line-height: 1.2; }
+.hud-unit { font-size: 9.5px; margin-left: 2px; color: var(--text-dim); }
+.hud-sub { font-size: 9px; color: var(--text-dim); margin-top: 1px; min-height: 10px; }
 /* Planing indicator lives in the SAIL POWER meter title (right side, where the
    trim word normally sits) — keeps it out of the compact HUD speed box. */
 #planing-badge {
@@ -90,8 +88,8 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 #planing-badge.on { display: inline-block; }
 @keyframes pulse { from { opacity: 0.75; } to { opacity: 1; } }
-.compass-box { padding: 4px; min-width: 0; display: flex; align-items: center; justify-content: center; }
-#compass { display: block; width: 108px; height: 108px; }   /* radar box, top-right of the HUD grid */
+.compass-box { padding: 3px; min-width: 0; display: flex; align-items: center; justify-content: center; }
+#compass { display: block; width: 76px; height: 76px; }   /* radar box, top-left of the HUD grid */
 
 /* ---------- meters ---------- */
 /* Desktop: SAIL POWER + BALANCE side by side, in the sidebar flow. */
@@ -237,7 +235,8 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 
 /* ---------- control panel ---------- */
 /* ---------- top-right buttons (info + settings) ---------- */
-#top-buttons { position: absolute; right: 14px; top: 14px; z-index: 30; display: flex; gap: 6px; }
+/* Demo + settings sit on the sea just LEFT of the sidebar (not in its column). */
+#top-buttons { position: absolute; right: 456px; top: 14px; z-index: 30; display: flex; gap: 6px; }
 /* Demo transport (pause). On BOTH desktop and phone this lives here, away from
    the top-right cluster — on desktop that cluster would otherwise grow left into
    the centred HUD (WIND box + compass) whenever a demo runs. The holder is a
@@ -291,7 +290,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 
 /* ---------- demo popover ---------- */
 #demo-panel {
-  position: absolute; right: 398px; top: 52px; width: 280px; z-index: 30;
+  position: absolute; right: 456px; top: 52px; width: 280px; z-index: 30;
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 12px; color: var(--text); backdrop-filter: blur(8px);
   box-shadow: 0 12px 32px rgba(0,0,0,0.4); overflow: hidden;
@@ -402,12 +401,12 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   background: none; border: 1px solid var(--panel-border); color: var(--text);
   border-radius: 6px; width: 22px; height: 22px; cursor: pointer; font-size: 14px; line-height: 1;
 }
-#panel-body { padding: 12px 14px 16px; }
+#panel-body { padding: 11px 15px 12px; }
 #panel.collapsed #panel-body { display: none; }
 
-.ctl { margin-bottom: 17px; }
+.ctl { margin-bottom: 11px; }
 .ctl-label {
-  font-size: 12px; letter-spacing: 1.2px; color: var(--text-dim); margin-bottom: 7px;
+  font-size: 12px; letter-spacing: 1.2px; color: var(--text-dim); margin-bottom: 5px;
   display: flex; align-items: center; gap: 6px;
 }
 .ctl-value { margin-left: auto; color: var(--text); font-weight: 700; font-size: 14px; }
