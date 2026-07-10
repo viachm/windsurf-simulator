@@ -71,7 +71,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 10px; padding: 6px 6px; color: var(--text);
   min-width: 0; text-align: center; backdrop-filter: blur(6px);
-  display: flex; flex-direction: column; justify-content: center;
+  display: flex; flex-direction: column; justify-content: flex-start;   /* labels line up at the top */
 }
 /* Speed box has no sub-line (gust/glide moved out). Keep its label pinned to the
    top (in line with the WIND label) but center the value in the space below. */
@@ -85,9 +85,9 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 /* Planing indicator lives in the SAIL POWER meter title (right side, where the
    trim word normally sits) — keeps it out of the compact HUD speed box. */
 #planing-badge {
-  display: none; float: right; font-size: 9px; font-weight: 700; color: #06121e;
-  background: var(--accent2); border-radius: 4px; padding: 0 5px; margin-left: 6px;
-  letter-spacing: 0.5px; animation: pulse 0.8s infinite alternate;
+  display: none; margin-left: auto; font-size: 8.5px; font-weight: 700; color: #06121e;
+  background: var(--accent2); border-radius: 4px; padding: 1px 5px;
+  letter-spacing: 0.5px; animation: pulse 0.8s infinite alternate; flex: 0 0 auto;
 }
 #planing-badge.on { display: inline-block; }
 @keyframes pulse { from { opacity: 0.75; } to { opacity: 1; } }
@@ -101,13 +101,14 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   display: flex; flex-direction: row; gap: 8px;
 }
 #meters .meter-block { flex: 1; min-width: 0; }
+#meters .meter-block:first-child { flex: 1.55; }   /* SAIL POWER needs room for the trim word / PLANING! badge */
 .meter-block {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 10px; padding: 6px 11px; color: var(--text); backdrop-filter: blur(6px);
 }
-.meter-title { font-size: 11px; letter-spacing: 1.2px; color: var(--text-dim); margin-bottom: 6px; }
+.meter-title { font-size: 11px; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 6px; display: flex; align-items: center; white-space: nowrap; }
 .meter-hint { display: none; }   /* verbose caption — the diamond/band read for themselves */
-#trim-state { float: right; font-weight: 700; }
+#trim-state { margin-left: auto; font-weight: 700; flex: 0 0 auto; }
 #trim-state.luff  { color: var(--text-dim); }
 #trim-state.good  { color: var(--good); }
 #trim-state.stall { color: var(--danger); }
@@ -240,8 +241,8 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 
 /* ---------- control panel ---------- */
 /* ---------- top-right buttons (info + settings) ---------- */
-/* Demo + settings sit on the sea, snug against the left edge of the sidebar. */
-#top-buttons { position: absolute; right: calc(var(--sidebar-w) + 2px); top: 14px; z-index: 30; display: flex; gap: 6px; }
+/* Demo + settings sit on the sea, flush against the left edge of the sidebar. */
+#top-buttons { position: absolute; right: var(--sidebar-w); top: 14px; z-index: 30; display: flex; gap: 6px; }
 /* Demo transport (pause). On BOTH desktop and phone this lives here, away from
    the top-right cluster — on desktop that cluster would otherwise grow left into
    the centred HUD (WIND box + compass) whenever a demo runs. The holder is a
@@ -402,7 +403,10 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   border-bottom: 1px solid var(--panel-border); position: sticky; top: 0;
   background: rgba(10, 25, 40, 0.95); border-radius: 12px 12px 0 0;
 }
+/* No collapsing on desktop — the panel is always open there. The toggle (and the
+   header-tap collapse in ui.js) come back only on the mobile bottom sheet. */
 #panel-toggle {
+  display: none;
   background: none; border: 1px solid var(--panel-border); color: var(--text);
   border-radius: 6px; width: 22px; height: 22px; cursor: pointer; font-size: 14px; line-height: 1;
 }
@@ -512,6 +516,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
     font-size: 11px;
   }
   #panel-toggle {
+    display: inline-block;
     width: 26px; height: 22px; font-size: 17px; line-height: 1;
     background: rgba(79, 195, 247, 0.16); border-color: var(--accent); color: var(--accent);
   }

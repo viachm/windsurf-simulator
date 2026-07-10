@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=47';
-import { DemoDirector } from './demo.js?b=47';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=48';
+import { DemoDirector } from './demo.js?b=48';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -179,6 +179,7 @@ export class UI {
 
     // tapping anywhere on the header toggles — a bigger, touch-friendly target
     $('panel').querySelector('.panel-header').addEventListener('click', () => {
+      if (!this.#isMobile()) return;   // desktop panel doesn't collapse
       this.setPanelCollapsed(!$('panel').classList.contains('collapsed'));
     });
 
