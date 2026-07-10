@@ -458,7 +458,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 /* sliders own their touch drag in both axes (esp. the vertical wind fader),
    and swallow pinch so two fingers on a slider can't zoom the page either */
 input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; touch-action: none; }
-.slider-wrap { position: relative; }
+.slider-wrap { position: relative; touch-action: none; }   /* own the whole wrap's touch, not just the thin input */
 #sheet-optimal {
   position: absolute; top: -3px; width: 3px; height: 14px; background: var(--good);
   border-radius: 2px; left: 50%; pointer-events: none; transition: left 0.15s linear;

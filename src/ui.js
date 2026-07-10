@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=68';
-import { DemoDirector } from './demo.js?b=68';
-import { track, trackDebounced } from './analytics.js?b=68';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=69';
+import { DemoDirector } from './demo.js?b=69';
+import { track, trackDebounced } from './analytics.js?b=69';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -146,6 +146,15 @@ export class UI {
     });
 
     $('lean').addEventListener('input', (e) => { this.#takeManualControl(); this.setLean(+e.target.value); });
+
+    // Robust drag for the two horizontal panel sliders: native <input type=range>
+    // dragging is flaky on mobile because the bottom sheet is touch-action:pan-y,
+    // so a grab that lands a hair off the thin input (or starts with a little
+    // vertical motion) gets stolen by the sheet's vertical pan. Driving them from
+    // captured pointer events instead means once you touch the slider the drag
+    // can't be hijacked. Fires 'input', so the listeners above run unchanged.
+    this.#makeSliderDraggable($('sheet'));
+    this.#makeSliderDraggable($('lean'));
 
     $('dagger').addEventListener('change', (e) => { this.#takeManualControl(); this.inputs.dagger = e.target.checked; track('dagger', { on: e.target.checked }); });
 
@@ -422,6 +431,45 @@ export class UI {
       if (e.target.closest('#windset') || e.target.closest('.panel-header')) return;
       this.demo.nudge();
     }, true);
+  }
+
+  // Drive a HORIZONTAL range input from captured pointer events so its drag can't
+  // be stolen by the mobile sheet's vertical pan. Maps the pointer's X straight to
+  // the value (respecting min/max/step) and fires a native 'input' event, so all
+  // existing listeners fire exactly as they do for a keyboard/native change. Only
+  // for horizontal sliders — the vertical wind fader keeps its native handling.
+  #makeSliderDraggable(el) {
+    if (!el) return;
+    const setFromX = (clientX) => {
+      const r = el.getBoundingClientRect();
+      if (r.width <= 0) return;
+      const min = +el.min || 0, max = +el.max || 100, step = +el.step || 1;
+      const frac = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+      let v = min + frac * (max - min);
+      v = Math.round(v / step) * step;
+      v = Math.max(min, Math.min(max, v));
+      if (+el.value !== v) {
+        el.value = v;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    };
+    el.addEventListener('pointerdown', (e) => {
+      if (e.button > 0) return;                 // ignore right/middle mouse
+      e.preventDefault();                       // claim the touch: no scroll, no native double-drag
+      try { el.setPointerCapture(e.pointerId); } catch { /* older browsers */ }
+      el.focus?.();
+      setFromX(e.clientX);
+      const move = (ev) => setFromX(ev.clientX);
+      const end = () => {
+        el.removeEventListener('pointermove', move);
+        el.removeEventListener('pointerup', end);
+        el.removeEventListener('pointercancel', end);
+        try { el.releasePointerCapture(e.pointerId); } catch { /* already released */ }
+      };
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+    });
   }
 
   // Reflect the demo's live state on the button and popover. While running, the
