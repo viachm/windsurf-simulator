@@ -573,7 +573,7 @@ export class World {
     const d = this._routeDummy;
     for (let i = 0; i < n; i++) {
       const m = markers[i];
-      const sc = m.scale || 1;
+      const sc = m.scale ?? 1;                 // keep 0 (a chevron ducking under the board), not `|| 1`
       d.position.set(m.x, 0.26, m.z);
       d.rotation.set(0, m.angle, 0);        // tip (local +Z) aims along the route
       d.scale.set(sc, sc, sc);

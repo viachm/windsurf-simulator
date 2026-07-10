@@ -9,7 +9,7 @@
 // carry the turns, and the rake steering is quantised to the five on-screen
 // buttons so the controls visibly "press" while it sails.
 
-import { t } from './i18n.js?b=61';
+import { t } from './i18n.js?b=62';
 
 const KN = 1.94384; // m/s -> knots
 const DEG = Math.PI / 180;
@@ -356,11 +356,22 @@ export class DemoDirector {
   // Sort the frozen chevrons near->far and map them to render instances with a
   // gentle size taper. Used both after a re-fit (straight sailing) and, during a
   // tack/gybe, to keep the already-placed chevrons on screen without rebuilding.
+  //
+  // The nearest chevrons also DUCK under the board: as one reaches the hull it
+  // shrinks to nothing over the board's nose (BOARD_NOSE metres ahead of centre),
+  // so it slides visually "under" the board instead of being drawn on top of the
+  // deck or popping out at the board's midpoint. (The board floats only ~0.1m
+  // proud of the water, so real depth occlusion is unreliable — shrinking is.)
   #renderMarks() {
     this.routeMarks.sort((p, q) => p.k - q.k);
-    return this.routeMarks.map((mk, idx) => ({
-      x: mk.x, z: mk.z, angle: mk.angle,
-      scale: Math.max(0.6, 1 - idx * 0.03),
-    }));
+    const BOARD_NOSE = 1.0, DUCK_FADE = 0.9;   // metres: hidden by the nose, full a bit further out
+    return this.routeMarks.map((mk, idx) => {
+      const ahead = mk.k * MARKER_SP - this.dist;                 // metres ahead of the board centre
+      const duck = Math.max(0, Math.min(1, (ahead - BOARD_NOSE) / DUCK_FADE));
+      return {
+        x: mk.x, z: mk.z, angle: mk.angle,
+        scale: Math.max(0.6, 1 - idx * 0.03) * duck,
+      };
+    });
   }
 }
