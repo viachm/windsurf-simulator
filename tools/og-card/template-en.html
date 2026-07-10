@@ -1,0 +1,86 @@
+<!doctype html><html><head><meta charset="utf-8">
+<!--
+  Windsurf Simulator — OG cover, VARIANT 1 ("Aurora Glass"), approved v1b.
+  1200×630 social share card. Built from the real in-game screenshots.
+
+  ASSETS (relative to this file = repo root):
+    plate-scene-en.png     — ocean backdrop (also used behind everything)
+    plate-desktop-en.png   — desktop game screenshot (laptop screen)
+    plate-mobile-en.png    — mobile game screenshot (phone screen)
+    docs/app-icon.png      — app icon
+  For other languages, swap the -en plates for that language's screenshots
+  (keep the same crop/zoom) and translate the copy in #left below.
+
+  RENDER (pixel-perfect, macOS): render at 2× then downscale to 1200×630.
+    CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    "$CHROME" --headless=new --disable-gpu --hide-scrollbars \
+      --force-device-scale-factor=2 --window-size=1200,630 \
+      --allow-file-access-from-files \
+      --screenshot=raw.png "file:///Users/viachm/Documents/routine/windsurf-simulator/variant1-source.html"
+    sips -z 630 1200 raw.png --out og-cover.png
+
+  APPROVED IN THIS SESSION (variant 1b):
+    • phone in FRONT, laptop BEHIND — one scene
+    • laptop pulled left so it fully fits (deck included)
+    • NO website-link line, NO "43.9 km/h PLANING" chip over the phone
+    • pills: "Learn to windsurf" · "Autopilot" · "No installation"
+    • CTA button kept: "Play free →"
+
+  ⚠️ OPEN DECISION (conflict between parallel sessions):
+    The other session said "free" and "no install" should be removed everywhere.
+    This file keeps them (per this session's edits). If the final call is to drop
+    them: delete the .btn line (or relabel to "Play now →") and swap the
+    "No installation" pill for e.g. "Beginner-friendly" / "Desktop & mobile"
+    / "20 languages". Label text lives in the .pills / .cta block at the bottom.
+-->
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1200px;height:630px;overflow:hidden}
+  :root{--ink:#eaf3fb;--gold:#ffb437;--orange:#ff8a45;--blue:#7cc0f0}
+  #card{position:relative;width:1200px;height:630px;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;background:#071a2c;overflow:hidden}
+  #sea{position:absolute;inset:0;background:url('plate-scene-en.png') center 40%/cover no-repeat}
+  #grade{position:absolute;inset:0;background:
+     linear-gradient(180deg, rgba(255,180,120,.10) 0%, rgba(7,26,44,0) 22%, rgba(7,26,44,.15) 60%, rgba(4,14,26,.7) 100%),
+     linear-gradient(100deg, rgba(6,20,36,.985) 0%, rgba(6,20,36,.93) 34%, rgba(8,32,52,.5) 60%, rgba(9,40,62,.06) 82%, transparent 100%)}
+  #vign{position:absolute;inset:0;background:radial-gradient(125% 95% at 46% 40%, transparent 52%, rgba(2,10,20,.6) 100%);pointer-events:none}
+  #glow{position:absolute;right:150px;top:120px;width:660px;height:440px;background:radial-gradient(closest-side, rgba(255,130,66,.4), rgba(255,130,66,.1) 46%, transparent 72%);filter:blur(8px)}
+
+  /* devices — phone (front) overlaps laptop (behind) */
+  .laptop{position:absolute;right:40px;top:104px;width:590px;filter:drop-shadow(0 44px 66px rgba(0,0,0,.6))}
+  .laptop .screen{background:#0b0f15;padding:11px 11px 9px;border-radius:16px 16px 4px 4px;border:1px solid rgba(255,255,255,.08);position:relative}
+  .laptop .screen .cam{position:absolute;top:5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:#2a3038}
+  .laptop .screen img{display:block;width:100%;border-radius:4px}
+  .laptop .glassrim{position:absolute;inset:11px 11px 9px;border-radius:4px;background:linear-gradient(120deg,rgba(120,180,255,.14),transparent 45%);pointer-events:none}
+  .laptop .deck{height:15px;margin:0 -27px;background:linear-gradient(180deg,#e2e8ee,#bcc6d0 55%,#96a3ae);border-radius:0 0 11px 11px;box-shadow:inset 0 2px 2px rgba(255,255,255,.6),0 12px 20px rgba(0,0,0,.45);position:relative}
+  .laptop .deck::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:100px;height:7px;background:linear-gradient(#8f9aa5,#a5afb9);border-radius:0 0 9px 9px}
+  .phone{position:absolute;right:474px;bottom:24px;width:162px;transform:rotate(-7deg);transform-origin:bottom center;border-radius:27px;padding:7px;background:#0a1420;box-shadow:0 32px 58px rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.14);z-index:4}
+  .phone .screen{border-radius:21px;overflow:hidden}
+  .phone img{display:block;width:100%}
+  .phone .notch{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:50px;height:5px;border-radius:3px;background:rgba(255,255,255,.32)}
+
+  /* left copy */
+  #left{position:absolute;top:0;left:76px;width:520px;height:630px;display:flex;flex-direction:column;justify-content:center;z-index:6}
+  .kick{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .kick .rule{width:34px;height:2px;background:linear-gradient(90deg,var(--gold),transparent)}
+  .kick span{color:var(--gold);font-weight:800;font-size:17px;letter-spacing:3.2px}
+  #icon{width:66px;height:66px;border-radius:17px;box-shadow:0 8px 26px rgba(0,0,0,.5);margin-bottom:24px}
+  h1{font-weight:800;font-size:80px;line-height:.96;letter-spacing:-2px;margin-bottom:22px;background:linear-gradient(180deg,#ffffff 40%,#bcd8f2);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 2px 24px rgba(0,0,0,.3)}
+  #sub{width:460px;color:var(--ink);font-weight:500;font-size:29px;line-height:1.34;margin-bottom:26px}
+  #sub .hl{color:var(--orange);font-weight:700}
+  .pills{display:flex;gap:9px;margin-bottom:28px}
+  .pill{padding:8px 15px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#dbe9f6;font-weight:600;font-size:15px;letter-spacing:.3px}
+  .cta{display:flex;align-items:center;gap:16px}
+  .btn{padding:14px 28px;border-radius:14px;background:linear-gradient(180deg,#ff9a4d,#ff7a3c);color:#2a1400;font-weight:800;font-size:20px;box-shadow:0 12px 30px rgba(255,122,60,.45)}
+</style></head><body><div id="card">
+  <div id="sea"></div><div id="grade"></div><div id="vign"></div><div id="glow"></div>
+  <div class="laptop"><div class="screen"><span class="cam"></span><img src="plate-desktop-en.png"><div class="glassrim"></div></div><div class="deck"></div></div>
+  <div class="phone"><div class="screen"><img src="plate-mobile-en.png"></div><div class="notch"></div></div>
+  <div id="left">
+    <img id="icon" src="docs/app-icon.png">
+    <div class="kick"><span class="rule"></span><span>PLAY IN YOUR BROWSER</span></div>
+    <h1>Windsurf<br>Simulator</h1>
+    <div id="sub">A 3D game about the <span class="hl">real physics</span> of windsurfing.</div>
+    <div class="pills"><div class="pill">Learn to windsurf</div><div class="pill">Autopilot</div><div class="pill">No installation</div></div>
+    <div class="cta"><div class="btn">Play free →</div></div>
+  </div>
+</div></body></html>

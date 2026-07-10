@@ -9,3 +9,11 @@ HANDOFF.md
 _og_template.html
 plate-*.png
 card-*.png
+_card-*.html
+_v1-*.html
+raw-*.png
+artifact-variant-*.jpg
+cardv*.png
+smoke-*.png
+tools/og-card/plates/
+tools/og-card/.raw-*.png
