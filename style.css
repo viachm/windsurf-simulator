@@ -60,7 +60,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
    stretches to the full height of that column. */
 #hud-region { width: 100%; display: flex; gap: 8px; align-items: stretch; }
 .hud-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.compass-box { flex: 0 0 132px; }   /* the tall radar */
+.compass-box { flex: 0 0 auto; }   /* the radar — a square sized to the section height (see #compass) */
 
 #hud-top {
   width: 100%;
@@ -92,7 +92,9 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #planing-badge.on { display: inline-block; }
 @keyframes pulse { from { opacity: 0.75; } to { opacity: 1; } }
 .compass-box { padding: 4px; min-width: 0; display: flex; align-items: center; justify-content: center; }
-#compass { display: block; width: 116px; height: 116px; }   /* big radar, spans the HUD + meters height */
+/* Radar fills the full height of the top section (HUD row + meters row) and stays
+   square, so it always fits perfectly no matter the meter/label sizes. */
+#compass { display: block; height: 100%; width: auto; aspect-ratio: 1 / 1; }
 
 /* ---------- meters ---------- */
 /* Desktop: SAIL POWER + BALANCE side by side, in the sidebar flow. */
