@@ -422,6 +422,12 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 @media (min-width: 769px) {
   #panel-body .ctl { margin-bottom: 15px; }
   #panel-body .ctl:last-child { margin-bottom: 0; }
+  /* Desktop: Autopilot lives inside the SAIL SHEET row (so mobile can right-align
+     it on that line), but here it wraps to its OWN full-width row above the sheet
+     label — its historic "own top row", set off with a divider. (Selector is
+     scoped to .sheet-head to outrank the base #autotrim-row rule below it.) */
+  .sheet-head { flex-wrap: wrap; }
+  .sheet-head #autotrim-row { order: -1; flex: 0 0 100%; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px; margin-bottom: 10px; }
   /* wind icon on the TRUE WIND label, like the mobile wind fader */
   #wind-ctl .ctl-label::before { content: "💨"; font-size: 13px; line-height: 1; }
   /* the SPLASH! crash card centres in the SEA (viewport minus the sidebar), like the boat */
@@ -470,9 +476,6 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
 .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .sheet-head .ctl-label { margin-bottom: 0; flex: 0 1 auto; min-width: 0; }
 #autotrim-row { font-size: 14px; flex: none; padding: 0; white-space: nowrap; }   /* Autopilot label a touch larger than the rest */
-/* Autopilot is its own row at the very top of the panel, set off from the manual
-   controls below it. */
-#autotrim-ctl { border-bottom: 1px solid var(--panel-border); padding-bottom: 10px; }
 /* Daggerboard (left) + Harness (right) share one row, spread to the edges so
    the free space on the right is used instead of stacking them. Slightly
    smaller so both labels — incl. the long ones (uk "Зачепитися в трапецію") —
