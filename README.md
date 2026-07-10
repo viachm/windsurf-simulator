@@ -2,7 +2,7 @@
   <img src="docs/icon.png" width="120" alt="Windsurf Simulator app icon" />
 </p>
 
-# 🏄 Windsurf Simulator
+# Windsurf Simulator
 
 A 3D browser game that teaches the **real mechanics of windsurfing**. You control the same
 levers a real windsurfer has — sheet angle, mast rake, foot stance, body lean, daggerboard,
