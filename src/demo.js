@@ -9,7 +9,7 @@
 // carry the turns, and the rake steering is quantised to the five on-screen
 // buttons so the controls visibly "press" while it sails.
 
-import { t } from './i18n.js?b=59';
+import { t } from './i18n.js?b=60';
 
 const KN = 1.94384; // m/s -> knots
 const DEG = Math.PI / 180;
@@ -196,10 +196,11 @@ export class DemoDirector {
 
     // advance to the next segment (keeps ticking even during an override)
     if (seg.turn) {
-      if (this.turned && !st.maneuver) {
-        this.settleT += dt;
-        if (this.settleT > 1.4) this.#advance();
-      }
+      // Maneuver finished -> advance straight onto the next leg. Don't dwell on
+      // the turn seg's entry beta: a gybe's entry is deeper than its exit, so
+      // steering to it bears the boat away and then heads it back up — which
+      // reads as the route arrows swinging out and back right after the gybe.
+      if (this.turned && !st.maneuver) this.#advance();
     } else if (this.segT >= seg.dur) {
       this.#advance();
     }
@@ -242,6 +243,16 @@ export class DemoDirector {
     const vCruise = Math.min(12, Math.max(3, Math.abs(st.v)));
     let i = this.i, segT = this.segT, turned = this.turned;
     let s = st.beta >= 0 ? 1 : -1;
+
+    // A turn whose maneuver has already completed: the boat is settling onto the
+    // NEW tack. Predict from the SETTLE leg, not the just-finished turn seg — its
+    // beta is the deep ENTRY/setup angle (for a gybe, deeper than the exit), so
+    // aiming the route at it bulges the chevrons out and then swings them back
+    // once the director advances a beat later. That swing-out-then-back right
+    // after a gybe is exactly the arrow flicker we must avoid.
+    if (turned && !st.maneuver && this.script[i % this.script.length].turn) {
+      i = (i + 1) % this.script.length; segT = 0; turned = false;
+    }
 
     // if a tack/gybe is already sweeping, seed the arc straight away — steering the
     // live heading onto the NEW tack's settle course (m.s is the entry tack sign).
