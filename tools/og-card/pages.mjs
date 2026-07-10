@@ -3,7 +3,7 @@
 // Meta text stays free-less (docTitle + tagline); the marketing "free" lives only on the image.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { L10N, LANGS, plain } from './l10n-v.mjs';
+import { L10N, LANGS, plain, DESC } from './l10n-v.mjs';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
 const ORIGIN = 'https://windsurfsimulator.com';
@@ -26,7 +26,7 @@ function buildPage(tpl, lang) {
   const tag = tagOf(lang);
   const title = esc(`${L.docTitle} — ${stripEnd(tag)}`); // SEO <title> (keyword-rich)
   const ogTitle = esc(L.docTitle);                        // social card title = app name only
-  const desc = esc(tag);                                  // social description = the tagline
+  const desc = esc(DESC[lang]);                           // useful, beginner-oriented description
   const url = `${ORIGIN}/${lang}/`;
   const img = `${ORIGIN}/og/og-cover-${lang}.png?v=3`;
   let h = tpl;
@@ -51,7 +51,7 @@ function buildPage(tpl, lang) {
 
   h = h.replace('"url": "https://windsurfsimulator.com/",', `"url": "${url}",`);
   h = h.replace('"name": "Windsurf Simulator",', `"name": ${JSON.stringify(L.docTitle)},`);
-  h = h.replace(/"description": "A 3D browser game[^"]*",/, `"description": ${JSON.stringify(tag)},`);
+  h = h.replace(/"description": "A 3D browser game[^"]*",/, `"description": ${JSON.stringify(DESC[lang])},`);
   h = h.replace(/"image": "https:\/\/windsurfsimulator\.com\/og-cover[^"]*",/, `"image": "${img}",`);
   h = h.replace(/"screenshot": "https:\/\/windsurfsimulator\.com\/og-cover[^"]*",/, `"screenshot": "${img}",`);
 

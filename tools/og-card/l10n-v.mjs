@@ -64,3 +64,28 @@ export const L10N = {
 };
 export const LANGS = Object.keys(L10N);
 export const plain = (s) => s.replace(/<[^>]+>/g, '');
+
+// Useful, beginner-oriented meta description (og/twitter/description + structured data).
+// Distinct from the title (which is just the app name).
+export const DESC = {
+  en: 'Learn to windsurf in your browser: control the sail, point upwind, change course and steer the board — all on real physics.',
+  uk: 'Опануй віндсерфінг у браузері: керуй вітрилом, ходи проти вітру, змінюй курс і веди дошку — усе на справжній фізиці.',
+  de: 'Windsurfen im Browser lernen: das Segel steuern, gegen den Wind kreuzen, den Kurs ändern und das Board lenken – alles mit echter Physik.',
+  fr: 'Apprends le windsurf dans ton navigateur : gère la voile, remonte au vent, change de cap et dirige la planche, le tout avec une vraie physique.',
+  es: 'Aprende windsurf en tu navegador: controla la vela, navega ciñendo el viento, cambia de rumbo y dirige la tabla, todo con física real.',
+  it: 'Impara il windsurf nel browser: controlla la vela, risali il vento, cambia rotta e guida la tavola, tutto con fisica reale.',
+  pt: 'Aprende windsurf no navegador: controla a vela, navega à bolina, muda de rumo e conduz a prancha — tudo com física real.',
+  nl: 'Leer windsurfen in je browser: bedien het zeil, kruis tegen de wind in, verander van koers en stuur de plank — met echte fysica.',
+  pl: 'Naucz się windsurfingu w przeglądarce: steruj żaglem, płyń pod wiatr, zmieniaj kurs i prowadź deskę — wszystko na prawdziwej fizyce.',
+  cs: 'Nauč se windsurfing v prohlížeči: ovládej plachtu, stoupej proti větru, měň kurz a řiď prkno — vše na skutečné fyzice.',
+  sv: 'Lär dig windsurfing i webbläsaren: styr seglet, kryssa mot vinden, byt kurs och styr brädan — allt med verklig fysik.',
+  da: 'Lær at windsurfe i browseren: styr sejlet, kryds mod vinden, skift kurs og styr brættet — alt med ægte fysik.',
+  fi: 'Opi purjelautailua selaimessa: hallitse purjetta, luovi vastatuuleen, vaihda suuntaa ja ohjaa lautaa — kaikki todellisella fysiikalla.',
+  el: 'Μάθε windsurf στον browser: έλεγξε το πανί, όρτσαρε στον άνεμο, άλλαξε πορεία και οδήγησε τη σανίδα — όλα με πραγματική φυσική.',
+  tr: 'Tarayıcında rüzgar sörfü öğren: yelkeni kontrol et, rüzgara karşı seyret, rota değiştir ve tahtayı yönet — hepsi gerçek fizikle.',
+  id: 'Belajar selancar angin di browser: kendalikan layar, melaju melawan angin, ubah haluan, dan kemudikan papan — semua dengan fisika nyata.',
+  ru: 'Освой виндсёрфинг в браузере: управляй парусом, иди против ветра, меняй курс и веди доску — всё на настоящей физике.',
+  zh: '在浏览器里学习风帆冲浪：控帆、迎风上行、改变航向、掌控冲浪板——全部基于真实物理。',
+  ja: 'ブラウザでウィンドサーフィンを学ぼう：セイルを操り、風上へ進み、コースを変え、ボードを操縦——すべてリアルな物理で。',
+  ko: '브라우저에서 윈드서핑을 배우세요: 세일을 다루고 바람을 거슬러 올라가며 방향을 바꾸고 보드를 조종하세요 — 모두 실제 물리로.',
+};
