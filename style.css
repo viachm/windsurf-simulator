@@ -106,7 +106,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 10px; padding: 6px 11px; color: var(--text); backdrop-filter: blur(6px);
 }
-.meter-title { font-size: 11px; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 6px; display: flex; align-items: center; white-space: nowrap; }
+.meter-title { font-size: 8.5px; letter-spacing: 0.8px; color: var(--text-dim); margin-bottom: 6px; display: flex; align-items: center; white-space: nowrap; }
 .meter-hint { display: none; }   /* verbose caption — the diamond/band read for themselves */
 #trim-state { margin-left: auto; font-weight: 700; flex: 0 0 auto; }
 #trim-state.luff  { color: var(--text-dim); }
@@ -241,8 +241,10 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 
 /* ---------- control panel ---------- */
 /* ---------- top-right buttons (info + settings) ---------- */
-/* Demo + settings sit on the sea, flush against the left edge of the sidebar. */
-#top-buttons { position: absolute; right: var(--sidebar-w); top: 14px; z-index: 30; display: flex; gap: 6px; }
+/* Demo + settings sit on the sea; the gap to the panel's visible edge (radar/HUD,
+   which starts 14px inside the sidebar padding) matches the 6px demo↔settings gap.
+   right = sidebar width − 14px padding + 6px gap. */
+#top-buttons { position: absolute; right: calc(var(--sidebar-w) - 8px); top: 14px; z-index: 30; display: flex; gap: 6px; }
 /* Demo transport (pause). On BOTH desktop and phone this lives here, away from
    the top-right cluster — on desktop that cluster would otherwise grow left into
    the centred HUD (WIND box + compass) whenever a demo runs. The holder is a
