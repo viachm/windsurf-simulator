@@ -65,6 +65,15 @@ export const L10N = {
 export const LANGS = Object.keys(L10N);
 export const plain = (s) => s.replace(/<[^>]+>/g, '');
 
+// Short "3D game" descriptor appended to the social title, so the card shows it's
+// a 3D game — WITHOUT repeating the sport word (already in the app name).
+export const GAME = {
+  en: '3D Game', uk: '3D-гра', de: '3D-Spiel', fr: 'jeu 3D', es: 'juego 3D',
+  it: 'gioco 3D', pt: 'jogo 3D', nl: '3D-game', pl: 'gra 3D', cs: '3D hra',
+  sv: '3D-spel', da: '3D-spil', fi: '3D-peli', el: 'παιχνίδι 3D', tr: '3D oyun',
+  id: 'game 3D', ru: '3D-игра', zh: '3D 游戏', ja: '3Dゲーム', ko: '3D 게임',
+};
+
 // Useful, beginner-oriented meta description (og/twitter/description + structured data).
 // Distinct from the title (which is just the app name).
 export const DESC = {

@@ -3,7 +3,7 @@
 // Meta text stays free-less (docTitle + tagline); the marketing "free" lives only on the image.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { L10N, LANGS, plain, DESC } from './l10n-v.mjs';
+import { L10N, LANGS, plain, DESC, GAME } from './l10n-v.mjs';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
 const ORIGIN = 'https://windsurfsimulator.com';
@@ -25,7 +25,7 @@ function buildPage(tpl, lang) {
   const L = L10N[lang];
   const tag = tagOf(lang);
   const title = esc(`${L.docTitle} — ${stripEnd(tag)}`); // SEO <title> (keyword-rich)
-  const ogTitle = esc(L.docTitle);                        // social card title = app name only
+  const ogTitle = esc(`${L.docTitle} — ${GAME[lang]}`);   // e.g. "Симулятор віндсерфінгу — 3D-гра"
   const desc = esc(DESC[lang]);                           // useful, beginner-oriented description
   const url = `${ORIGIN}/${lang}/`;
   const img = `${ORIGIN}/og/og-cover-${lang}.png?v=3`;
