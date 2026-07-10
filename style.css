@@ -40,25 +40,47 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
    Keeping it off-centre frees the top-right corner for the demo/settings
    cluster, which used to overlap the radar. (Phones re-flow it into a flat
    horizontal row — see the mobile block.) */
-#hud-top {
-  position: absolute; top: 138px; left: 14px; width: 200px;
-  display: flex; flex-direction: column; gap: 8px; align-items: stretch;
-  pointer-events: none;
+/* ---------- right sidebar (desktop) ----------
+   One column pinned to the right edge holding every control + readout, top to
+   bottom: HUD (speed/wind/point-of-sail + radar), the meters row, then the rig
+   controls. The sea gets the whole left of the screen; the boat is lens-shifted
+   left to sit centred in it (see ui.js #applyFramingShiftX). */
+#sidebar {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 384px; z-index: 20;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 52px 14px 14px;          /* top clears the demo/settings buttons */
+  overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin;
 }
+
+/* Desktop: HUD lives at the top of the right sidebar — speed/wind/point-of-sail
+   on the left, the radar spanning the right (top-right). */
+#hud-top {
+  width: 100%;
+  display: grid; gap: 8px;
+  grid-template-columns: 1fr 1fr 118px;
+  grid-template-areas:
+    "speed wind  radar"
+    "pos   pos   radar";
+}
+#speed-box { grid-area: speed; }
+#wind-box  { grid-area: wind; }
+#pos-box   { grid-area: pos; }
+.compass-box { grid-area: radar; align-self: stretch; }
 .hud-box {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
-  border-radius: 10px; padding: 8px 16px; color: var(--text);
-  min-width: 118px; text-align: center; backdrop-filter: blur(6px);
+  border-radius: 10px; padding: 8px 12px; color: var(--text);
+  min-width: 0; text-align: center; backdrop-filter: blur(6px);
 }
 /* Speed box has no sub-line (gust/glide moved out). Keep its label pinned to the
    top (in line with the WIND label) but center the value in the space below. */
 #speed-box { display: flex; flex-direction: column; }
 #speed-box .hud-value { margin-top: auto; margin-bottom: auto; }
-.hud-label { font-size: 9px; letter-spacing: 1.5px; color: var(--text-dim); }
-.hud-value { font-size: 22px; font-weight: 700; margin-top: 2px; }
-#pos-val { font-size: 15px; line-height: 1.7; }
-.hud-unit { font-size: 11px; margin-left: 3px; color: var(--text-dim); }
-.hud-sub { font-size: 10px; color: var(--text-dim); margin-top: 1px; min-height: 12px; }
+.hud-label { font-size: 10px; letter-spacing: 1.4px; color: var(--text-dim); }
+.hud-value { font-size: 24px; font-weight: 700; margin-top: 2px; }
+#pos-val { font-size: 16px; line-height: 1.4; }
+.hud-unit { font-size: 12px; margin-left: 3px; color: var(--text-dim); }
+.hud-sub { font-size: 11px; color: var(--text-dim); margin-top: 1px; min-height: 12px; }
 /* Planing indicator lives in the SAIL POWER meter title (right side, where the
    trim word normally sits) — keeps it out of the compact HUD speed box. */
 #planing-badge {
@@ -68,20 +90,22 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 #planing-badge.on { display: inline-block; }
 @keyframes pulse { from { opacity: 0.75; } to { opacity: 1; } }
-.compass-box { padding: 4px; min-width: 0; }
-#compass { display: block; margin: 0 auto; }   /* centred inside the full-width column box */
+.compass-box { padding: 4px; min-width: 0; display: flex; align-items: center; justify-content: center; }
+#compass { display: block; width: 108px; height: 108px; }   /* radar box, top-right of the HUD grid */
 
 /* ---------- meters ---------- */
+/* Desktop: SAIL POWER + BALANCE side by side, in the sidebar flow. */
 #meters {
-  position: absolute; top: 14px; left: 14px; width: 200px;
-  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+  width: 100%;
+  display: flex; flex-direction: row; gap: 8px;
 }
+#meters .meter-block { flex: 1; min-width: 0; }
 .meter-block {
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 10px; padding: 8px 12px; color: var(--text); backdrop-filter: blur(6px);
 }
-.meter-title { font-size: 9px; letter-spacing: 1.2px; color: var(--text-dim); margin-bottom: 6px; }
-.meter-hint { letter-spacing: 0; text-transform: none; }
+.meter-title { font-size: 11px; letter-spacing: 1.2px; color: var(--text-dim); margin-bottom: 6px; }
+.meter-hint { display: none; }   /* verbose caption — the diamond/band read for themselves */
 #trim-state { float: right; font-weight: 700; }
 #trim-state.luff  { color: var(--text-dim); }
 #trim-state.good  { color: var(--good); }
@@ -213,7 +237,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 
 /* ---------- control panel ---------- */
 /* ---------- top-right buttons (info + settings) ---------- */
-#top-buttons { position: absolute; right: 366px; top: 14px; z-index: 30; display: flex; gap: 6px; }
+#top-buttons { position: absolute; right: 14px; top: 14px; z-index: 30; display: flex; gap: 6px; }
 /* Demo transport (pause). On BOTH desktop and phone this lives here, away from
    the top-right cluster — on desktop that cluster would otherwise grow left into
    the centred HUD (WIND box + compass) whenever a demo runs. The holder is a
@@ -267,7 +291,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 
 /* ---------- demo popover ---------- */
 #demo-panel {
-  position: absolute; right: 366px; top: 52px; width: 280px; z-index: 30;
+  position: absolute; right: 398px; top: 52px; width: 280px; z-index: 30;
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 12px; color: var(--text); backdrop-filter: blur(8px);
   box-shadow: 0 12px 32px rgba(0,0,0,0.4); overflow: hidden;
@@ -361,15 +385,16 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 .lang-select:focus { outline: none; border-color: var(--accent); }
 .lang-select option { background: #0a1928; color: var(--text); }
 
+/* Desktop: the rig controls are the bottom section of the sidebar column
+   (the sidebar itself scrolls if the stack is taller than the viewport). */
 #panel {
-  position: absolute; right: 14px; top: 14px; width: 340px;
+  width: 100%;
   background: var(--panel-bg); border: 1px solid var(--panel-border);
   border-radius: 12px; color: var(--text); backdrop-filter: blur(8px);
-  max-height: calc(100vh - 28px); overflow-y: auto;
 }
 .panel-header {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 14px; font-size: 11px; letter-spacing: 2px; color: var(--accent);
+  padding: 11px 15px; font-size: 13px; letter-spacing: 2px; color: var(--accent);
   border-bottom: 1px solid var(--panel-border); position: sticky; top: 0;
   background: rgba(10, 25, 40, 0.95); border-radius: 12px 12px 0 0;
 }
@@ -380,18 +405,18 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #panel-body { padding: 12px 14px 16px; }
 #panel.collapsed #panel-body { display: none; }
 
-.ctl { margin-bottom: 16px; }
+.ctl { margin-bottom: 17px; }
 .ctl-label {
-  font-size: 10px; letter-spacing: 1.2px; color: var(--text-dim); margin-bottom: 6px;
+  font-size: 12px; letter-spacing: 1.2px; color: var(--text-dim); margin-bottom: 7px;
   display: flex; align-items: center; gap: 6px;
 }
-.ctl-value { margin-left: auto; color: var(--text); font-weight: 700; font-size: 12px; }
-.ctl-hint { margin-left: auto; letter-spacing: 0; text-transform: none; font-size: 9px; color: var(--text-dim); opacity: 0.75; font-weight: 400; }
+.ctl-value { margin-left: auto; color: var(--text); font-weight: 700; font-size: 14px; }
+.ctl-hint { margin-left: auto; letter-spacing: 0; text-transform: none; font-size: 10px; color: var(--text-dim); opacity: 0.75; font-weight: 400; }
 .key-hint {
-  font-size: 9px; color: var(--text-dim); border: 1px solid var(--panel-border);
+  font-size: 10px; color: var(--text-dim); border: 1px solid var(--panel-border);
   border-radius: 4px; padding: 0 4px;
 }
-.ctl-sub { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-dim); margin-top: 3px; }
+.ctl-sub { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-dim); margin-top: 4px; }
 
 /* sliders own their touch drag in both axes (esp. the vertical wind fader),
    and swallow pinch so two fingers on a slider can't zoom the page either */
@@ -406,19 +431,19 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
 .seg { display: flex; gap: 4px; }
 .seg button {
   flex: 1; background: rgba(255,255,255,0.06); color: var(--text-dim);
-  border: 1px solid var(--panel-border); border-radius: 6px; padding: 6px 2px;
-  font-size: 9.5px; cursor: pointer; font-family: inherit;
+  border: 1px solid var(--panel-border); border-radius: 6px; padding: 8px 3px;
+  font-size: 11.5px; cursor: pointer; font-family: inherit;
 }
 .seg button:hover { background: rgba(255,255,255,0.12); }
 .seg button.active { background: var(--accent); color: #06121e; font-weight: 700; border-color: var(--accent); }
 .seg button.blocked { outline: 1px solid var(--danger); }
 
 .toggle-row {
-  display: flex; align-items: center; gap: 8px; font-size: 11.5px; cursor: pointer;
-  padding: 4px 0; user-select: none;
+  display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer;
+  padding: 5px 0; user-select: none;
 }
-.toggle-row input { accent-color: var(--accent); width: 15px; height: 15px; }
-#autotrim-row { font-size: 12.5px; }   /* Autopilot label a touch larger than the rest */
+.toggle-row input { accent-color: var(--accent); width: 17px; height: 17px; }
+#autotrim-row { font-size: 14px; }   /* Autopilot label a touch larger than the rest */
 /* Daggerboard (left) + Harness (right) share one row, spread to the edges so
    the free space on the right is used instead of stacking them. Slightly
    smaller so both labels — incl. the long ones (uk "Зачепитися в трапецію") —
@@ -427,13 +452,13 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   display: flex; flex-direction: row; flex-wrap: wrap;
   justify-content: space-between; align-items: center; gap: 4px 6px;
 }
-.toggles-row .toggle-row { font-size: 10.5px; gap: 7px; flex: 0 1 auto; white-space: nowrap; }
-.toggles-row .toggle-row input { width: 14px; height: 14px; }
+.toggles-row .toggle-row { font-size: 12.5px; gap: 7px; flex: 0 1 auto; white-space: nowrap; }
+.toggles-row .toggle-row input { width: 16px; height: 16px; }
 
 .btn-row { display: flex; gap: 6px; }
 .action-btn {
   flex: 1; background: rgba(79, 195, 247, 0.15); border: 1px solid var(--accent);
-  color: var(--accent); border-radius: 8px; padding: 9px 4px; font-size: 11px;
+  color: var(--accent); border-radius: 8px; padding: 10px 4px; font-size: 13px;
   font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 1px;
 }
 .action-btn:hover { background: rgba(79, 195, 247, 0.3); }
@@ -441,7 +466,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
 .action-btn.subtle { border-color: var(--panel-border); color: var(--text-dim); }
 
 #help-note {
-  position: absolute; bottom: 6px; right: 14px; font-size: 10px; color: rgba(200,230,255,0.4);
+  position: absolute; bottom: 6px; left: 14px; font-size: 10px; color: rgba(200,230,255,0.4);
   pointer-events: none;
 }
 
@@ -449,6 +474,12 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
    MOBILE  —  bottom-sheet controls, compact HUD, touch-friendly
    ===================================================================== */
 @media (max-width: 768px) {
+
+  /* The desktop right-sidebar wrapper dissolves on phones: its children
+     (#hud-top, #meters, #panel) go back to being positioned against #app so
+     every mobile rule below keeps working exactly as before. */
+  #sidebar { display: contents; }
+  #hud-top, #meters { position: absolute; }
 
   /* ---- control panel becomes a collapsible bottom sheet ----
      Anchored to the bottom of #app, which is sized with 100dvh (dynamic
@@ -563,7 +594,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   #hud-top {
     top: calc(6px + env(safe-area-inset-top));
     left: 8px; right: 100px; width: auto; transform: none; max-width: none;   /* clear the demo + gear cluster */
-    flex-direction: row;                                          /* undo the desktop column */
+    display: flex; flex-direction: row;                           /* undo the desktop grid */
     gap: 6px; padding: 0; justify-content: flex-start;
   }
   /* boxes stay flat AND a constant height (single-line labels, tight metrics,

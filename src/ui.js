@@ -1,7 +1,7 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=44';
-import { DemoDirector } from './demo.js?b=44';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=45';
+import { DemoDirector } from './demo.js?b=45';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -78,6 +78,8 @@ export class UI {
 
     // keep the framing centred if the viewport changes (rotate / URL bar)
     addEventListener('resize', () => { this.#applyFramingLift(); this.#sizeWindFader(); });
+    // apply the desktop sidebar / mobile fader framing shift on first paint too
+    this.#applyFramingShiftX();
 
     // Static markup (incl. the windset readout) is re-templated on language
     // change; re-sync the readouts that aren't refreshed every frame.
@@ -504,9 +506,14 @@ export class UI {
   // fraction of the viewport; on desktop (no fader) there's no shift.
   #applyFramingShiftX() {
     if (!this.world) return;
-    const fader = document.querySelector('.wind-fader');
-    if (!this.#isMobile() || !fader) { this.world.setFramingShiftX(0); return; }
-    const rightInset = innerWidth - fader.getBoundingClientRect().left;
+    // The rider is nudged LEFT so it sits centred in the sea beside whatever
+    // occupies the right edge: on mobile the wind fader, on desktop the whole
+    // right sidebar. shift = occluded-right width / viewport width.
+    let rightEl = null;
+    if (this.#isMobile()) rightEl = document.querySelector('.wind-fader');
+    else rightEl = document.getElementById('sidebar');
+    if (!rightEl) { this.world.setFramingShiftX(0); return; }
+    const rightInset = innerWidth - rightEl.getBoundingClientRect().left;
     this.world.setFramingShiftX(rightInset / innerWidth);
   }
 
