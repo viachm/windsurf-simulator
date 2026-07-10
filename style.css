@@ -111,6 +111,11 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 .meter-title { font-size: 8.5px; letter-spacing: 0.8px; color: var(--text-dim); margin-bottom: 6px; display: flex; align-items: center; white-space: nowrap; }
 .meter-hint { display: none; }   /* verbose caption — the diamond/band read for themselves */
 #trim-state { margin-left: auto; font-weight: 700; flex: 0 0 auto; }
+/* While planing the JS blanks the trim word so the PLANING! badge owns the
+   right slot — but an empty flex item with margin-left:auto still eats the free
+   space and strands the badge mid-row. Drop it from layout so the badge (also
+   margin-left:auto) sits flush right. Desktop and mobile both. */
+#trim-state:empty { display: none; }
 #trim-state.luff  { color: var(--text-dim); }
 #trim-state.good  { color: var(--good); }
 #trim-state.stall { color: var(--danger); }
@@ -640,7 +645,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   .hud-unit { font-size: 8px; margin-left: 2px; }
   #pos-val { font-size: 10px; line-height: 1.05; }
   .hud-sub { font-size: 7px; min-height: 0; line-height: 1.0; }
-  #planing-badge { font-size: 7px; padding: 0 4px; margin-left: 4px; }
+  #planing-badge { font-size: 7px; padding: 0 4px; margin-left: auto; }   /* flush right in the SAIL POWER row */
 
   /* ---- radar/compass: floating widget under the meters (no room in the HUD row) ---- */
   .compass-box {
