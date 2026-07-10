@@ -9,7 +9,7 @@
 // carry the turns, and the rake steering is quantised to the five on-screen
 // buttons so the controls visibly "press" while it sails.
 
-import { t } from './i18n.js?b=58';
+import { t } from './i18n.js?b=59';
 
 const KN = 1.94384; // m/s -> knots
 const DEG = Math.PI / 180;
@@ -245,11 +245,19 @@ export class DemoDirector {
 
     // if a tack/gybe is already sweeping, seed the arc straight away — steering the
     // live heading onto the NEW tack's settle course (m.s is the entry tack sign).
-    let inTurn = false, turnTargetH = 0, turnSign = s;
+    // turnDir LOCKS the sweep direction for the whole turn. A tack carries the
+    // bow UP through the eye (heading rotates by +s), a gybe carries the stern
+    // DOWN through the run (rotates by -s) — matching sim's turnDH sign. We must
+    // NOT re-pick the direction each frame via a shortest-arc test: through a
+    // ~180° turn the remaining angle sits near ±π, and the tiny wind-angle wobble
+    // flips Math.sign() frame-to-frame, so the chevrons swing one way then the
+    // other then back. Locking the direction once kills that flicker.
+    let inTurn = false, turnTargetH = 0, turnSign = s, turnDir = s;
     if (st.maneuver) {
       const m = st.maneuver;
       turnSign = -m.s;
       turnTargetH = wa - turnSign * EXIT[m.type] * DEG;
+      turnDir = Math.sign(m.turnDH) || (m.type === 'tack' ? m.s : -m.s);
       inTurn = true;
     }
 
@@ -259,15 +267,18 @@ export class DemoDirector {
       if (!inTurn && seg.turn && !turned) {
         turnSign = -s;
         turnTargetH = wa - turnSign * EXIT[seg.turn] * DEG;
+        turnDir = seg.turn === 'tack' ? s : -s;   // tack up through the eye, gybe down through the run
         inTurn = true;
       }
       if (inTurn) {
-        // shortest-arc sweep onto the new tack (up through the eye for a tack,
-        // down through the run for a gybe — the short way round is the right way)
-        const dh = wrapAngle(turnTargetH - h);
-        h += Math.sign(dh) * Math.min(Math.abs(dh), ARC_RATE * PDT);
+        // sweep onto the new tack in the LOCKED direction. Measure the remaining
+        // angle the intended way round: if the shortest arc points opposite to
+        // turnDir, take the long way (subtract a full turn) so we never reverse.
+        let rem = wrapAngle(turnTargetH - h);
+        if (rem !== 0 && Math.sign(rem) !== turnDir) rem -= turnDir * 2 * Math.PI;
+        h += turnDir * Math.min(Math.abs(rem), ARC_RATE * PDT);
         v *= Math.pow(0.72, PDT);              // scrub speed through the carve
-        if (Math.abs(wrapAngle(turnTargetH - h)) < 0.04) {
+        if (Math.abs(rem) < 0.04) {
           inTurn = false; s = turnSign;        // settled on the new tack
           i++; segT = 0; turned = false;       // move on to the next leg
         }
