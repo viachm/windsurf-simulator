@@ -1,7 +1,7 @@
-import { WindsurfSim } from './sim.js?b=38';
-import { World } from './world.js?b=38';
-import { UI } from './ui.js?b=38';
-import { t, applyStatic } from './i18n.js?b=38';
+import { WindsurfSim } from './sim.js?b=39';
+import { World } from './world.js?b=39';
+import { UI } from './ui.js?b=39';
+import { t, applyStatic } from './i18n.js?b=39';
 
 applyStatic(); // localise the static markup for the saved/default language
 
@@ -13,12 +13,18 @@ let last = performance.now();
 let wasCrashed = false;
 
 function frame(now) {
-  // Pause button: freeze everything. Keep `last` current so resuming doesn't
-  // integrate one giant catch-up step.
-  if (ui.paused) { last = now; requestAnimationFrame(frame); return; }
-
   const dt = Math.min((now - last) / 1000, 0.05);
   last = now;
+
+  // Pause button: freeze the SIM, but keep the camera, OrbitControls (which has
+  // damping — it needs controls.update() every frame) and the renderer live.
+  // Re-render the last frozen state with dt=0 so nothing moves, yet the player
+  // can still orbit/zoom while paused and resuming doesn't jump the camera.
+  if (ui.paused) {
+    if (sim.lastState) world.update(sim.lastState, 0);
+    requestAnimationFrame(frame);
+    return;
+  }
 
   const inputs = ui.tickInputs(dt, sim.lastState);
   const state = sim.update(dt, inputs);
