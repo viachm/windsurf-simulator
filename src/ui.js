@@ -1,7 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=63';
-import { DemoDirector } from './demo.js?b=63';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=64';
+import { DemoDirector } from './demo.js?b=64';
+import { track, trackDebounced } from './analytics.js?b=64';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -128,37 +129,43 @@ export class UI {
       // manual control); otherwise the checkbox is the real toggle
       if (this.demo.running) { e.target.checked = true; this.inputs.autotrim = true; this.demo.nudge(); return; }
       this.inputs.autotrim = e.target.checked;
+      track('assist', { on: e.target.checked });
     });
     $('autotrim').checked = this.inputs.autotrim; // reflect the default (on)
 
     $('rake-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       this.setRake(parseFloat(b.dataset.rake));
+      track('rake', { rake: parseFloat(b.dataset.rake) });
     });
 
     $('stance-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       this.setStance(b.dataset.stance, true);
+      track('stance', { stance: b.dataset.stance });
     });
 
     $('lean').addEventListener('input', (e) => { this.#takeManualControl(); this.setLean(+e.target.value); });
 
-    $('dagger').addEventListener('change', (e) => { this.#takeManualControl(); this.inputs.dagger = e.target.checked; });
+    $('dagger').addEventListener('change', (e) => { this.#takeManualControl(); this.inputs.dagger = e.target.checked; track('dagger', { on: e.target.checked }); });
 
-    $('harness').addEventListener('change', (e) => this.setHarness(e.target.checked));
+    $('harness').addEventListener('change', (e) => { this.setHarness(e.target.checked); track('harness', { on: this.inputs.harness }); });
 
     $('btn-tack').addEventListener('click', () => this.tryTack());
     $('btn-gybe').addEventListener('click', () => this.tryGybe());
-    $('btn-reset').addEventListener('click', () => { this.sim.reset(); this.resetInputs(); });
+    $('btn-reset').addEventListener('click', () => { this.sim.reset(); this.resetInputs(); track('reset'); });
 
     $('windset').addEventListener('input', (e) => {
       this.sim.baseWind = +e.target.value;      // slider is in m/s
       this.#refreshWindReadout();
+      // one event on settle, not one per drag tick
+      trackDebounced('set_wind', { wind: Math.round(this.sim.baseWind) });
     });
 
     $('welcome-close').addEventListener('click', () => {
       $('welcome-overlay').classList.add('off');
       try { localStorage.setItem('ws_welcomeSeen', '1'); } catch (e) {} // don't show again next time
+      track('welcome_close');
     });
 
     // "How to play" (in settings) reopens the how-to on demand
@@ -166,6 +173,7 @@ export class UI {
       $('welcome-overlay').classList.remove('off');
       $('settings-panel').classList.add('off');
       $('settings-toggle').classList.remove('open');
+      track('how_to_play');
     });
 
     // "About" (in settings) — author credit popup
@@ -173,6 +181,7 @@ export class UI {
       $('about-overlay').classList.remove('off');
       $('settings-panel').classList.add('off');
       $('settings-toggle').classList.remove('open');
+      track('about');
     });
     $('about-close').addEventListener('click', () => $('about-overlay').classList.add('off'));
     // tap the dark backdrop (outside the card) closes it
@@ -264,26 +273,31 @@ export class UI {
     $('units-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       this.setUnits(b.dataset.units);
+      track('set_units', { units: this.units });
     });
 
     $('windunits-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       this.setWindUnits(b.dataset.windunits);
+      track('set_wind_units', { units: this.windUnits });
     });
 
     $('sailsize-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       this.setSailArea(parseFloat(b.dataset.sailarea));
+      track('set_sail', { sail: this.inputs.sailArea });
     });
 
     $('camera-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       this.setCameraMode(b.dataset.camera);
+      track('set_camera', { mode: this.cameraMode });
     });
 
     $('democap-seg').addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       this.setShowCaptions(b.dataset.democap === 'on');
+      track('set_captions', { on: this.showCaptions });
     });
 
     const langSel = $('lang-select');
@@ -292,7 +306,7 @@ export class UI {
       opt.value = code; opt.textContent = name;
       langSel.appendChild(opt);
     }
-    langSel.addEventListener('change', (e) => setLang(e.target.value));
+    langSel.addEventListener('change', (e) => { setLang(e.target.value); track('change_language', { lang: e.target.value }); });
 
     // initial state
     this.setUnits(this.units);
@@ -352,7 +366,7 @@ export class UI {
   // ---------------- pause (demo-only transport) ----------------
   #bindPause() {
     const pz = $('pause-toggle');
-    if (pz) pz.addEventListener('click', (e) => { e.stopPropagation(); this.setPaused(!this.paused); });
+    if (pz) pz.addEventListener('click', (e) => { e.stopPropagation(); this.setPaused(!this.paused); track('pause', { on: this.paused }); });
   }
 
   // Freeze / resume the whole simulation (main.js skips its update while paused).
@@ -414,6 +428,10 @@ export class UI {
   // ▶ DEMO pill turns into a ■ STOP button (icon + label + red styling) so one
   // tap ends the tour — no reopening the popover.
   #setDemoState(mode) {
+    // single choke point for demo lifecycle: fire start on entry, stop on exit
+    if (mode && mode !== this._demoMode) track('demo_start', { mode });
+    else if (!mode && this._demoMode) track('demo_stop', { mode: this._demoMode });
+    this._demoMode = mode || null;
     const btn = $('demo-toggle');
     btn.classList.toggle('running', !!mode);
     // the pause button lives only inside a demo; leaving a demo also lifts any
@@ -625,8 +643,10 @@ export class UI {
     if (!res.ok) {
       if (res.reason === 'downwind') this.flashMsg(t('flash.tooDownwind'));
       else if (res.reason === 'slow') this.flashMsg(t('flash.tackNeedSpeed'));
+      track('tack', { result: res.reason || 'blocked' });
       return;
     }
+    track('tack', { result: 'ok' });
     // maneuver housekeeping: sheet out, unhook, step to neutral
     if (this.inputs.harness) this.setHarness(false);
     this.setStance('mid');
@@ -640,8 +660,10 @@ export class UI {
     if (!res.ok) {
       if (res.reason === 'upwind') this.flashMsg(t('flash.tooUpwind'));
       else if (res.reason === 'slow') this.flashMsg(t('flash.gybeNeedSpeed'));
+      track('gybe', { result: res.reason || 'blocked' });
       return;
     }
+    track('gybe', { result: 'ok' });
     if (this.inputs.harness) this.setHarness(false);
     this.setStance('mid');
     this.setLean(15);
@@ -704,14 +726,14 @@ export class UI {
       // during a demo a gameplay key opens a brief override instead of stopping
       if (this.demo.running && GAME_KEYS.has(e.code)) this.demo.nudge();
       switch (e.code) {
-        case 'Digit1': this.setStance('front', true); break;
-        case 'Digit2': this.setStance('mid', true); break;
-        case 'Digit3': this.setStance('back', true); break;
-        case 'KeyD': this.#takeManualControl(); $('dagger').checked = !$('dagger').checked; this.inputs.dagger = $('dagger').checked; break;
-        case 'KeyH': this.setHarness(!this.inputs.harness); break;
+        case 'Digit1': this.setStance('front', true); track('stance', { stance: 'front' }); break;
+        case 'Digit2': this.setStance('mid', true); track('stance', { stance: 'mid' }); break;
+        case 'Digit3': this.setStance('back', true); track('stance', { stance: 'back' }); break;
+        case 'KeyD': this.#takeManualControl(); $('dagger').checked = !$('dagger').checked; this.inputs.dagger = $('dagger').checked; track('dagger', { on: this.inputs.dagger }); break;
+        case 'KeyH': this.setHarness(!this.inputs.harness); track('harness', { on: this.inputs.harness }); break;
         case 'KeyT': this.tryTack(); break;
         case 'KeyG': this.tryGybe(); break;
-        case 'KeyR': this.sim.reset(); this.resetInputs(); break;
+        case 'KeyR': this.sim.reset(); this.resetInputs(); track('reset'); break;
       }
     });
     addEventListener('keyup', (e) => {

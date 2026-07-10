@@ -1,7 +1,8 @@
-import { WindsurfSim } from './sim.js?b=63';
-import { World } from './world.js?b=63';
-import { UI } from './ui.js?b=63';
-import { t, applyStatic } from './i18n.js?b=63';
+import { WindsurfSim } from './sim.js?b=64';
+import { World } from './world.js?b=64';
+import { UI } from './ui.js?b=64';
+import { t, applyStatic } from './i18n.js?b=64';
+import { initAnalytics, tickPlayTime, track, trackOnce } from './analytics.js?b=64';
 
 applyStatic(); // localise the static markup for the saved/default language
 
@@ -11,6 +12,7 @@ const ui = new UI(sim, world);
 
 let last = performance.now();
 let wasCrashed = false;
+let wasPlaning = false;
 
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.05);
@@ -35,6 +37,8 @@ function frame(now) {
         world.triggerSplash(state.pos.x, 0.3, state.pos.z);
         if (inputs.harness) ui.setHarness(false);
         ui.setRake(0);
+        // reason keys look like 'crash.catapult.reason' -> report just 'catapult'
+        track('crash', { reason: (state.crashReason || '').split('.')[1] || 'unknown' });
       }
       // recovered -> sensible restart posture
       if (!state.crashed && wasCrashed) {
@@ -42,9 +46,16 @@ function frame(now) {
         ui.inputs.sheetDeg = 70;
         document.getElementById('sheet').value = 70;
         ui.flashMsg(t('main.recovered'));
+        track('recover');
       }
       wasCrashed = state.crashed;
 
+      // planing rising edge: count each time the rider gets up on the plane, and
+      // flag the first plane of the session as an engagement milestone.
+      if (state.planing && !wasPlaning) { track('plane'); trackOnce('first_plane'); }
+      wasPlaning = state.planing;
+
+      tickPlayTime(dt);   // session-depth milestones (how long people last)
       world.update(state, dt);
       ui.updateHUD(state);
     }
@@ -64,5 +75,6 @@ if (bootLoader) {
 }
 
 console.log('[windsurf-sim] started');
+initAnalytics();   // GA4 gameplay/settings events (best-effort; no-op if blocked)
 // debug handles
 window.__sim = sim; window.__world = world; window.__ui = ui;
