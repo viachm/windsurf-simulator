@@ -9,7 +9,7 @@
 // carry the turns, and the rake steering is quantised to the five on-screen
 // buttons so the controls visibly "press" while it sails.
 
-import { t } from './i18n.js?b=50';
+import { t } from './i18n.js?b=51';
 
 const KN = 1.94384; // m/s -> knots
 const DEG = Math.PI / 180;

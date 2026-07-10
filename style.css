@@ -423,6 +423,8 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
     justify-content: space-between; gap: 6px;
   }
   #panel-body .ctl { margin-bottom: 0; }   /* spacing comes from gap + space-between */
+  /* wind icon on the TRUE WIND label, like the mobile wind fader */
+  #wind-ctl .ctl-label::before { content: "💨"; font-size: 13px; line-height: 1; }
 }
 #panel.collapsed #panel-body { display: none; }
 
