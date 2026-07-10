@@ -61,9 +61,9 @@
   </script>
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' width='100' height='100'><ellipse cx='50' cy='87' rx='31' ry='5.6' fill='%23ffd23f'/><path d='M50 11 Q87 40 72 82 L50 84 Z' fill='%23ff6b4d'/><path d='M50 16 Q72 40 65 78 L50 80 Z' fill='%23ff9a52'/><line x1='50' y1='9' x2='50' y2='85' stroke='%230a2540' stroke-width='3.4' stroke-linecap='round'/><g fill='none' stroke='%230a2540' stroke-linecap='round'><path d='M44 84 L45 62' stroke-width='7'/><path d='M56 84 L45 62' stroke-width='7'/><path d='M45 63 L37 44' stroke-width='7.5'/><path d='M38 47 L62 42' stroke-width='6'/><path d='M39 52 L62 49' stroke-width='6'/></g><circle cx='34.5' cy='38' r='7.3' fill='%230a2540'/></svg>" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=46" />
-  <link rel="manifest" href="site.webmanifest?b=46" />
-  <link rel="stylesheet" href="style.css?b=46" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=47" />
+  <link rel="manifest" href="site.webmanifest?b=47" />
+  <link rel="stylesheet" href="style.css?b=47" />
   <script type="importmap">
     {
       "imports": {
@@ -238,7 +238,7 @@
       <div id="about-card">
         <div class="w-title" data-i18n="about.title">ABOUT</div>
         <div class="about-app">
-          <img src="docs/app-icon.png?b=46" width="54" height="54" alt="" />
+          <img src="docs/app-icon.png?b=47" width="54" height="54" alt="" />
           <span class="about-app-name">Windsurf Simulator</span>
         </div>
         <p class="about-tagline" data-i18n="about.tagline">A 3D game about the real physics of windsurfing.</p>
@@ -271,38 +271,43 @@
     <!-- Right sidebar: all HUD, meters, radar and controls stacked top→bottom -->
     <div id="sidebar">
 
-    <!-- Top HUD -->
-    <div id="hud-top">
-      <div class="hud-box" id="speed-box">
-        <div class="hud-label" data-i18n="hud.speed">BOARD SPEED</div>
-        <div class="hud-value"><span id="speed-val">0.0</span><span class="hud-unit" id="speed-unit">kn</span></div>
-      </div>
-      <div class="hud-box" id="wind-box">
-        <div class="hud-label" data-i18n="hud.wind">WIND</div>
-        <div class="hud-value"><span id="wind-val">14</span><span class="hud-unit" id="wind-unit">kn</span></div>
-        <div class="hud-sub" id="gust-val"></div>
-      </div>
-      <div class="hud-box" id="pos-box">
-        <div class="hud-label" data-i18n="hud.pos">POINT OF SAIL</div>
-        <div class="hud-value" id="pos-val">Beam Reach</div>
-        <div class="hud-sub" id="tack-val">Starboard tack</div>
-      </div>
+    <!-- Top region: tall radar on the left; HUD row + meters row stacked on the right -->
+    <div id="hud-region">
       <div class="hud-box compass-box">
         <canvas id="compass" width="120" height="120"></canvas>
       </div>
-    </div>
+      <div class="hud-right">
+        <!-- Top HUD -->
+        <div id="hud-top">
+          <div class="hud-box" id="speed-box">
+            <div class="hud-label" data-i18n="hud.speed">BOARD SPEED</div>
+            <div class="hud-value"><span id="speed-val">0.0</span><span class="hud-unit" id="speed-unit">kn</span></div>
+          </div>
+          <div class="hud-box" id="wind-box">
+            <div class="hud-label" data-i18n="hud.wind">WIND</div>
+            <div class="hud-value"><span id="wind-val">14</span><span class="hud-unit" id="wind-unit">kn</span></div>
+            <div class="hud-sub" id="gust-val"></div>
+          </div>
+          <div class="hud-box" id="pos-box">
+            <div class="hud-label" data-i18n="hud.pos">POINT OF SAIL</div>
+            <div class="hud-value" id="pos-val">Beam Reach</div>
+            <div class="hud-sub" id="tack-val">Starboard tack</div>
+          </div>
+        </div>
 
-    <!-- Meters -->
-    <div id="meters">
-      <div class="meter-block">
-        <div class="meter-title" data-i18n-html="meter.power">SAIL POWER <span id="trim-state"></span></div>
-        <div class="meter-track"><div class="meter-fill" id="power-fill"></div></div>
-      </div>
-      <div class="meter-block">
-        <div class="meter-title" data-i18n-html="meter.balance">BALANCE <span class="meter-hint">(diamond = your lean, band = what the sail demands)</span></div>
-        <div class="meter-track balance-track">
-          <div id="required-band"></div>
-          <div id="lean-marker"></div>
+        <!-- Meters -->
+        <div id="meters">
+          <div class="meter-block">
+            <div class="meter-title" data-i18n-html="meter.power">SAIL POWER <span id="trim-state"></span></div>
+            <div class="meter-track"><div class="meter-fill" id="power-fill"></div></div>
+          </div>
+          <div class="meter-block">
+            <div class="meter-title" data-i18n-html="meter.balance">BALANCE <span class="meter-hint">(diamond = your lean, band = what the sail demands)</span></div>
+            <div class="meter-track balance-track">
+              <div id="required-band"></div>
+              <div id="lean-marker"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -398,9 +403,9 @@
        kills the English→localised flash. Its ?b token MUST stay in sync with
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script type="module">
-    import { applyStatic } from './src/i18n.js?b=46';
+    import { applyStatic } from './src/i18n.js?b=47';
     applyStatic();
   </script>
-  <script type="module" src="src/main.js?b=46"></script>
+  <script type="module" src="src/main.js?b=47"></script>
 </body>
 </html>
