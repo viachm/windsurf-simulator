@@ -1,0 +1,742 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --panel-bg: rgba(10, 25, 40, 0.82);
+  --panel-border: rgba(120, 200, 255, 0.25);
+  --sidebar-w: 486px;   /* desktop right column; the sea is everything left of it */
+  --accent: #4fc3f7;
+  --accent2: #ffd54f;
+  --danger: #ff7043;
+  --good: #66bb6a;
+  --text: #e8f4fd;
+  --text-dim: #8fb8d4;
+  font-family: "SF Mono", "Menlo", "Consolas", monospace;
+}
+
+html, body { height: 100%; overflow: hidden; background: #06121e; }
+
+/* touch-action: pan-y lets the panels scroll vertically but blocks the browser's
+   pinch-zoom and double-tap-zoom everywhere in the UI. The 3D canvas sets its own
+   touch-action:none (OrbitControls), so the water keeps its camera pinch. */
+#app { position: relative; width: 100vw; height: 100vh; height: 100dvh; touch-action: pan-y; }
+#scene { position: absolute; inset: 0; display: block; }
+
+/* ---------- boot loader ---------- */
+#boot-loader {
+  position: fixed; inset: 0; z-index: 100; display: flex;
+  align-items: center; justify-content: center; background: #06121e;
+  transition: opacity 0.35s ease;
+}
+#boot-loader.off { opacity: 0; pointer-events: none; }
+.boot-spinner {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 3px solid rgba(120, 200, 255, 0.2);
+  border-top-color: var(--accent);
+  animation: boot-spin 0.8s linear infinite;
+}
+@keyframes boot-spin { to { transform: rotate(360deg); } }
+
+/* ---------- top HUD ----------
+   Desktop: a vertical column down the LEFT edge, tucked under the meters.
+   Keeping it off-centre frees the top-right corner for the demo/settings
+   cluster, which used to overlap the radar. (Phones re-flow it into a flat
+   horizontal row — see the mobile block.) */
+/* ---------- right sidebar (desktop) ----------
+   One column pinned to the right edge holding every control + readout, top to
+   bottom: HUD (speed/wind/point-of-sail + radar), the meters row, then the rig
+   controls. The sea gets the whole left of the screen; the boat is lens-shifted
+   left to sit centred in it (see ui.js #applyFramingShiftX). */
+#sidebar {
+  position: absolute; top: 0; right: 0; bottom: 0; width: var(--sidebar-w); z-index: 20;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px;                    /* demo/settings live on the sea, left of here */
+  overflow-y: auto; overflow-x: hidden;   /* natural height; only scrolls if a short screen can't fit it */
+}
+
+/* Desktop: HUD lives at the top of the right sidebar — speed/wind/point-of-sail
+   on the left, the radar spanning the right (top-right). */
+/* Top region: a tall radar on the left, and a right column that stacks the HUD
+   row (BOARD SPEED / WIND / POINT OF SAIL) above the meters row. The radar
+   stretches to the full height of that column. */
+#hud-region { width: 100%; display: flex; gap: 8px; align-items: stretch; }
+.hud-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.compass-box { flex: 0 0 auto; }   /* the radar — a square sized to the section height (see #compass) */
+
+#hud-top {
+  width: 100%;
+  display: grid; gap: 6px;
+  grid-template-columns: 1fr 1fr 1fr;   /* BOARD SPEED · WIND · POINT OF SAIL */
+}
+.hud-box {
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 10px; padding: 6px 6px; color: var(--text);
+  min-width: 0; text-align: center; backdrop-filter: blur(6px);
+  display: flex; flex-direction: column; justify-content: flex-start;   /* labels line up at the top */
+}
+/* Speed box has no sub-line (gust/glide moved out). Keep its label pinned to the
+   top (in line with the WIND label) but center the value in the space below. */
+#speed-box { display: flex; flex-direction: column; }
+#speed-box .hud-value { margin-top: auto; margin-bottom: auto; }
+.hud-label { font-size: 8.5px; letter-spacing: 0.8px; color: var(--text-dim); white-space: nowrap; }
+.hud-value { font-size: 18px; font-weight: 700; margin-top: 1px; }
+#pos-val { font-size: 12.5px; line-height: 1.2; }
+.hud-unit { font-size: 9.5px; margin-left: 2px; color: var(--text-dim); }
+.hud-sub { font-size: 9px; color: var(--text-dim); margin-top: 1px; min-height: 10px; }
+/* Planing indicator lives in the SAIL POWER meter title (right side, where the
+   trim word normally sits) — keeps it out of the compact HUD speed box. */
+#planing-badge {
+  display: none; margin-left: auto; font-size: 8.5px; font-weight: 700; color: #06121e;
+  background: var(--accent2); border-radius: 4px; padding: 1px 5px;
+  letter-spacing: 0.5px; animation: pulse 0.8s infinite alternate; flex: 0 0 auto;
+}
+#planing-badge.on { display: inline-block; }
+@keyframes pulse { from { opacity: 0.75; } to { opacity: 1; } }
+.compass-box { padding: 4px; min-width: 0; display: flex; align-items: center; justify-content: center; }
+/* Radar is sized in JS (#sizeRadar) to a square matching the HUD+meters column
+   height, so it fits perfectly with no leftover gap under the meters. */
+#compass { display: block; }
+
+/* ---------- meters ---------- */
+/* Desktop: SAIL POWER + BALANCE side by side, in the sidebar flow. */
+#meters {
+  width: 100%;
+  display: flex; flex-direction: row; gap: 8px;
+}
+#meters .meter-block { flex: 1; min-width: 0; }
+#meters .meter-block:first-child { flex: 1.55; }   /* SAIL POWER needs room for the trim word / PLANING! badge */
+.meter-block {
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 10px; padding: 6px 11px; color: var(--text); backdrop-filter: blur(6px);
+}
+.meter-title { font-size: 8.5px; letter-spacing: 0.8px; color: var(--text-dim); margin-bottom: 6px; display: flex; align-items: center; white-space: nowrap; }
+.meter-hint { display: none; }   /* verbose caption — the diamond/band read for themselves */
+#trim-state { margin-left: auto; font-weight: 700; flex: 0 0 auto; }
+/* While planing the JS blanks the trim word so the PLANING! badge owns the
+   right slot — but an empty flex item with margin-left:auto still eats the free
+   space and strands the badge mid-row. Drop it from layout so the badge (also
+   margin-left:auto) sits flush right. Desktop and mobile both. */
+#trim-state:empty { display: none; }
+#trim-state.luff  { color: var(--text-dim); }
+#trim-state.good  { color: var(--good); }
+#trim-state.stall { color: var(--danger); }
+.meter-track {
+  position: relative; height: 10px; border-radius: 5px;
+  background: rgba(255,255,255,0.08); overflow: visible;
+}
+.meter-fill {
+  height: 100%; width: 0%; border-radius: 5px;
+  background: linear-gradient(90deg, #29b6f6, #ffd54f 75%, #ff7043);
+  transition: width 0.12s linear;
+}
+#required-band {
+  position: absolute; top: 0; height: 100%; background: rgba(255, 213, 79, 0.35);
+  border: 1px solid rgba(255, 213, 79, 0.7); border-radius: 4px; width: 20%; left: 20%;
+}
+#lean-marker {
+  position: absolute; top: 50%; width: 12px; height: 12px; background: var(--accent);
+  transform: translate(-50%, -50%) rotate(45deg); left: 25%;
+  border: 1px solid white; transition: left 0.1s linear;
+}
+
+/* ---------- hint bar ---------- */
+/* Centred over the SEA (viewport minus the sidebar), like the boat — not the
+   whole page. Mobile resets left:50% (no sidebar there). */
+#hint-bar {
+  position: absolute; bottom: 18px; left: calc(50% - var(--sidebar-w) / 2); transform: translateX(-50%);
+  max-width: 640px; pointer-events: none; text-align: center;
+}
+#hint-text {
+  display: inline-block; background: var(--panel-bg); border: 1px solid var(--panel-border);
+  color: var(--accent2); border-radius: 10px; padding: 8px 18px; font-size: 13px;
+  backdrop-filter: blur(6px); transition: opacity 0.3s;
+}
+#hint-text:empty { opacity: 0; }
+#hint-text.warn { color: var(--danger); font-weight: 700; animation: pulse 0.5s infinite alternate; }
+
+/* ---------- toast (why an action was blocked) ---------- */
+#toast {
+  position: absolute; left: calc(50% - var(--sidebar-w) / 2); bottom: 78px; z-index: 25;
+  transform: translateX(-50%) translateY(8px);
+  max-width: min(440px, 90vw); pointer-events: none; text-align: center;
+  background: var(--panel-bg); border: 1px solid var(--accent2); color: var(--accent2);
+  border-radius: 10px; padding: 10px 16px; font-size: 13px; line-height: 1.35;
+  backdrop-filter: blur(6px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease;
+}
+#toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- welcome overlay ---------- */
+#welcome-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(4, 16, 28, 0.55); z-index: 30;
+}
+#welcome-overlay.off { display: none; }
+#welcome-card {
+  background: var(--panel-bg); border: 1px solid var(--accent); border-radius: 16px;
+  padding: 26px 34px; color: var(--text); max-width: 560px; backdrop-filter: blur(10px);
+  font-size: 13px; line-height: 1.55;
+}
+#welcome-card .w-title { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
+#welcome-card p { margin: 8px 0; }
+#welcome-card ol { margin: 10px 0 10px 20px; }
+#welcome-card li { margin: 6px 0; }
+#welcome-card .w-goal { color: var(--text-dim); }
+#welcome-close {
+  margin-top: 12px; width: 100%; background: var(--accent); color: #06121e; border: none;
+  border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800; letter-spacing: 2px;
+  cursor: pointer; font-family: inherit;
+}
+#welcome-close:hover { filter: brightness(1.15); }
+
+/* ---------- about overlay ---------- */
+#about-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(4, 16, 28, 0.55); z-index: 31;
+}
+#about-overlay.off { display: none; }
+#about-card {
+  background: var(--panel-bg); border: 1px solid var(--accent); border-radius: 16px;
+  padding: 26px 34px; color: var(--text); max-width: 400px; width: calc(100% - 48px);
+  backdrop-filter: blur(10px); text-align: center; font-size: 13px; line-height: 1.55;
+}
+#about-card .w-title { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--accent); margin-bottom: 16px; }
+.about-app { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 0 2px; }
+/* App-icon tile (its own light-sky background baked in) */
+.about-app img { border-radius: 13px; }
+.about-app-name { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+.about-tagline { margin: 8px 0 18px; color: var(--text-dim); }
+.about-author { display: flex; flex-direction: column; gap: 3px; margin: 4px 0 14px; }
+.about-madeby { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); }
+.about-name { font-size: 17px; font-weight: 700; }
+.about-email { color: var(--accent); text-decoration: none; font-size: 13px; }
+.about-email:hover { text-decoration: underline; }
+.about-thanks { color: var(--text-dim); margin: 0 0 10px; }
+.about-github {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--text); text-decoration: none; font-size: 13px; font-weight: 600;
+  padding: 8px 16px; border: 1px solid var(--line, rgba(255,255,255,.18)); border-radius: 10px;
+}
+.about-github:hover { border-color: var(--accent); color: var(--accent); }
+.about-github svg { display: block; }
+/* Quiet "Made in Ukraine 🇺🇦" line — small and dim so it reads as a footnote. */
+.about-madein { margin-top: 14px; font-size: 11px; letter-spacing: 0.5px; color: var(--text-dim); opacity: 0.7; }
+#about-close {
+  margin-top: 16px; width: 100%; background: var(--accent); color: #06121e; border: none;
+  border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800; letter-spacing: 2px;
+  cursor: pointer; font-family: inherit;
+}
+#about-close:hover { filter: brightness(1.15); }
+
+/* ---------- crash overlay ---------- */
+#crash-overlay {
+  position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+  background: rgba(4, 16, 28, 0.45); z-index: 20;
+  cursor: pointer; touch-action: none;
+}
+/* stop iOS from selecting text / showing the callout when you press-and-hold */
+#crash-overlay, #crash-overlay * {
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+#crash-overlay.on { display: flex; }
+#crash-card {
+  background: var(--panel-bg); border: 2px solid var(--danger); border-radius: 16px;
+  padding: 28px 40px; text-align: center; color: var(--text); max-width: 480px;
+  backdrop-filter: blur(8px);
+}
+#crash-title { font-size: 34px; font-weight: 800; color: var(--danger); letter-spacing: 2px; }
+#crash-reason { font-size: 15px; margin-top: 10px; }
+#crash-lesson { font-size: 12px; margin-top: 12px; color: var(--accent2); line-height: 1.5; }
+#crash-timer { font-size: 11px; margin-top: 14px; color: var(--text-dim); }
+
+/* ---------- control panel ---------- */
+/* ---------- top-right buttons (info + settings) ---------- */
+/* Demo + settings sit on the sea; the gap to the panel's visible edge (radar/HUD,
+   which starts 14px inside the sidebar padding) matches the 6px demo↔settings gap.
+   right = sidebar width − 14px padding + 6px gap. */
+#top-buttons { position: absolute; right: calc(var(--sidebar-w) - 8px); top: 14px; z-index: 30; display: flex; gap: 6px; }
+/* Demo transport (pause). On BOTH desktop and phone this lives here, away from
+   the top-right cluster — on desktop that cluster would otherwise grow left into
+   the centred HUD (WIND box + compass) whenever a demo runs. The holder is a
+   zero-size flex box until a demo un-hides its button. Desktop home: the clear
+   bottom-left corner; phones re-home it top-right (mobile block below). */
+#demo-transport {
+  position: absolute; z-index: 30; display: flex; gap: 6px;
+  left: 14px; bottom: 14px;
+}
+#app.demo-running .demo-only { display: flex !important; }
+#settings-toggle {
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 8px; color: var(--text); backdrop-filter: blur(6px);
+  cursor: pointer; font-family: inherit; font-weight: 700; letter-spacing: 1.5px;
+  padding: 6px 9px; display: flex; align-items: center; justify-content: center;
+}
+#settings-toggle svg { display: block; }
+#settings-toggle:hover, #settings-toggle.open { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- pause button (shown only while a demo runs) ---------- */
+#pause-toggle {
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 8px; color: var(--text); backdrop-filter: blur(6px);
+  cursor: pointer; font-family: inherit; font-weight: 700;
+  padding: 6px 9px; display: flex; align-items: center; justify-content: center;
+  transition: transform 0.12s ease;
+}
+#pause-toggle svg { display: block; }
+#pause-toggle:hover { border-color: var(--accent); color: var(--accent); }
+/* the pause pill turns amber while everything is frozen */
+#pause-toggle.paused { border-color: var(--accent); color: var(--accent); }
+/* both are demo-only: hidden until #demo-transport is marked demo-on (they live
+   in that holder on every viewport — see #demo-transport above) */
+.demo-only { display: none !important; }
+
+/* ---------- guided-demo button ---------- */
+#demo-toggle {
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 8px; color: var(--text); backdrop-filter: blur(6px);
+  cursor: pointer; font-family: inherit; font-weight: 700; letter-spacing: 1.5px;
+  font-size: 11px; padding: 6px 11px; display: flex; align-items: center; gap: 6px;
+}
+#demo-toggle svg { display: block; }
+#demo-toggle:hover, #demo-toggle.open { border-color: var(--accent); color: var(--accent); }
+/* while a tour runs the pill IS the stop button — red so it reads as "■ stop" */
+#demo-toggle.running {
+  border-color: var(--danger); color: var(--danger);
+  box-shadow: 0 0 10px rgba(255, 112, 67, 0.4);
+}
+#demo-toggle.running:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ---------- demo popover ---------- */
+#demo-panel {
+  position: absolute; right: calc(var(--sidebar-w) + 2px); top: 52px; width: 280px; z-index: 30;
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 12px; color: var(--text); backdrop-filter: blur(8px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4); overflow: hidden;
+}
+#demo-panel.off { display: none; }
+#demo-close {
+  background: none; border: 1px solid var(--panel-border); color: var(--text);
+  border-radius: 6px; width: 22px; height: 22px; cursor: pointer; font-size: 15px; line-height: 1;
+}
+.demo-intro { font-size: 11px; line-height: 1.5; color: var(--text-dim); margin-bottom: 12px; }
+.demo-mode {
+  display: block; width: 100%; text-align: left; margin-bottom: 8px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--panel-border);
+  border-radius: 8px; padding: 9px 12px; color: var(--text); cursor: pointer; font-family: inherit;
+}
+.demo-mode:hover { border-color: var(--accent); }
+.demo-mode.active { border-color: var(--good); background: rgba(102, 187, 106, 0.14); }
+.demo-mode-name { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+.demo-mode-desc { display: block; font-size: 10px; line-height: 1.4; color: var(--text-dim); margin-top: 2px; }
+
+/* ---------- demo narration banner ----------
+   Shares the SAME bottom slot as every transient message: low-centre on desktop,
+   full-width just above the control sheet on phones (bottom set in JS). */
+#demo-caption {
+  position: absolute; left: calc(50% - var(--sidebar-w) / 2); bottom: 58px; z-index: 24;
+  transform: translateX(-50%);
+  max-width: min(560px, 92vw); pointer-events: none; text-align: center;
+  background: var(--panel-bg); border: 1px solid var(--good); border-radius: 10px;
+  padding: 8px 16px; backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  transition: opacity 0.3s ease;
+}
+#demo-caption.off { opacity: 0; }
+#demo-cap { font-size: 13px; line-height: 1.4; color: var(--text); }
+
+/* ---------- settings popover ---------- */
+/* Settings is a full-screen centred modal (same pattern as #about-overlay):
+   a dim backdrop + a card. #settings-panel is the backdrop, #settings-card the card. */
+#settings-panel {
+  position: absolute; inset: 0; z-index: 31;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(4, 16, 28, 0.55);
+}
+#settings-panel.off { display: none; }
+#settings-card {
+  width: 400px; max-width: calc(100% - 40px); max-height: calc(100% - 40px);
+  overflow-y: auto; color: var(--text);
+  background: var(--panel-bg); border: 1px solid var(--accent);
+  border-radius: 16px; backdrop-filter: blur(10px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+  padding: 26px 32px;
+}
+/* centred title, same treatment as the About modal's .w-title */
+#settings-card .w-title {
+  font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--accent);
+  text-align: center; margin-bottom: 20px;
+}
+/* .settings-header is still used by the guided-demo popover (its own × close) */
+.settings-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; font-size: 11px; letter-spacing: 2px; color: var(--accent);
+  border-bottom: 1px solid var(--panel-border);
+}
+.settings-body { padding: 14px; }
+/* the card owns the padding now; the settings body sits flush inside it */
+#settings-card .settings-body { padding: 0; }
+/* bottom CLOSE button — identical to the About modal's #about-close */
+#settings-close {
+  margin-top: 20px; width: 100%; background: var(--accent); color: #06121e; border: none;
+  border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800; letter-spacing: 2px;
+  cursor: pointer; font-family: inherit;
+}
+#settings-close:hover { filter: brightness(1.15); }
+.settings-action {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  margin-top: 4px; padding: 9px; background: rgba(255,255,255,0.06);
+  border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text);
+  cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+}
+.settings-action svg { display: block; }
+.settings-action:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Language dropdown — enough locales that a segmented row won't fit. */
+.lang-select {
+  width: 100%; padding: 8px 10px; background: rgba(255,255,255,0.06);
+  border: 1px solid var(--panel-border); border-radius: 8px; color: var(--text);
+  font-family: inherit; font-size: 12px; cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%238fb8d4' stroke-width='1.6'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; background-size: 11px;
+}
+.lang-select:focus { outline: none; border-color: var(--accent); }
+.lang-select option { background: #0a1928; color: var(--text); }
+
+/* Desktop: the rig controls are the bottom section of the sidebar column
+   (the sidebar itself scrolls if the stack is taller than the viewport). */
+#panel {
+  width: 100%;
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 12px; color: var(--text); backdrop-filter: blur(8px);
+}
+.panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 11px 15px; font-size: 13px; letter-spacing: 2px; color: var(--accent);
+  border-bottom: 1px solid var(--panel-border); position: sticky; top: 0;
+  background: rgba(10, 25, 40, 0.95); border-radius: 12px 12px 0 0;
+}
+/* No collapsing on desktop — the panel is always open there. The toggle (and the
+   header-tap collapse in ui.js) come back only on the mobile bottom sheet. */
+#panel-toggle {
+  display: none;
+  background: none; border: 1px solid var(--panel-border); color: var(--text);
+  border-radius: 6px; width: 22px; height: 22px; cursor: pointer; font-size: 14px; line-height: 1;
+}
+#panel-body { padding: 11px 15px 12px; }
+
+/* Desktop only: the panel sits at its natural height (it does NOT stretch to the
+   bottom — that made huge gaps on tall screens). Each row gets a fixed, roomy
+   spacing instead, the same on every screen size. */
+@media (min-width: 769px) {
+  #panel-body .ctl { margin-bottom: 15px; }
+  #panel-body .ctl:last-child { margin-bottom: 0; }
+  /* Desktop: Autopilot lives inside the SAIL SHEET row (so mobile can right-align
+     it on that line), but here it wraps to its OWN full-width row above the sheet
+     label — its historic "own top row", set off with a divider. (Selector is
+     scoped to .sheet-head to outrank the base #autotrim-row rule below it.) */
+  .sheet-head { flex-wrap: wrap; }
+  .sheet-head #autotrim-row { order: -1; flex: 0 0 100%; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px; margin-bottom: 10px; }
+  /* wind icon on the TRUE WIND label, like the mobile wind fader */
+  #wind-ctl .ctl-label::before { content: "💨"; font-size: 13px; line-height: 1; }
+  /* the SPLASH! crash card centres in the SEA (viewport minus the sidebar), like the boat */
+  #crash-overlay { padding-right: var(--sidebar-w); }
+}
+#panel.collapsed #panel-body { display: none; }
+
+.ctl { margin-bottom: 11px; }
+.ctl-label {
+  font-size: 12px; letter-spacing: 1.2px; color: var(--text-dim); margin-bottom: 5px;
+  display: flex; align-items: center; gap: 6px;
+}
+.ctl-value { margin-left: auto; color: var(--text); font-weight: 700; font-size: 14px; }
+.ctl-hint { margin-left: auto; letter-spacing: 0; text-transform: none; font-size: 10px; color: var(--text-dim); opacity: 0.75; font-weight: 400; }
+.key-hint {
+  font-size: 10px; color: var(--text-dim); border: 1px solid var(--panel-border);
+  border-radius: 4px; padding: 0 4px;
+}
+.ctl-sub { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-dim); margin-top: 4px; }
+
+/* sliders own their touch drag in both axes (esp. the vertical wind fader),
+   and swallow pinch so two fingers on a slider can't zoom the page either */
+input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; touch-action: none; }
+.slider-wrap { position: relative; touch-action: none; }   /* own the whole wrap's touch, not just the thin input */
+#sheet-optimal {
+  position: absolute; top: -3px; width: 3px; height: 14px; background: var(--good);
+  border-radius: 2px; left: 50%; pointer-events: none; transition: left 0.15s linear;
+  box-shadow: 0 0 6px var(--good);
+}
+
+.seg { display: flex; gap: 4px; }
+.seg button {
+  flex: 1; background: rgba(255,255,255,0.06); color: var(--text-dim);
+  border: 1px solid var(--panel-border); border-radius: 6px; padding: 11px 3px;
+  font-size: 11.5px; cursor: pointer; font-family: inherit;
+}
+.seg button:hover { background: rgba(255,255,255,0.12); }
+.seg button.active { background: var(--accent); color: #06121e; font-weight: 700; border-color: var(--accent); }
+.seg button.blocked { outline: 1px solid var(--danger); }
+
+.toggle-row {
+  display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer;
+  padding: 5px 0; user-select: none;
+}
+.toggle-row input { accent-color: var(--accent); width: 17px; height: 17px; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sheet-head .ctl-label { margin-bottom: 0; flex: 0 1 auto; min-width: 0; }
+#autotrim-row { font-size: 14px; flex: none; padding: 0; white-space: nowrap; }   /* Autopilot label a touch larger than the rest */
+/* Daggerboard (left) + Harness (right) share one row, spread to the edges so
+   the free space on the right is used instead of stacking them. Slightly
+   smaller so both labels — incl. the long ones (uk "Зачепитися в трапецію") —
+   fit side by side; longer translations wrap back to two lines gracefully. */
+.toggles-row {
+  display: flex; flex-direction: row; flex-wrap: wrap;
+  justify-content: space-between; align-items: center; gap: 4px 6px;
+}
+.toggles-row .toggle-row { font-size: 12.5px; gap: 7px; flex: 0 1 auto; white-space: nowrap; }
+.toggles-row .toggle-row input { width: 16px; height: 16px; }
+
+.btn-row { display: flex; gap: 6px; }
+.action-btn {
+  flex: 1; background: rgba(79, 195, 247, 0.15); border: 1px solid var(--accent);
+  color: var(--accent); border-radius: 8px; padding: 13px 4px; font-size: 13px;
+  font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 1px;
+}
+.action-btn:hover { background: rgba(79, 195, 247, 0.3); }
+.action-btn:disabled { opacity: 0.35; cursor: default; }
+.action-btn.subtle { border-color: var(--panel-border); color: var(--text-dim); }
+
+#help-note {
+  position: absolute; bottom: 6px; left: 14px; font-size: 10px; color: rgba(200,230,255,0.4);
+  pointer-events: none;
+}
+
+/* =====================================================================
+   MOBILE  —  bottom-sheet controls, compact HUD, touch-friendly
+   ===================================================================== */
+@media (max-width: 768px) {
+
+  /* The desktop right-sidebar wrapper dissolves on phones: its children
+     (#hud-top, #meters, #panel) go back to being positioned against #app so
+     every mobile rule below keeps working exactly as before. */
+  #sidebar, #hud-region, .hud-right { display: contents; }
+  #hud-top, #meters { position: absolute; }
+
+  /* ---- control panel becomes a collapsible bottom sheet ----
+     Anchored to the bottom of #app, which is sized with 100dvh (dynamic
+     viewport height). dvh excludes the iOS Safari bottom toolbar, so the
+     bar — and its toggle — sit ABOVE the browser chrome instead of behind
+     it (position:fixed / 100vh both hide it under the toolbar). */
+  #panel {
+    position: absolute;
+    left: 0; right: 0; top: auto; bottom: 0;
+    width: 100%; max-width: 100%;
+    max-height: 62vh; max-height: 62dvh;   /* generous cap — trimmed content fits without scrolling */
+    border-radius: 16px 16px 0 0;
+    border-left: 0; border-right: 0; border-bottom: 0;
+    box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.45);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* the tappable / swipeable bar (also the whole collapsed state) */
+  .panel-header {
+    position: relative;
+    align-items: center;
+    padding: 5px 14px 4px;                                   /* thinner header */
+    padding-bottom: calc(4px + env(safe-area-inset-bottom)); /* clear the home bar */
+    border-radius: 16px 16px 0 0;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  #panel-toggle {
+    display: inline-block;
+    width: 26px; height: 22px; font-size: 17px; line-height: 1;
+    background: rgba(79, 195, 247, 0.16); border-color: var(--accent); color: var(--accent);
+  }
+  /* the open sheet doesn't need the header's home-bar padding — the body has it */
+  #panel:not(.collapsed) .panel-header { padding-bottom: 8px; }
+
+  #panel-body {
+    padding: 8px 12px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  /* ---- controls ~2x more compact ---- */
+  .ctl { margin-bottom: 6px; }
+  .ctl-label { font-size: 9px; margin-bottom: 3px; gap: 5px; }
+  .ctl-value { font-size: 10px; }
+  .ctl-sub { font-size: 8px; margin-top: 2px; }
+  .key-hint { font-size: 8px; padding: 0 3px; }
+  .seg { gap: 4px; }
+  .seg button { padding: 7px 2px; font-size: 9px; border-radius: 5px; }
+  .action-btn { padding: 8px 4px; font-size: 10px; }
+  .btn-row { gap: 5px; }
+  .toggle-row { padding: 3px 0; font-size: 10.5px; gap: 7px; }
+  .toggle-row input { width: 16px; height: 16px; }
+  input[type="range"] { height: 20px; }
+
+  /* the two soft orientation hints are redundant on phones (the live value
+     already reads it out) — reclaim the vertical space. Rake's stays. */
+  .ctl-sub-soft { display: none; }
+
+  /* Auto-trim rides on the SAIL SHEET label line instead of its own row */
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 3px; }
+  .sheet-head .ctl-label { margin-bottom: 0; flex: 0 1 auto; min-width: 0; }
+  #autotrim-row { padding: 0; flex: none; font-size: 12px; white-space: nowrap; }
+  .tr-note { display: none; }               /* "(sheets for you)" — desktop only */
+
+  /* Daggerboard + Harness already share a row (base rule); nothing extra here. */
+
+  /* ---- demo transport (pause): tucked snug under the BALANCE meter (which
+     bottoms at ~77px) with a 6px gap, so no dead space opens above it. The wind
+     fader begins just below this row — the region between the meter and the
+     fader is exactly one button tall, filled by the button while a demo runs. ---- */
+  #demo-transport {
+    position: absolute; z-index: 16; right: 8px; left: auto; bottom: auto;
+    top: calc(83px + env(safe-area-inset-top));
+    display: flex; gap: 5px;
+  }
+
+  /* ---- TRUE WIND: slim vertical fader on the sea's right edge ----
+     Top is fixed just below the transport-button row (83 + 38 + 6 = 127px);
+     bottom + slider height are set in JS so it always sits flush above the
+     control sheet — so its height scales with the phone's display height. */
+  .wind-fader {
+    position: absolute; z-index: 15; margin: 0;
+    right: calc(6px + env(safe-area-inset-right));
+    top: calc(127px + env(safe-area-inset-top));
+    bottom: 84px;                        /* JS overrides to track the sheet */
+    width: 44px;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 8px 4px;
+    background: var(--panel-bg); border: 1px solid var(--panel-border);
+    border-radius: 12px; backdrop-filter: blur(6px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+  .wind-fader .ctl-label {
+    flex-direction: column; align-items: center; gap: 1px; margin: 0;
+    font-size: 7px; letter-spacing: 0.3px; text-align: center; line-height: 1.1;
+  }
+  .wind-fader .wind-cap { display: none; }             /* glyph stands in for the caption */
+  .wind-fader .ctl-label > span[data-i18n] { display: none; }  /* phones: drop the "WIND SPEED" caption on the vertical fader */
+  .wind-fader .ctl-label::before { content: "💨"; font-size: 12px; line-height: 1; }
+  .wind-fader .ctl-value { margin: 0; font-size: 8.5px; line-height: 1.1; }
+  /* value on top, unit below — and the unit never breaks mid-string */
+  .wind-fader .wf-num { display: block; font-size: 11px; font-weight: 700; color: var(--text); }
+  .wind-fader .wf-unit { display: block; white-space: nowrap; font-size: 8px; color: var(--text-dim); }
+  .wind-fader input[type="range"] {
+    writing-mode: vertical-lr; direction: rtl;
+    -webkit-appearance: slider-vertical;   /* older iOS Safari fallback; modern uses writing-mode */
+    width: 22px; min-height: 70px;         /* height set in JS to fill the fader */
+    padding: 0; margin: 0;
+  }
+
+  /* ---- top HUD: wide, flat boxes filling the row (compass dropped) ----
+     Span from the left edge to just before the top-right buttons; flex:1 makes
+     the three boxes wide, which also lets the labels sit on one line (flatter). */
+  #hud-top {
+    top: calc(6px + env(safe-area-inset-top));
+    left: 8px; right: 100px; width: auto; transform: none; max-width: none;   /* clear the demo + gear cluster */
+    display: flex; flex-direction: row;                           /* undo the desktop grid */
+    gap: 6px; padding: 0; justify-content: flex-start;
+  }
+  /* boxes stay flat AND a constant height (single-line labels, tight metrics,
+     min-height floors every box to the tallest state) so the row never grows or
+     shrinks as the gust / planing lines come and go — and never reaches the
+     meters row below it. */
+  .hud-box { flex: 1; min-width: 0; max-width: none; padding: 2px 8px; border-radius: 8px; min-height: 36px; }
+  .hud-label { font-size: 7px; letter-spacing: 0.2px; line-height: 1.1; white-space: nowrap; }
+  .hud-value { font-size: 14px; margin-top: 0; line-height: 1.0; }
+  .hud-unit { font-size: 8px; margin-left: 2px; }
+  #pos-val { font-size: 10px; line-height: 1.05; }
+  .hud-sub { font-size: 7px; min-height: 0; line-height: 1.0; }
+  #planing-badge { font-size: 7px; padding: 0 4px; margin-left: auto; }   /* flush right in the SAIL POWER row */
+
+  /* ---- radar/compass: floating widget under the meters (no room in the HUD row) ---- */
+  .compass-box {
+    display: block; position: fixed; z-index: 15;
+    top: calc(80px + env(safe-area-inset-top)); left: 8px;
+    padding: 3px; min-width: 0; border-radius: 10px;
+  }
+  #compass { width: 88px; height: 88px; }
+
+  /* ---- meters: one row, power (left) + balance (right) ----
+     just below the constant-height HUD row (which bottoms at ~42px). */
+  #meters {
+    top: calc(45px + env(safe-area-inset-top));
+    left: 8px; right: 8px; width: auto;
+    flex-direction: row; gap: 6px;
+  }
+  .meter-block { flex: 1; min-width: 0; padding: 4px 10px; border-radius: 8px; }
+  .meter-title { font-size: 7.5px; margin-bottom: 3px; }
+  .meter-hint { display: none; }
+  .meter-track { height: 10px; }
+  #lean-marker { width: 10px; height: 10px; }
+
+  /* ---- info + settings buttons in the top-right corner ---- */
+  #top-buttons {
+    right: 8px; left: auto;
+    top: calc(6px + env(safe-area-inset-top));
+    gap: 5px;
+  }
+  #settings-toggle { padding: 0 11px; height: 38px; border-radius: 10px; }
+  #settings-toggle svg { width: 19px; height: 19px; }
+  #pause-toggle { padding: 0 11px; height: 38px; border-radius: 10px; }
+  #pause-toggle svg { width: 18px; height: 18px; }
+  /* #settings-panel is a full-screen modal on every viewport (base rule) — no
+     mobile-specific positioning needed. */
+
+  /* demo button: icon-only to fit the tight top-right cluster */
+  #demo-toggle { padding: 0 11px; height: 38px; border-radius: 10px; gap: 0; }
+  #demo-toggle svg { width: 16px; height: 16px; }
+  .demo-btn-label { display: none; }
+  #demo-panel {
+    right: 8px; top: calc(50px + env(safe-area-inset-top));
+    width: min(260px, calc(100vw - 16px));
+  }
+
+  /* narration banner: full-width, just above the control sheet (bottom set in JS),
+     same slot the toast uses so all transient messages share one place */
+  #demo-caption {
+    left: 6px; right: 56px; top: auto; bottom: 78px; transform: none;   /* clear the wind fader */
+    max-width: none; text-align: center; padding: 7px 11px; border-radius: 9px;
+  }
+  #demo-cap { font-size: 10.5px; line-height: 1.32; }
+
+  /* ---- coaching hint lifts above the collapsed bar ---- */
+  #hint-bar { left: 50%; bottom: calc(64px + env(safe-area-inset-bottom)); max-width: 92%; }
+  #hint-text { font-size: 11px; padding: 6px 12px; }
+  /* toast spans the screen just above the control sheet (offset set in JS) */
+  #toast {
+    left: 6px; right: 6px; max-width: none;
+    transform: translateY(8px);
+    font-size: 10.5px; line-height: 1.3; padding: 7px 10px;
+  }
+  #toast.on { transform: translateY(0); }
+
+  /* no physical keys on a phone — hide the keyboard-shortcut badges */
+  .key-hint { display: none; }
+
+  /* ---- orbit help note is irrelevant on touch ---- */
+  #help-note { display: none; }
+
+  /* ---- it's a game UI, not a document: no text selection or the iOS
+     long-press callout anywhere on the page (sliders/buttons still work) ---- */
+  #app, #app * {
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* ---- overlays fit the viewport ---- */
+  #welcome-card {
+    padding: 20px 22px; max-width: 92vw; max-height: 82vh; overflow-y: auto;
+    font-size: 12px;
+  }
+  #welcome-card .w-title { font-size: 18px; }
+  #crash-card { padding: 22px 24px; max-width: 90vw; }
+  #crash-title { font-size: 28px; }
+}
+
+/* very narrow phones — squeeze the HUD a touch more */
+@media (max-width: 380px) {
+  .hud-box { padding: 3px 4px; }
+  .hud-value { font-size: 12px; }
+}
