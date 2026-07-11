@@ -15,6 +15,16 @@
 
 html, body { height: 100%; overflow: hidden; background: #06121e; }
 
+/* Crawlable SEO copy (#seo-content): kept in the DOM and the accessibility tree
+   for search engines and screen readers, but pulled off-screen so it never
+   shows over the full-screen game. NOT display:none/visibility:hidden — those
+   can suppress indexing; the clip pattern keeps the text live and indexable. */
+.seo-content {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+
 /* touch-action: pan-y lets the panels scroll vertically but blocks the browser's
    pinch-zoom and double-tap-zoom everywhere in the UI. The 3D canvas sets its own
    touch-action:none (OrbitControls), so the water keeps its camera pinch. */

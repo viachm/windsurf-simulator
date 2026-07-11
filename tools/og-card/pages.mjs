@@ -3,7 +3,7 @@
 // Meta text stays free-less (docTitle + tagline); the marketing "free" lives only on the image.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { L10N, LANGS, plain, DESC, GAME } from './l10n-v.mjs';
+import { L10N, LANGS, plain, DESC, GAME, SEO } from './l10n-v.mjs';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
 const ORIGIN = 'https://windsurfsimulator.com';
@@ -21,12 +21,28 @@ function hreflangBlock(indent = '  ') {
   return lines.join('\n');
 }
 
+// Crawlable, localised copy for the visually-hidden #seo-content block. Built
+// statically per page so search engines index real keyword-rich text in each
+// language without executing JS. Bounded by the <!--SEO:START/END--> markers.
+function seoBlock(lang) {
+  const S = SEO[lang];
+  return [
+    `<h1>${esc(S.h1)}</h1>`,
+    `<p>${esc(S.p1)}</p>`,
+    `<h2>${esc(S.h2a)}</h2>`,
+    `<p>${esc(S.p2)}</p>`,
+    `<h2>${esc(S.h2b)}</h2>`,
+    `<p>${esc(S.p3)}</p>`,
+  ].map((l) => `    ${l}`).join('\n');
+}
+
 function buildPage(tpl, lang) {
   const L = L10N[lang];
+  const S = SEO[lang];
   const tag = tagOf(lang);
-  const title = esc(`${L.docTitle} — ${stripEnd(tag)}`); // SEO <title> (keyword-rich)
+  const title = esc(S?.title || `${L.docTitle} — ${stripEnd(tag)}`); // keyword-rich SEO <title>
   const ogTitle = esc(`${L.docTitle} — ${GAME[lang]}`);   // e.g. "Симулятор віндсерфінгу — 3D-гра"
-  const desc = esc(DESC[lang]);                           // useful, beginner-oriented description
+  const desc = esc(DESC[lang]);                           // keyword-rich meta description
   const url = `${ORIGIN}/${lang}/`;
   const img = `${ORIGIN}/og/og-cover-${lang}.png?v=3`;
   let h = tpl;
@@ -34,6 +50,10 @@ function buildPage(tpl, lang) {
   h = h.replace('<html lang="en" translate="no">', `<html lang="${lang}" translate="no">`);
   h = h.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
   h = h.replace(/(<meta name="description" content=")[^"]*(")/, `$1${desc}$2`);
+  h = h.replace(/(<meta name="keywords" content=")[^"]*(")/, `$1${esc(S.keywords)}$2`);
+  // Strip the template's own hreflang alternates before re-injecting a fresh set,
+  // so localized pages don't inherit a duplicate block (the root already carries one).
+  h = h.replace(/^\s*<link rel="alternate" hreflang="[^"]*" href="[^"]*" \/>\n/gm, '');
   h = h.replace('<link rel="canonical" href="https://windsurfsimulator.com/" />',
     `<link rel="canonical" href="${url}" />\n${hreflangBlock()}`);
   h = h.replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${ogTitle}$2`);
@@ -51,9 +71,16 @@ function buildPage(tpl, lang) {
 
   h = h.replace('"url": "https://windsurfsimulator.com/",', `"url": "${url}",`);
   h = h.replace('"name": "Windsurf Simulator",', `"name": ${JSON.stringify(L.docTitle)},`);
-  h = h.replace(/"description": "A 3D browser game[^"]*",/, `"description": ${JSON.stringify(DESC[lang])},`);
-  h = h.replace(/"image": "https:\/\/windsurfsimulator\.com\/og-cover[^"]*",/, `"image": "${img}",`);
-  h = h.replace(/"screenshot": "https:\/\/windsurfsimulator\.com\/og-cover[^"]*",/, `"screenshot": "${img}",`);
+  // JSON-LD strings use the "key": "value" form; meta tags use content="…", so
+  // these anchored replaces only ever hit the structured-data block.
+  h = h.replace(/"description": "[^"]*",/, `"description": ${JSON.stringify(DESC[lang])},`);
+  h = h.replace(/"keywords": "[^"]*",/, `"keywords": ${JSON.stringify(S.keywords)},`);
+  h = h.replace(/"image": "https:\/\/windsurfsimulator\.com\/og\/og-cover[^"]*",/, `"image": "${img}",`);
+  h = h.replace(/"screenshot": "https:\/\/windsurfsimulator\.com\/og\/og-cover[^"]*",/, `"screenshot": "${img}",`);
+
+  // Swap the English SEO copy for this language's (between the markers).
+  h = h.replace(/<!--SEO:START-->[\s\S]*?<!--SEO:END-->/,
+    `<!--SEO:START-->\n${seoBlock(lang)}\n    <!--SEO:END-->`);
 
   h = h.replace('href="apple-touch-icon.png', 'href="/apple-touch-icon.png');
   h = h.replace('href="icon-192.png', 'href="/icon-192.png');

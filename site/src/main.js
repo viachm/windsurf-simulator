@@ -1,8 +1,8 @@
-import { WindsurfSim } from './sim.js?b=76';
-import { World } from './world.js?b=76';
-import { UI } from './ui.js?b=76';
-import { t, applyStatic } from './i18n.js?b=76';
-import { initAnalytics, tickPlayTime, track, trackOnce } from './analytics.js?b=76';
+import { WindsurfSim } from './sim.js?b=77';
+import { World } from './world.js?b=77';
+import { UI } from './ui.js?b=77';
+import { t, applyStatic } from './i18n.js?b=77';
+import { initAnalytics, tickPlayTime, track, trackOnce } from './analytics.js?b=77';
 
 applyStatic(); // localise the static markup for the saved/default language
 
