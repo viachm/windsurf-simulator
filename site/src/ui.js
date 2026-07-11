@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=82';
-import { DemoDirector } from './demo.js?b=82';
-import { track, trackDebounced } from './analytics.js?b=82';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=83';
+import { DemoDirector } from './demo.js?b=83';
+import { track, trackDebounced } from './analytics.js?b=83';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -573,7 +573,9 @@ export class UI {
     const H = innerHeight;
     const bottomInset = Math.max(0, H - $('panel').getBoundingClientRect().top);
     const topInset = $('meters').getBoundingClientRect().bottom;  // lowest top overlay edge
-    this.world.setFramingLift((bottomInset - topInset) / H);
+    // Nudge the rider a touch DOWN so it sits nearer the vertical centre of the
+    // clear band, not high in it (mobile only).
+    this.world.setFramingLift((bottomInset - topInset) / H - 0.05);
   }
 
   // Nudge the rider LEFT so it's centred in the water beside the wind fader
@@ -589,7 +591,10 @@ export class UI {
     else rightEl = document.getElementById('sidebar');
     if (!rightEl) { this.world.setFramingShiftX(0); return; }
     const rightInset = innerWidth - rightEl.getBoundingClientRect().left;
-    this.world.setFramingShiftX(rightInset / innerWidth);
+    // On mobile, ease the leftward shift back a touch so the rider sits nearer
+    // the centre of the sea (it was pushed a shade too far left before).
+    const easeRight = this.#isMobile() ? 0.05 : 0;
+    this.world.setFramingShiftX(rightInset / innerWidth - easeRight);
   }
 
   // Desktop: size the radar to an exact square matching the height of the HUD +
