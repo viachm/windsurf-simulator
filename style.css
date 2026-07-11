@@ -616,6 +616,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
     font-size: 7px; letter-spacing: 0.3px; text-align: center; line-height: 1.1;
   }
   .wind-fader .wind-cap { display: none; }             /* glyph stands in for the caption */
+  .wind-fader .ctl-label > span[data-i18n] { display: none; }  /* phones: drop the "WIND SPEED" caption on the vertical fader */
   .wind-fader .ctl-label::before { content: "💨"; font-size: 12px; line-height: 1; }
   .wind-fader .ctl-value { margin: 0; font-size: 8.5px; line-height: 1.1; }
   /* value on top, unit below — and the unit never breaks mid-string */
