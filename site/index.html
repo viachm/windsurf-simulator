@@ -117,11 +117,11 @@
 
   <!-- Real, crawlable favicon files. Google can't use a data: URI favicon
        (that is why search showed a generic globe) — use actual PNG files. -->
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?b=75" />
-  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?b=75" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=75" />
-  <link rel="manifest" href="site.webmanifest?b=75" />
-  <link rel="stylesheet" href="style.css?b=75" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?b=76" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?b=76" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=76" />
+  <link rel="manifest" href="site.webmanifest?b=76" />
+  <link rel="stylesheet" href="style.css?b=76" />
   <script type="importmap">
     {
       "imports": {
@@ -282,6 +282,7 @@
           <li data-i18n-html="welcome.step4"><b>Chase the plane</b> — enough speed and power and the board pops on top of the water. Then: feet in the straps (3), daggerboard up (D), hang on.</li>
         </ol>
         <p class="w-goal" data-i18n-html="welcome.goal">Try to reach the <span style="color:#ff7043">■ orange buoy upwind</span> (you'll need to tack), then blast back to the <span style="color:#ffd54f">■ yellow one</span>.</p>
+        <p class="w-tip" data-i18n-html="welcome.tip">💡 New here? Keep the <b>Autopilot</b> on — it trims the sail and holds your balance for you, so you won't fall while you learn (switch it off to practise for real). Or tap <b>▶ DEMO</b> to sit back and watch the board sail a whole lesson by itself.</p>
         <button id="welcome-close" data-i18n="welcome.close">SAIL AWAY →</button>
       </div>
     </div>
@@ -296,7 +297,7 @@
       <div id="about-card">
         <div class="w-title" data-i18n="about.title">ABOUT</div>
         <div class="about-app">
-          <img src="docs/app-icon.png?b=75" width="54" height="54" alt="" />
+          <img src="docs/app-icon.png?b=76" width="54" height="54" alt="" />
           <span class="about-app-name">Windsurf Simulator</span>
         </div>
         <p class="about-tagline" data-i18n="about.tagline">A 3D game about the real physics of windsurfing.</p>
@@ -462,9 +463,9 @@
        kills the English→localised flash. Its ?b token MUST stay in sync with
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script type="module">
-    import { applyStatic } from './src/i18n.js?b=75';
+    import { applyStatic } from './src/i18n.js?b=76';
     applyStatic();
   </script>
-  <script type="module" src="src/main.js?b=75"></script>
+  <script type="module" src="src/main.js?b=76"></script>
 </body>
 </html>

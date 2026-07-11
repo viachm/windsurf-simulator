@@ -181,6 +181,12 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #welcome-card ol { margin: 10px 0 10px 20px; }
 #welcome-card li { margin: 6px 0; }
 #welcome-card .w-goal { color: var(--text-dim); }
+#welcome-card .w-tip {
+  margin-top: 12px; padding: 10px 12px; border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.10);
+  color: var(--text-dim); font-size: 12.5px;
+}
+#welcome-card .w-tip b { color: var(--text); }
 #welcome-close {
   margin-top: 12px; width: 100%; background: var(--accent); color: #06121e; border: none;
   border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800; letter-spacing: 2px;
