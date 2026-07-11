@@ -187,8 +187,11 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   font-size: 13px; line-height: 1.55;
   /* Cap the card to the viewport and let the text scroll inside, so the
      SAIL AWAY button (a flex footer below) is always visible — the tip line
-     made the card tall enough to push the button off small screens. */
-  display: flex; flex-direction: column; max-height: 88vh; overflow: hidden;
+     made the card tall enough to push the button off small screens.
+     dvh = the *visible* viewport on iOS Safari, so the button can't hide
+     behind the address bar / home indicator (plain vh over-measures there). */
+  display: flex; flex-direction: column; overflow: hidden;
+  max-height: 88vh; max-height: 88dvh;
 }
 #welcome-card .w-scroll { overflow-y: auto; min-height: 0; }
 #welcome-card .w-title { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
@@ -749,7 +752,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
 
   /* ---- overlays fit the viewport ---- */
   #welcome-card {
-    padding: 20px 22px; max-width: 92vw; max-height: 85vh;
+    padding: 20px 22px; max-width: 92vw;
+    max-height: 85vh; max-height: 85dvh;
     font-size: 12px;
   }
   #welcome-card .w-title { font-size: 18px; }

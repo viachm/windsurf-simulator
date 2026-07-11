@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=78';
-import { DemoDirector } from './demo.js?b=78';
-import { track, trackDebounced } from './analytics.js?b=78';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=79';
+import { DemoDirector } from './demo.js?b=79';
+import { track, trackDebounced } from './analytics.js?b=79';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -171,10 +171,15 @@ export class UI {
       trackDebounced('set_wind', { wind: Math.round(this.sim.baseWind) });
     });
 
-    $('welcome-close').addEventListener('click', () => {
+    const closeWelcome = (how) => {
       $('welcome-overlay').classList.add('off');
       try { localStorage.setItem('ws_welcomeSeen', '1'); } catch (e) {} // don't show again next time
-      track('welcome_close');
+      track('welcome_close', { how });
+    };
+    $('welcome-close').addEventListener('click', () => closeWelcome('button'));
+    // Tapping the dimmed backdrop (anywhere outside the card) also dismisses it.
+    $('welcome-overlay').addEventListener('click', (e) => {
+      if (e.target === $('welcome-overlay')) closeWelcome('backdrop');
     });
 
     // "How to play" (in settings) reopens the how-to on demand
