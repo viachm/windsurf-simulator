@@ -43,6 +43,33 @@ The deploy flow, in order:
 5. Report the built SHA and give a cache-bypass URL for iPhone/Safari:
    `https://windsurfsimulator.com/?fresh=<n>`.
 
+## Dev / staging environment — `dev.windsurfsimulator.com`
+
+A separate staging site mirrors prod but is fed by the **`dev`** branch and hosted
+on **Cloudflare Pages** (project `windsurf-simulator-dev`), NOT GitHub Pages —
+GitHub Pages allows only one custom domain per repo, which prod already owns.
+
+- **Branch → URL:** push to `dev` → auto-deploys `site/` to
+  `https://dev.windsurfsimulator.com`. Push to `main` → prod (unchanged).
+  Normal flow: land changes on `dev`, verify on the dev domain, then merge
+  `dev` → `main` to ship to prod.
+- **Auto-deploy:** `.github/workflows/deploy-dev.yml` runs `wrangler pages deploy site`
+  on every push to `dev`. It lives **only on the `dev` branch** and triggers only
+  for `dev`, so it never fires on `main`. Needs repo secrets
+  `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (already set).
+- **noindex:** `dev` carries `site/_headers` (`X-Robots-Tag: noindex, nofollow`)
+  so staging (and `*.pages.dev`) never gets indexed — keep it on `dev`, and do
+  NOT let it merge into `main` (prod must stay indexable).
+- **Cloudflare:** account `27a760b02276afc8a6fc2d5a21a300c9`; the `dev` DNS record
+  is a **proxied** CNAME → `windsurf-simulator-dev.pages.dev` (opposite of the
+  apex GitHub Pages records, which must be DNS-only). A Pages-scoped API token is
+  in Keychain: `security find-generic-password -a "$USER" -s cloudflare-pages-token -w`.
+- **Manual deploy** (bypasses the Action, e.g. to ship dev-branch content directly):
+  `CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=27a760b02276afc8a6fc2d5a21a300c9 \
+   node <npx-cli.js> wrangler pages deploy site --project-name=windsurf-simulator-dev --branch=dev`
+  (nvm shims break `npx` in non-interactive shells — call `npx-cli.js` via the
+  absolute `node` binary; see Notes).
+
 ## Cache-bust token (`?b=N`)
 
 Every module import carries a shared `?b=N` build token (`site/index.html` script
