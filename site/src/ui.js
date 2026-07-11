@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=84';
-import { DemoDirector } from './demo.js?b=84';
-import { track, trackDebounced } from './analytics.js?b=84';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=86';
+import { DemoDirector } from './demo.js?b=86';
+import { track, trackDebounced } from './analytics.js?b=86';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -39,6 +39,10 @@ function loadShowCaptions() {
   // default: shown on desktop, hidden on phones (the sheet already crowds the screen)
   return !matchMedia('(max-width: 768px)').matches;
 }
+function loadFoil() {
+  try { const v = localStorage.getItem('ws_foil'); if (v === 'on' || v === 'off') return v === 'on'; } catch { /* ignore */ }
+  return false; // default: classic board (foil is an opt-in extra)
+}
 
 export class UI {
   constructor(sim, world = null) {
@@ -53,6 +57,7 @@ export class UI {
       harness: false,
       autotrim: true,   // beginner assist on by default (full autopilot)
       sailArea: loadSailArea(),   // m²; scales rig power (see sim.js)
+      foil: loadFoil(),           // hydrofoil mode (opt-in extra; see settings)
     };
     this.units = loadUnits();
     this.windUnits = loadWindUnits();
@@ -317,6 +322,12 @@ export class UI {
       track('set_captions', { on: this.showCaptions });
     });
 
+    $('foil-seg').addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      this.setFoil(b.dataset.foil === 'on');
+      track('set_foil', { on: this.inputs.foil });
+    });
+
     const langSel = $('lang-select');
     for (const { code, name } of LOCALES) {
       const opt = document.createElement('option');
@@ -331,6 +342,10 @@ export class UI {
     this.setSailArea(this.inputs.sailArea);
     this.setCameraMode(this.cameraMode);
     this.setShowCaptions(this.showCaptions);
+    // The "Kostia" easter-egg rig flies on a hydrofoil by default. Force it on
+    // for this session WITHOUT persisting, so it never leaks onto a normal visit.
+    if (this.world && this.world.kostia) this.setFoil(true, false);
+    else this.setFoil(this.inputs.foil);
     this.#syncLangButtons();
     this.#refreshWindReadout();
   }
@@ -345,6 +360,22 @@ export class UI {
     // apply now: hide a live caption, or bring the current one back
     if (this.showCaptions && this.demo.running && this._capText) this.#showCaption(this._capText);
     else if (!this.showCaptions) $('demo-caption').classList.add('off');
+  }
+
+  // Foil mode: swap the classic board for a hydrofoil. Persisted, reflected on
+  // the segment, fed to the sim via inputs.foil, and shown by the world (foil
+  // rig + hidden daggerboard). With a foil the daggerboard control is moot, so
+  // its row is hidden while foiling.
+  setFoil(on, persist = true) {
+    this.inputs.foil = !!on;
+    if (persist) {
+      try { localStorage.setItem('ws_foil', this.inputs.foil ? 'on' : 'off'); } catch { /* ignore */ }
+    }
+    const seg = $('foil-seg');
+    if (seg) for (const b of seg.children) b.classList.toggle('active', (b.dataset.foil === 'on') === this.inputs.foil);
+    if (this.world) this.world.setFoil(this.inputs.foil);
+    const dagRow = $('dagger-row');
+    if (dagRow) dagRow.style.display = this.inputs.foil ? 'none' : '';
   }
 
   setUnits(u) {
@@ -855,14 +886,18 @@ export class UI {
       this.inputs.lean = clamp01(this.inputs.lean, 0, 100);
       $('lean').value = Math.round(this.inputs.lean);
 
+      // On a foil there's no daggerboard and you're flying, so treat "flying"
+      // like "planing" for the stance/board choices below.
+      const fast = lastState.planing || lastState.foiling;
+
       // 3) daggerboard -> down for grip while displacing, retracted the instant
       //    you plane (a lowered board rails over and spins out at speed).
-      this.inputs.dagger = !lastState.planing;
+      this.inputs.dagger = !fast;
       $('dagger').checked = this.inputs.dagger;
 
-      // 4) stance -> into the back straps once planing (less drag, no nose-dive),
-      //    neutral otherwise.
-      this.inputs.stance = lastState.planing ? 'back' : 'mid';
+      // 4) stance -> into the back straps once planing/flying (less drag, no
+      //    nose-dive), neutral otherwise.
+      this.inputs.stance = fast ? 'back' : 'mid';
       for (const b of $('stance-seg').children) {
         b.classList.toggle('active', b.dataset.stance === this.inputs.stance);
       }
@@ -875,7 +910,12 @@ export class UI {
     const unit = this.#unitLabel();
     $('speed-val').textContent = this.#conv(st.speedKn).toFixed(1);
     $('speed-unit').textContent = unit;
-    $('planing-badge')?.classList.toggle('on', st.planing);
+    const skimming = st.planing || st.foiling;
+    const badge = $('planing-badge');
+    if (badge) {
+      badge.classList.toggle('on', skimming);
+      badge.textContent = st.foiling ? t('meter.foiling') : t('meter.planing');
+    }
     $('pos-val').textContent = st.maneuver
       ? (st.maneuver.type === 'tack' ? t('man.tacking') : t('man.gybing'))
       : t(st.pointOfSailKey);
@@ -897,8 +937,8 @@ export class UI {
     const trimEl = $('trim-state');
     // planing takes over the meter-title's right slot (see #planing-badge); hide
     // the trim word while it shows so the two don't stack.
-    trimEl.textContent = st.planing ? '' : ({ luff: t('trim.luff'), good: t('trim.good'), stall: t('trim.stall') }[st.trim] || '');
-    trimEl.className = st.planing ? '' : st.trim;
+    trimEl.textContent = skimming ? '' : ({ luff: t('trim.luff'), good: t('trim.good'), stall: t('trim.stall') }[st.trim] || '');
+    trimEl.className = skimming ? '' : st.trim;
 
     // balance meter: band = required lean (with tolerance), diamond = effective
     // lean. Both are clamped to the track, so a very high required lean (strong

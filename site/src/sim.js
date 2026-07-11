@@ -65,6 +65,7 @@ export class WindsurfSim {
     this.windFromAngle0 = 0;         // wind FROM +Z direction
     this.baseWind = 7;               // m/s (default true wind)
     this.planing = false;
+    this.foiling = false;            // hydrofoil flying (foil mode only)
     this.crashed = false;
     this.crashReason = '';
     this.crashLesson = '';
@@ -174,7 +175,7 @@ export class WindsurfSim {
 
   /**
    * inputs: { sheetDeg 0..90, rake -1..1 (back..fwd), stance 'front'|'mid'|'back',
-   *           lean 0..100, dagger bool, harness bool, autotrim bool }
+   *           lean 0..100, dagger bool, harness bool, autotrim bool, foil bool }
    */
   update(dt, inputs) {
     dt = Math.min(dt, 0.05);
@@ -193,6 +194,11 @@ export class WindsurfSim {
       this.yawVel *= Math.pow(0.1, dt);
       return this.snapshot(inputs, warnings, { power01: 0, required01: 0, trim: 'luff', sheetOpt: 45 });
     }
+
+    // In foil mode a hydrofoil replaces the daggerboard, so treat the dagger as
+    // retracted everywhere below (its drag/grip/spinout terms all switch off).
+    const foilMode = !!inputs.foil;
+    const dagger = foilMode ? false : inputs.dagger;
 
     // ------- wind & geometry -------
     const ws = this.windSpeed();
@@ -372,15 +378,36 @@ export class WindsurfSim {
     // and lets you break through and pop onto the plane — exactly the real
     // "get planing" move. Onset needs real speed AND power so it can't trigger
     // the instant the sail loads up.
-    if (!this.planing) {
-      if (this.v > 5.2 && power01 > 0.36 && absBetaDeg > 70 && absBetaDeg < 162 && trim === 'good') this.planing = true;
-    } else if (this.v < 4.7 || power01 < 0.21) {
-      this.planing = false;
+    if (foilMode) {
+      // Foil takeoff/touchdown. A hydrofoil's lift grows with v², so it flies at
+      // a much lower speed than a hull needs to plane — and once flying the hull
+      // leaves the water entirely (drag collapses, see below). Forgiving "chill"
+      // thresholds: pops up early, stays up, and the autopilot keeps it aloft.
+      if (!this.foiling) {
+        if (this.v > 3.4 && power01 > 0.18 && absBetaDeg > 45 && absBetaDeg < 172) this.foiling = true;
+      } else if (this.v < 2.8 || power01 < 0.09) {
+        this.foiling = false;
+      }
+      this.planing = false;   // the foil regime replaces planing
+    } else {
+      this.foiling = false;
+      if (!this.planing) {
+        if (this.v > 5.2 && power01 > 0.36 && absBetaDeg > 70 && absBetaDeg < 162 && trim === 'good') this.planing = true;
+      } else if (this.v < 4.7 || power01 < 0.21) {
+        this.planing = false;
+      }
     }
 
     // ------- drag -------
     let drag;
-    if (this.planing) {
+    if (this.foiling) {
+      // Flying: the hull is clear of the water. Only the thin foil mast + wing
+      // shed drag — tiny, and rising only gently with speed (a little induced
+      // drag). That collapse is why a foiler keeps accelerating in light wind
+      // and tops out well above a planing hull. No wall, no dagger/stance terms.
+      const cFoil = 1.05 + 0.28 * smoothstep(6, 13, this.v);
+      drag = cFoil * this.v * Math.abs(this.v);
+    } else if (this.planing) {
       // Semi-planing ramp: a freshly-released hull still drags its tail through
       // the water; only at speed does it skim on the clean ~3.0 coefficient. This
       // floor sets top speed for a given wind — a 6.5m freeride board tops out
@@ -388,7 +415,7 @@ export class WindsurfSim {
       const cPlane = 4.6 - 1.6 * smoothstep(4, 7.5, this.v);
       drag = cPlane * this.v * Math.abs(this.v);
       if (inputs.stance === 'mid') drag *= 1.4;           // not in the straps
-      if (inputs.dagger) drag *= 1.5;                     // board wants to rail over
+      if (dagger) drag *= 1.5;                            // board wants to rail over
     } else {
       // Displacement drag: heavier than a planing skim so acceleration off the
       // line is gradual (a real board takes several seconds to build way, not
@@ -402,9 +429,11 @@ export class WindsurfSim {
       // (~5 m/s) that pushing harder barely beats. You climb it, stall just
       // short on a beam reach, and only punch through by bearing away for drive.
       // Breaking onto the plane removes it.
-      drag += K_WALL * smoothstep(3.6, 5.5, this.v) * this.v * this.v;
+      // Foil boards take off before the hull's wave-making hump, so they never
+      // have to climb this wall — skip it so they accelerate straight to flight.
+      if (!foilMode) drag += K_WALL * smoothstep(3.6, 5.5, this.v) * this.v * this.v;
     }
-    if (inputs.dagger && !this.planing) drag += 0.25 * this.v * this.v;
+    if (dagger && !this.planing) drag += 0.25 * this.v * this.v;
     drag *= 1 + 1.8 * Math.abs(this.yawVel);   // carving scrubs speed
     drag += 14 * this.u * this.u;              // slip (sideways flow) drag
 
@@ -436,9 +465,10 @@ export class WindsurfSim {
     // ------- leeway (sideways drift) -------
     const leewardSign = betaSign; // drift toward leeward = +starboard when wind over port... see note
     // wind over port (beta>0) pushes the board to starboard (+right)
-    const finGrip = inputs.dagger ? 0.22 : (this.planing ? 0.25 : 0.85);
-    const uTarget = leewardSign * heel01 * finGrip * (this.planing ? 0.5 : 1.6);
-    const finTau = this.planing ? 0.25 : (inputs.dagger ? 0.35 : 0.55);
+    // A foil's wing + mast bite hard, so a flying board barely drifts.
+    const finGrip = this.foiling ? 0.16 : dagger ? 0.22 : (this.planing ? 0.25 : 0.85);
+    const uTarget = leewardSign * heel01 * finGrip * (this.foiling ? 0.35 : this.planing ? 0.5 : 1.6);
+    const finTau = this.foiling ? 0.22 : this.planing ? 0.25 : (dagger ? 0.35 : 0.55);
     this.u += (uTarget - this.u) * clamp(dt / finTau, 0, 1);
 
     // ------- balance: lean vs sail pull -------
@@ -459,7 +489,7 @@ export class WindsurfSim {
       warnings.push('warn.backfall');
     } else this.acc.backFall = Math.max(0, this.acc.backFall - dt * 2);
 
-    if (this.planing && (inputs.dagger || Math.abs(this.u) > 1.3)) {
+    if (this.planing && (dagger || Math.abs(this.u) > 1.3)) {
       this.acc.spinout += dt;
       warnings.push('warn.spinout');
     } else this.acc.spinout = Math.max(0, this.acc.spinout - dt * 2);
@@ -524,6 +554,7 @@ export class WindsurfSim {
       tackKey: beta >= 0 ? 'tack.port' : 'tack.starboard',
       pointOfSailKey: posKey,
       planing: this.planing,
+      foiling: this.foiling,
       crashed: this.crashed,
       crashReason: this.crashReason,
       crashLesson: this.crashLesson,
