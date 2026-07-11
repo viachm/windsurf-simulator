@@ -1,8 +1,8 @@
-import { WindsurfSim } from './sim.js?b=84';
-import { World } from './world.js?b=84';
-import { UI } from './ui.js?b=84';
-import { t, applyStatic } from './i18n.js?b=84';
-import { initAnalytics, tickPlayTime, track, trackOnce } from './analytics.js?b=84';
+import { WindsurfSim } from './sim.js?b=85';
+import { World } from './world.js?b=85';
+import { UI } from './ui.js?b=85';
+import { t, applyStatic } from './i18n.js?b=85';
+import { initAnalytics, tickPlayTime, track, trackOnce } from './analytics.js?b=85';
 
 applyStatic(); // localise the static markup for the saved/default language
 
@@ -13,6 +13,7 @@ const ui = new UI(sim, world);
 let last = performance.now();
 let wasCrashed = false;
 let wasPlaning = false;
+let wasFoiling = false;
 
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 0.05);
@@ -54,6 +55,10 @@ function frame(now) {
       // flag the first plane of the session as an engagement milestone.
       if (state.planing && !wasPlaning) { track('plane'); trackOnce('first_plane'); }
       wasPlaning = state.planing;
+
+      // foil takeoff milestone (mirrors planing) — count each flight, flag the first.
+      if (state.foiling && !wasFoiling) { track('foil_up'); trackOnce('first_foil'); }
+      wasFoiling = state.foiling;
 
       tickPlayTime(dt);   // session-depth milestones (how long people last)
       world.update(state, dt);
