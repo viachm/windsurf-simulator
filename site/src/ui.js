@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=79';
-import { DemoDirector } from './demo.js?b=79';
-import { track, trackDebounced } from './analytics.js?b=79';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=80';
+import { DemoDirector } from './demo.js?b=80';
+import { track, trackDebounced } from './analytics.js?b=80';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -78,9 +78,10 @@ export class UI {
     this.compassCtx = $('compass').getContext('2d');
 
     // keep the framing centred if the viewport changes (rotate / URL bar)
-    addEventListener('resize', () => { this.#applyFramingLift(); this.#sizeWindFader(); this.#sizeRadar(); });
+    addEventListener('resize', () => { this.#applyFramingLift(); this.#sizeWindFader(); this.#sizeRadar(); this.#sizeWelcomeCard(); });
     // apply the desktop sidebar / mobile fader framing shift on first paint too
     this.#applyFramingShiftX();
+    this.#sizeWelcomeCard();   // cap the how-to card to the real viewport height
     // size the radar to the HUD+meters column once layout settles
     requestAnimationFrame(() => this.#sizeRadar());
 
@@ -185,6 +186,7 @@ export class UI {
     // "How to play" (in settings) reopens the how-to on demand
     $('info-toggle').addEventListener('click', () => {
       $('welcome-overlay').classList.remove('off');
+      this.#sizeWelcomeCard();   // re-cap in case the viewport changed since load
       $('settings-panel').classList.add('off');
       $('settings-toggle').classList.remove('open');
       track('how_to_play');
@@ -597,6 +599,16 @@ export class UI {
   // would open a gap before the control panel). Measured from the two rows'
   // own geometry so an oversized radar can't inflate what we read. Mobile keeps
   // its fixed CSS size (inline styles cleared).
+  // Cap the how-to card to the *actual* visible viewport. window.innerHeight is
+  // reliable in every in-app WebView (Telegram, etc.), unlike CSS vh/dvh which
+  // some WebViews over-measure — that over-measure pushed the SAIL AWAY button
+  // (the flex footer) off-screen. With a real-px cap the body scrolls and the
+  // button always stays in view.
+  #sizeWelcomeCard() {
+    const card = $('welcome-card');
+    if (card) card.style.maxHeight = `${Math.round(window.innerHeight - 24)}px`;
+  }
+
   #sizeRadar() {
     const c = $('compass');
     if (!c) return;
