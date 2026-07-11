@@ -176,24 +176,26 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ---------- welcome overlay ---------- */
+/* The whole overlay scrolls (not the card), and the SAIL AWAY button is a
+   sticky footer pinned to the bottom of the *actual* scrollport. This makes it
+   always reachable and visible without relying on vh/dvh/innerHeight — some
+   in-app WebViews (Telegram, Instagram, …) over-measure the viewport, which
+   used to push the button off-screen on long-text locales (e.g. French). */
 #welcome-overlay {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
   background: rgba(4, 16, 28, 0.55); z-index: 30;
+  padding: 14px;
 }
 #welcome-overlay.off { display: none; }
 #welcome-card {
   background: var(--panel-bg); border: 1px solid var(--accent); border-radius: 16px;
-  padding: 26px 34px; color: var(--text); max-width: 560px; backdrop-filter: blur(10px);
+  padding: 26px 34px 0; color: var(--text); width: 100%; max-width: 560px; backdrop-filter: blur(10px);
   font-size: 13px; line-height: 1.55;
-  /* Cap the card to the viewport and let the text scroll inside, so the
-     SAIL AWAY button (a flex footer below) is always visible — the tip line
-     made the card tall enough to push the button off small screens.
-     dvh = the *visible* viewport on iOS Safari, so the button can't hide
-     behind the address bar / home indicator (plain vh over-measures there). */
-  display: flex; flex-direction: column; overflow: hidden;
-  max-height: 88vh; max-height: 88dvh;
+  margin: auto;   /* vertically centre when it fits; scroll the overlay when it doesn't */
+  display: flex; flex-direction: column;
 }
-#welcome-card .w-scroll { overflow-y: auto; min-height: 0; }
 #welcome-card .w-title { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
 #welcome-card p { margin: 8px 0; }
 #welcome-card ol { margin: 10px 0 10px 20px; }
@@ -206,9 +208,11 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 #welcome-card .w-tip b { color: var(--text); }
 #welcome-close {
-  flex: 0 0 auto;   /* footer never shrinks — stays visible while the body scrolls */
-  margin-top: 12px; width: 100%; background: var(--accent); color: #06121e; border: none;
-  border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800; letter-spacing: 2px;
+  /* sticky footer: spans to the card's edges, stays at the visible bottom */
+  position: sticky; bottom: 0; z-index: 1;
+  margin: 14px -34px 0; padding: 15px 34px calc(15px + env(safe-area-inset-bottom, 0px));
+  background: var(--accent); color: #06121e; border: none;
+  border-radius: 0 0 15px 15px; font-size: 14px; font-weight: 800; letter-spacing: 2px;
   cursor: pointer; font-family: inherit;
 }
 #welcome-close:hover { filter: brightness(1.15); }
@@ -752,11 +756,11 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
 
   /* ---- overlays fit the viewport ---- */
   #welcome-card {
-    padding: 20px 22px; max-width: 92vw;
-    max-height: 85vh; max-height: 85dvh;
+    padding: 20px 22px 0; max-width: 100%;
     font-size: 12px;
   }
   #welcome-card .w-title { font-size: 18px; }
+  #welcome-close { margin: 14px -22px 0; padding: 15px 22px calc(15px + env(safe-area-inset-bottom, 0px)); }
   #crash-card { padding: 22px 24px; max-width: 90vw; }
   #crash-title { font-size: 28px; }
 }
