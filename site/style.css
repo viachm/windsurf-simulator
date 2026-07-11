@@ -177,6 +177,7 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   font-size: 13px; line-height: 1.55;
 }
 #welcome-card .w-title { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
+.w-title-icon { height: 1.5em; width: auto; vertical-align: -0.42em; margin-right: 8px; }
 #welcome-card p { margin: 8px 0; }
 #welcome-card ol { margin: 10px 0 10px 20px; }
 #welcome-card li { margin: 6px 0; }
