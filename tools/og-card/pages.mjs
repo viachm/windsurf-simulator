@@ -1,5 +1,5 @@
-// Generate per-language landing pages (/xx/index.html), inject hreflang into the
-// root, and rebuild sitemap.xml.  Root (/) is English — no /en/.
+// Generate per-language landing pages (site/<xx>/index.html), inject hreflang into
+// the site root (site/index.html), and rebuild site/sitemap.xml.  Root (/) is English — no /en/.
 // Meta text stays free-less (docTitle + tagline); the marketing "free" lives only on the image.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -69,18 +69,18 @@ function buildPage(tpl, lang) {
   return h;
 }
 
-const tpl = readFileSync(`${REPO}/index.html`, 'utf8');
+const tpl = readFileSync(`${REPO}/site/index.html`, 'utf8');
 for (const lang of NONEN) {
-  mkdirSync(`${REPO}/${lang}`, { recursive: true });
-  writeFileSync(`${REPO}/${lang}/index.html`, buildPage(tpl, lang));
+  mkdirSync(`${REPO}/site/${lang}`, { recursive: true });
+  writeFileSync(`${REPO}/site/${lang}/index.html`, buildPage(tpl, lang));
   console.log('page', `/${lang}/`);
 }
 
-let root = readFileSync(`${REPO}/index.html`, 'utf8');
+let root = readFileSync(`${REPO}/site/index.html`, 'utf8');
 if (!root.includes('hreflang="x-default"')) {
   root = root.replace('<link rel="canonical" href="https://windsurfsimulator.com/" />',
     `<link rel="canonical" href="${ORIGIN}/" />\n${hreflangBlock()}`);
-  writeFileSync(`${REPO}/index.html`, root);
+  writeFileSync(`${REPO}/site/index.html`, root);
   console.log('root hreflang injected');
 } else console.log('root hreflang already present');
 
@@ -89,5 +89,5 @@ const altLines = (loc) => ['en" href="' + ORIGIN + '/', ...NONEN.map((l) => `${l
   + `\n      <xhtml:link rel="alternate" hreflang="x-default" href="${ORIGIN}/" />`;
 const urlEntry = (loc, pr) => `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${LASTMOD}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>${pr}</priority>\n${altLines(loc)}\n  </url>`;
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${[urlEntry(`${ORIGIN}/`, '1.0'), ...NONEN.map((l) => urlEntry(`${ORIGIN}/${l}/`, '0.8'))].join('\n')}\n</urlset>\n`;
-writeFileSync(`${REPO}/sitemap.xml`, sitemap);
+writeFileSync(`${REPO}/site/sitemap.xml`, sitemap);
 console.log('sitemap rebuilt with', NONEN.length + 1, 'urls');

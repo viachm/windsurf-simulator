@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Dev server with caching disabled: python3 serve.py [port]"""
+"""Dev server with caching disabled: python3 serve.py [port]
+Serves ./site (the deploy root — same layout GitHub Pages publishes)."""
 import sys
+from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 
@@ -12,5 +14,6 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
 
 
 port = int(sys.argv[1]) if len(sys.argv) > 1 else 8737
-print(f'Serving on http://localhost:{port}')
-HTTPServer(('127.0.0.1', port), NoCacheHandler).serve_forever()
+print(f'Serving ./site on http://localhost:{port}')
+handler = partial(NoCacheHandler, directory='site')
+HTTPServer(('127.0.0.1', port), handler).serve_forever()

@@ -74,7 +74,7 @@ for (const lang of langs) {
   execFileSync(CHROME, ['--headless=new','--disable-gpu','--hide-scrollbars',
     '--force-device-scale-factor=2','--window-size=1200,630','--allow-file-access-from-files',
     `--screenshot=${raw}`, `file://${htmlPath}`], { stdio: 'ignore' });
-  const out = lang === 'en' ? `${REPO}/og/og-cover.png` : `${REPO}/og/og-cover-${lang}.png`;
+  const out = lang === 'en' ? `${REPO}/site/og/og-cover.png` : `${REPO}/site/og/og-cover-${lang}.png`;
   execFileSync('sips', ['-z','630','1200', raw, '--out', out], { stdio: 'ignore' });
   console.log('rendered', lang, '->', out.split('/').pop());
 }

@@ -1,7 +1,19 @@
 # Windsurf Simulator — project rules
 
-Static, no-build Three.js web app deployed on GitHub Pages
-(`https://viachm.github.io/windsurf-simulator/`). Repo: `viachm/windsurf-simulator`.
+Static, no-build Three.js web app, live at `https://windsurfsimulator.com/`.
+Repo: `viachm/windsurf-simulator`.
+
+## Project layout — the served site lives in `site/`
+
+Everything that ships to the web is under **`site/`** (that folder is the deploy
+root, so `site/index.html` → `/`, `site/uk/index.html` → `/uk/`, `site/src/…`,
+`site/og/…`, `site/style.css`, `CNAME`, `.nojekyll`, etc.). GitHub Pages deploys
+`site/` via the **GitHub Actions** workflow `.github/workflows/deploy.yml` (NOT
+the legacy branch builder). The repo root holds only tooling/dev files —
+`tools/` (og-card generator), `test/`, `serve.py`, `docs/` (README assets),
+`README.md`, `CLAUDE.md`. The 19 `site/<lang>/index.html` landing pages and
+`site/og/*.png` are **generated** by `tools/og-card/` (see its README) — edit the
+English template / `l10n-v.mjs` and regenerate, don't hand-edit each locale.
 
 ## Ship every completed feature (commit → push → deploy)
 
@@ -12,9 +24,10 @@ errors**. If verification fails, fix it before deploying; don't ship broken code
 
 The deploy flow, in order:
 
-1. **Bump the cache-bust token** in sync across all module URLs (or browsers
-   serve a stale/mixed JS graph — see below):
-   `sed -i '' 's/?b=[0-9][0-9]*/?b=NEXT/g' index.html src/*.js`
+1. **Bump the cache-bust token** in sync across all served files (or browsers
+   serve a stale/mixed JS graph — see below). The token now lives under `site/`,
+   including the 19 generated localized pages:
+   `sed -i '' 's/?b=[0-9][0-9]*/?b=NEXT/g' site/index.html site/src/*.js site/*/index.html`
 2. **Commit** only the files this change touched. Do NOT bundle unrelated
    working-tree edits (the user often edits in parallel — check `git diff` first).
    End the message with the standard trailers:
@@ -22,27 +35,26 @@ The deploy flow, in order:
    Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
    Claude-Session: <session url>
    ```
-3. **Push**: `git push origin main`
-4. **Trigger the Pages rebuild** (legacy builder):
-   `gh api -X POST repos/viachm/windsurf-simulator/pages/builds`
-5. **Poll until built**:
+3. **Push**: `git push origin main` — this **auto-triggers** the GitHub Actions
+   deploy (`.github/workflows/deploy.yml`). No manual `pages/builds` POST anymore.
+4. **Poll until deployed** (the Actions run publishes `site/`):
    `gh api repos/viachm/windsurf-simulator/pages/builds/latest --jq '.status + " " + .commit'`
-   until it reads `built <sha>`.
-6. Report the built SHA and give a cache-bypass URL for iPhone/Safari:
-   `https://viachm.github.io/windsurf-simulator/?fresh=<n>`.
+   until it reads `built <sha>` (or watch the run: `gh run watch <id>`).
+5. Report the built SHA and give a cache-bypass URL for iPhone/Safari:
+   `https://windsurfsimulator.com/?fresh=<n>`.
 
 ## Cache-bust token (`?b=N`)
 
-Every module import carries a shared `?b=N` build token (`index.html` script src
-**and the `style.css` link**, plus all `import` statements in `src/main.js`,
-`src/ui.js`, `src/demo.js`). It MUST be identical everywhere — if it drifts,
-`i18n.js` loads as two instances and language state splits. Always bump it with
-the single `sed` above so all files stay in sync. This is what prevents the
-recurring "new HTML + stale JS/CSS" breakage on GitHub Pages / Safari.
+Every module import carries a shared `?b=N` build token (`site/index.html` script
+src **and the `style.css` link**, all `import` statements in `site/src/*.js`, AND
+the asset refs in every `site/<lang>/index.html`). It MUST be identical
+everywhere — if it drifts, `i18n.js` loads as two instances and language state
+splits. Always bump it with the single `sed` above so all files stay in sync.
+This is what prevents the recurring "new HTML + stale JS/CSS" breakage on Safari.
 
-NB: `style.css` has no token of its own inside the file — its cache-bust lives
-in the `<link rel="stylesheet" href="style.css?b=N">` in `index.html`, which the
-`sed` updates. Without it, iOS Safari serves the **old cached CSS** even after a
+NB: `site/style.css` has no token of its own inside the file — its cache-bust
+lives in the `<link rel="stylesheet" href="style.css?b=N">` in `site/index.html`,
+which the `sed` updates. Without it, iOS Safari serves the **old cached CSS** even after a
 deploy, so CSS-only fixes silently don't take (this bit us: a fixed layout
 looked unchanged on the phone). Keep the token on the stylesheet link.
 

@@ -1,7 +1,7 @@
 // Acceptance tests: does the sim's physics match real windsurfing behaviour?
 // Exit code 0 = all pass. Run with:
 //   /Users/viachm/.nvm/versions/node/v22.15.0/bin/node test/physics-acceptance.mjs
-import { WindsurfSim } from '../src/sim.js';
+import { WindsurfSim } from '../site/src/sim.js';
 
 const DEG = Math.PI / 180;
 const KN = 1.94384;
