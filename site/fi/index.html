@@ -58,7 +58,7 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Windsurf Simulator" />
   <meta property="og:title" content="Windsurf Simulator — 3D-peli" />
-  <meta property="og:description" content="Opi purjelautailua verkossa ilmaisessa 3D-simulaattorissa: aloittelijan oppitunti, aito purjeen fysiikka, purjehduskulmat, vastakäännös ja jiippi — harjoittele selaimessa, ilman asennusta." />
+  <meta property="og:description" content="Ohjaa purjetta, luovi vastatuuleen, vaihda suuntaa ja johdata lautaa harjoitellen vastakäännöstä ja jiippiä." />
   <meta property="og:url" content="https://windsurfsimulator.com/fi/" />
   <meta property="og:image" content="https://windsurfsimulator.com/og/og-cover-fi.png?v=3" />
   <meta property="og:image:width" content="1200" />
@@ -88,7 +88,7 @@
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Windsurf Simulator — 3D-peli" />
-  <meta name="twitter:description" content="Opi purjelautailua verkossa ilmaisessa 3D-simulaattorissa: aloittelijan oppitunti, aito purjeen fysiikka, purjehduskulmat, vastakäännös ja jiippi — harjoittele selaimessa, ilman asennusta." />
+  <meta name="twitter:description" content="Ohjaa purjetta, luovi vastatuuleen, vaihda suuntaa ja johdata lautaa harjoitellen vastakäännöstä ja jiippiä." />
   <meta name="twitter:image" content="https://windsurfsimulator.com/og/og-cover-fi.png?v=3" />
   <meta name="twitter:image:alt" content="Opi purjelautailua verkossa ilmaisessa 3D-simulaattorissa: aloittelijan oppitunti, aito purjeen fysiikka, purjehduskulmat, vastakäännös ja jiippi — harjoittele selaimessa, ilman asennusta." />
 
@@ -273,6 +273,7 @@
     <!-- Welcome / how-to overlay -->
     <div id="welcome-overlay">
       <div id="welcome-card">
+        <div class="w-scroll">
         <div class="w-title" data-i18n="welcome.title">WINDSURF SIMULATOR</div>
         <p data-i18n-html="welcome.intro">You are on a board with a sail. The <b>yellow arrow</b> on the compass is the wind.
            A sail can never drive you straight into it (the shaded <b>no-go wedge</b>) — sail across it.</p>
@@ -284,13 +285,21 @@
         </ol>
         <p class="w-goal" data-i18n-html="welcome.goal">Try to reach the <span style="color:#ff7043">■ orange buoy upwind</span> (you'll need to tack), then blast back to the <span style="color:#ffd54f">■ yellow one</span>.</p>
         <p class="w-tip" data-i18n-html="welcome.tip">💡 New here? Keep the <b>Autopilot</b> on — it trims the sail and holds your balance for you, so you won't fall while you learn (switch it off to practise for real). Or tap <b>▶ DEMO</b> to sit back and watch the board sail a whole lesson by itself.</p>
+        </div>
         <button id="welcome-close" data-i18n="welcome.close">SAIL AWAY →</button>
       </div>
     </div>
     <!-- Hide the how-to on return visits (before paint, so it never flashes).
-         Cleared by the ℹ button, which reopens it on demand. -->
+         Cleared by the ℹ button, which reopens it on demand.
+         ?intro (any value) forces it open even after it's been seen — for
+         testing the overlay on a phone without clearing site data. -->
     <script>
-      try { if (localStorage.getItem('ws_welcomeSeen')) document.getElementById('welcome-overlay').classList.add('off'); } catch (e) {}
+      try {
+        var forceIntro = new URLSearchParams(location.search).has('intro');
+        if (!forceIntro && localStorage.getItem('ws_welcomeSeen')) {
+          document.getElementById('welcome-overlay').classList.add('off');
+        }
+      } catch (e) {}
     </script>
 
     <!-- About overlay (author credit) -->

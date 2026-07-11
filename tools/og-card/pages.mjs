@@ -3,7 +3,7 @@
 // Meta text stays free-less (docTitle + tagline); the marketing "free" lives only on the image.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { L10N, LANGS, plain, DESC, GAME, SEO } from './l10n-v.mjs';
+import { L10N, LANGS, plain, DESC, SOCIAL, GAME, SEO } from './l10n-v.mjs';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
 const ORIGIN = 'https://windsurfsimulator.com';
@@ -42,7 +42,8 @@ function buildPage(tpl, lang) {
   const tag = tagOf(lang);
   const title = esc(S?.title || `${L.docTitle} — ${stripEnd(tag)}`); // keyword-rich SEO <title>
   const ogTitle = esc(`${L.docTitle} — ${GAME[lang]}`);   // e.g. "Симулятор віндсерфінгу — 3D-гра"
-  const desc = esc(DESC[lang]);                           // keyword-rich meta description
+  const desc = esc(DESC[lang]);                           // keyword-rich meta description (SEO)
+  const social = esc(SOCIAL[lang]);                        // human, action-led social caption
   const url = `${ORIGIN}/${lang}/`;
   const img = `${ORIGIN}/og/og-cover-${lang}.png?v=3`;
   let h = tpl;
@@ -57,7 +58,7 @@ function buildPage(tpl, lang) {
   h = h.replace('<link rel="canonical" href="https://windsurfsimulator.com/" />',
     `<link rel="canonical" href="${url}" />\n${hreflangBlock()}`);
   h = h.replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${ogTitle}$2`);
-  h = h.replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${desc}$2`);
+  h = h.replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${social}$2`);
   h = h.replace('<meta property="og:url" content="https://windsurfsimulator.com/" />',
     `<meta property="og:url" content="${url}" />`);
   h = h.replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${img}$2`);
@@ -65,7 +66,7 @@ function buildPage(tpl, lang) {
   h = h.replace('<meta property="og:locale" content="en_US" />',
     `<meta property="og:locale" content="${L.ogLocale}" />`);
   h = h.replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${ogTitle}$2`);
-  h = h.replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${desc}$2`);
+  h = h.replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${social}$2`);
   h = h.replace(/(<meta name="twitter:image" content=")[^"]*(")/, `$1${img}$2`);
   h = h.replace(/(<meta name="twitter:image:alt" content=")[^"]*(")/, `$1${desc}$2`);
 

@@ -100,6 +100,33 @@ export const DESC = {
   ko: '무료 3D 시뮬레이터에서 윈드서핑을 온라인으로 배우세요: 초보자 레슨, 진짜 세일 물리, 세일링 코스, 태킹과 자이빙 — 브라우저에서 연습, 설치 불필요.',
 };
 
+// Social share caption — the punchy, action-led line shown in link previews
+// (og:description / twitter:description). Deliberately DECOUPLED from DESC:
+// DESC stays keyword-rich for search snippets, this stays human for social.
+// The tack/gybe terms mirror each language's DESC (app-native i18n).
+export const SOCIAL = {
+  en: 'Work the sail, sail upwind, change course and steer the board while you practise the tack and gybe.',
+  uk: 'Керуй вітрилом, ходи проти вітру, змінюй курс і веди дошку, тренуючи оверштаг і джайб.',
+  de: 'Steuere das Segel, kreuze gegen den Wind, wechsle den Kurs und lenke das Board, während du Wende und Halse übst.',
+  fr: 'Maîtrise la voile, remonte au vent, change de cap et dirige la planche en t’entraînant au virement et à l’empannage.',
+  es: 'Controla la vela, navega ciñendo el viento, cambia de rumbo y dirige la tabla mientras practicas la virada y la trasluchada.',
+  it: 'Governa la vela, risali il vento, cambia rotta e guida la tavola allenando la virata e la strambata.',
+  pt: 'Controla a vela, navega à bolina, muda de rumo e conduz a prancha enquanto treinas a viragem e a cambada.',
+  nl: 'Bedien het zeil, kruis tegen de wind in, verander van koers en stuur de plank terwijl je overstag en gijp oefent.',
+  pl: 'Steruj żaglem, płyń pod wiatr, zmieniaj kurs i prowadź deskę, ćwicząc zwrot przez sztag i przez rufę.',
+  cs: 'Ovládej plachtu, stoupej proti větru, měň kurz a veď prkno a přitom trénuj obrat a halzu.',
+  sv: 'Styr seglet, kryssa mot vinden, byt kurs och för brädan medan du tränar stagvändning och gipp.',
+  da: 'Styr sejlet, kryds mod vinden, skift kurs og før brættet, mens du træner stagvending og bomvending.',
+  fi: 'Ohjaa purjetta, luovi vastatuuleen, vaihda suuntaa ja johdata lautaa harjoitellen vastakäännöstä ja jiippiä.',
+  el: 'Χειρίσου το πανί, όρτσαρε στον άνεμο, άλλαξε πορεία και οδήγησε τη σανίδα εξασκώντας την αναστροφή και την υποστροφή.',
+  tr: 'Yelkeni kontrol et, rüzgara karşı seyret, rota değiştir ve tahtayı yönet; tramola ve kavança çalış.',
+  id: 'Kendalikan layar, melaju melawan angin, ubah haluan, dan kemudikan papan sambil melatih tacking dan gybing.',
+  ru: 'Управляй парусом, иди против ветра, меняй курс и веди доску, отрабатывая оверштаг и фордевинд.',
+  zh: '操控帆、迎风上行、改变航向、驾驭冲浪板，练习抢风换舷和顺风换舷。',
+  ja: 'セイルを操り、風上へ進み、コースを変え、ボードを操りながら、タックとジャイブを練習しよう。',
+  ko: '세일을 다루고 바람을 거슬러 올라가며 방향을 바꾸고 보드를 조종하면서 태킹과 자이빙을 연습하세요.',
+};
+
 // SEO per page: keyword-rich <title>, localised <meta keywords>, and the
 // crawlable, visually-hidden #seo-content block (h1 + two h2/p sections).
 // Maneuver terms (tack/gybe/points of sail/planing) match the app's own
