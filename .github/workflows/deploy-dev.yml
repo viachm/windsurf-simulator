@@ -1,19 +1,19 @@
-name: Deploy dev to Cloudflare Pages
+name: Deploy develop to Cloudflare Pages
 
-# Staging deploy: every push to `dev` publishes ./site to the Cloudflare Pages
+# Staging deploy: every push to `develop` publishes ./site to the Cloudflare Pages
 # project `windsurf-simulator-dev`, served at https://dev.windsurfsimulator.com.
 # Production (main -> GitHub Pages -> windsurfsimulator.com) is untouched by this.
-# The dev branch also carries site/_headers (X-Robots-Tag: noindex) so staging
+# The develop branch also carries site/_headers (X-Robots-Tag: noindex) so staging
 # never gets indexed.
 
 on:
   push:
-    branches: [dev]
+    branches: [develop]
   workflow_dispatch:
 
 # One dev deploy at a time.
 concurrency:
-  group: pages-dev
+  group: pages-develop
   cancel-in-progress: false
 
 jobs:
@@ -28,4 +28,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy site --project-name=windsurf-simulator-dev --branch=dev
+          command: pages deploy site --project-name=windsurf-simulator-dev --branch=develop
