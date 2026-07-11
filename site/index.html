@@ -117,11 +117,11 @@
 
   <!-- Real, crawlable favicon files. Google can't use a data: URI favicon
        (that is why search showed a generic globe) — use actual PNG files. -->
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?b=70" />
-  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?b=70" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=70" />
-  <link rel="manifest" href="site.webmanifest?b=70" />
-  <link rel="stylesheet" href="style.css?b=70" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?b=72" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?b=72" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=72" />
+  <link rel="manifest" href="site.webmanifest?b=72" />
+  <link rel="stylesheet" href="style.css?b=72" />
   <script type="importmap">
     {
       "imports": {
@@ -296,7 +296,7 @@
       <div id="about-card">
         <div class="w-title" data-i18n="about.title">ABOUT</div>
         <div class="about-app">
-          <img src="docs/app-icon.png?b=70" width="54" height="54" alt="" />
+          <img src="docs/app-icon.png?b=72" width="54" height="54" alt="" />
           <span class="about-app-name">Windsurf Simulator</span>
         </div>
         <p class="about-tagline" data-i18n="about.tagline">A 3D game about the real physics of windsurfing.</p>
@@ -306,13 +306,13 @@
           <a class="about-email" href="mailto:viacheslav.mukha@gmail.com">viacheslav.mukha@gmail.com</a>
         </div>
         <p class="about-thanks" data-i18n="about.thanks">Thanks for playing — fair winds! 🌬️</p>
+        <div class="about-madein"><span data-i18n="about.madein">Made in Ukraine</span> 🇺🇦</div>
         <a class="about-github" href="https://github.com/viachm/windsurf-simulator" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">
             <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.28-.01-1.04-.02-2.04-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.21.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.67-.31-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.31-.54-1.52.11-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.87.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.81 1.1.81 2.22 0 1.61-.01 2.9-.01 3.29 0 .32.22.69.82.58A12 12 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/>
           </svg>
           <span data-i18n="about.github">View on GitHub</span>
         </a>
-        <div class="about-madein"><span data-i18n="about.madein">Made in Ukraine</span> 🇺🇦</div>
         <button id="about-close" data-i18n="about.close">CLOSE</button>
       </div>
     </div>
@@ -462,9 +462,9 @@
        kills the English→localised flash. Its ?b token MUST stay in sync with
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script type="module">
-    import { applyStatic } from './src/i18n.js?b=70';
+    import { applyStatic } from './src/i18n.js?b=72';
     applyStatic();
   </script>
-  <script type="module" src="src/main.js?b=70"></script>
+  <script type="module" src="src/main.js?b=72"></script>
 </body>
 </html>
