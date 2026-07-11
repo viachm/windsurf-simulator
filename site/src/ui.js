@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=85';
-import { DemoDirector } from './demo.js?b=85';
-import { track, trackDebounced } from './analytics.js?b=85';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=86';
+import { DemoDirector } from './demo.js?b=86';
+import { track, trackDebounced } from './analytics.js?b=86';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -342,7 +342,10 @@ export class UI {
     this.setSailArea(this.inputs.sailArea);
     this.setCameraMode(this.cameraMode);
     this.setShowCaptions(this.showCaptions);
-    this.setFoil(this.inputs.foil);
+    // The "Kostia" easter-egg rig flies on a hydrofoil by default. Force it on
+    // for this session WITHOUT persisting, so it never leaks onto a normal visit.
+    if (this.world && this.world.kostia) this.setFoil(true, false);
+    else this.setFoil(this.inputs.foil);
     this.#syncLangButtons();
     this.#refreshWindReadout();
   }
@@ -363,9 +366,11 @@ export class UI {
   // the segment, fed to the sim via inputs.foil, and shown by the world (foil
   // rig + hidden daggerboard). With a foil the daggerboard control is moot, so
   // its row is hidden while foiling.
-  setFoil(on) {
+  setFoil(on, persist = true) {
     this.inputs.foil = !!on;
-    try { localStorage.setItem('ws_foil', this.inputs.foil ? 'on' : 'off'); } catch { /* ignore */ }
+    if (persist) {
+      try { localStorage.setItem('ws_foil', this.inputs.foil ? 'on' : 'off'); } catch { /* ignore */ }
+    }
     const seg = $('foil-seg');
     if (seg) for (const b of seg.children) b.classList.toggle('active', (b.dataset.foil === 'on') === this.inputs.foil);
     if (this.world) this.world.setFoil(this.inputs.foil);
