@@ -176,15 +176,16 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 #toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ---------- welcome overlay ---------- */
-/* The whole overlay scrolls (not the card), and the SAIL AWAY button is a
-   sticky footer pinned to the bottom of the *actual* scrollport. This makes it
-   always reachable and visible without relying on vh/dvh/innerHeight — some
-   in-app WebViews (Telegram, Instagram, …) over-measure the viewport, which
-   used to push the button off-screen on long-text locales (e.g. French). */
+/* The CARD is a fixed frame that stays put; only its inner .w-scroll region
+   scrolls, so the SAIL AWAY button (a plain flex footer) is always pinned to
+   the card's bottom with no gap. The card's max-height is capped in JS to
+   window.innerHeight (#sizeWelcomeCard) rather than 100dvh — some in-app
+   WebViews (Telegram, Instagram, …) over-measure dvh, which would push the
+   button below the fold; window.innerHeight is measured reliably. */
 #welcome-overlay {
   position: absolute; inset: 0;
-  display: flex; flex-direction: column; align-items: center;
-  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  overflow: hidden;
   background: rgba(4, 16, 28, 0.55); z-index: 30;
   padding: 14px;
 }
@@ -193,8 +194,14 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
   background: var(--panel-bg); border: 1px solid var(--accent); border-radius: 16px;
   padding: 26px 34px 0; color: var(--text); width: 100%; max-width: 560px; backdrop-filter: blur(10px);
   font-size: 13px; line-height: 1.55;
-  margin: auto;   /* vertically centre when it fits; scroll the overlay when it doesn't */
+  max-height: 100%;   /* JS (#sizeWelcomeCard) caps this to window.innerHeight for WebViews */
+  overflow: hidden;
   display: flex; flex-direction: column;
+}
+/* Only the text scrolls; the card frame + SAIL AWAY footer stay fixed. */
+#welcome-card .w-scroll {
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  flex: 1 1 auto; min-height: 0;
 }
 #welcome-card .w-title { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
 #welcome-card p { margin: 8px 0; }
@@ -208,8 +215,8 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 }
 #welcome-card .w-tip b { color: var(--text); }
 #welcome-close {
-  /* sticky footer: spans to the card's edges, stays at the visible bottom */
-  position: sticky; bottom: 0; z-index: 1;
+  /* plain footer at the card's bottom — the card doesn't scroll, only .w-scroll does */
+  flex: 0 0 auto;
   margin: 14px -34px 0; padding: 15px 34px calc(15px + env(safe-area-inset-bottom, 0px));
   background: var(--accent); color: #06121e; border: none;
   border-radius: 0 0 15px 15px; font-size: 14px; font-weight: 800; letter-spacing: 2px;
@@ -403,6 +410,8 @@ html, body { height: 100%; overflow: hidden; background: #06121e; }
 .settings-body { padding: 14px; }
 /* the card owns the padding now; the settings body sits flush inside it */
 #settings-card .settings-body { padding: 0; }
+/* settings section titles sit 2px larger than the in-panel controls for readability */
+#settings-card .ctl-label { font-size: 14px; }
 /* bottom CLOSE button — identical to the About modal's #about-close */
 #settings-close {
   margin-top: 20px; width: 100%; background: var(--accent); color: #06121e; border: none;
@@ -712,6 +721,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 20px; to
   #pause-toggle svg { width: 18px; height: 18px; }
   /* #settings-panel is a full-screen modal on every viewport (base rule) — no
      mobile-specific positioning needed. */
+  /* settings titles keep the +2px bump over the compact mobile controls (9px → 11px) */
+  #settings-card .ctl-label { font-size: 11px; }
 
   /* demo button: icon-only to fit the tight top-right cluster */
   #demo-toggle { padding: 0 11px; height: 38px; border-radius: 10px; gap: 0; }

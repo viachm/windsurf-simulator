@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=86';
-import { DemoDirector } from './demo.js?b=86';
-import { track, trackDebounced } from './analytics.js?b=86';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=87';
+import { DemoDirector } from './demo.js?b=87';
+import { track, trackDebounced } from './analytics.js?b=87';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -83,7 +83,8 @@ export class UI {
     this.compassCtx = $('compass').getContext('2d');
 
     // keep the framing centred if the viewport changes (rotate / URL bar)
-    addEventListener('resize', () => { this.#applyFramingLift(); this.#sizeWindFader(); this.#sizeRadar(); });
+    addEventListener('resize', () => { this.#applyFramingLift(); this.#sizeWindFader(); this.#sizeRadar(); this.#sizeWelcomeCard(); });
+    this.#sizeWelcomeCard();
     // apply the desktop sidebar / mobile fader framing shift on first paint too
     this.#applyFramingShiftX();
     // size the radar to the HUD+meters column once layout settles
@@ -190,6 +191,7 @@ export class UI {
     // "How to play" (in settings) reopens the how-to on demand
     $('info-toggle').addEventListener('click', () => {
       $('welcome-overlay').classList.remove('off');
+      this.#sizeWelcomeCard();
       $('settings-panel').classList.add('off');
       $('settings-toggle').classList.remove('open');
       track('how_to_play');
@@ -594,6 +596,16 @@ export class UI {
     // keep the demo caption sitting just above the sheet as it resizes
     const cap = $('demo-caption');
     if (!cap.classList.contains('off')) this.#positionAbovePanel(cap);
+  }
+
+  // Cap the how-to card to the *reliably measured* visible height, so its inner
+  // .w-scroll region (not the whole card) scrolls and the SAIL AWAY footer stays
+  // pinned to the card's bottom. Uses window.innerHeight, not 100dvh — some in-app
+  // WebViews over-measure dvh and would push the button off-screen. 28 = the
+  // overlay's 14px top+bottom padding.
+  #sizeWelcomeCard() {
+    const card = $('welcome-card');
+    if (card) card.style.maxHeight = `${Math.max(0, innerHeight - 28)}px`;
   }
 
   // Centre the rider in the clear band between the top overlays (HUD + meters)
