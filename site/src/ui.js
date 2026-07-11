@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=83';
-import { DemoDirector } from './demo.js?b=83';
-import { track, trackDebounced } from './analytics.js?b=83';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=84';
+import { DemoDirector } from './demo.js?b=84';
+import { track, trackDebounced } from './analytics.js?b=84';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -203,9 +203,12 @@ export class UI {
       if (e.target === $('about-overlay')) $('about-overlay').classList.add('off');
     });
 
-    // tapping anywhere on the header toggles — a bigger, touch-friendly target
-    $('panel').querySelector('.panel-header').addEventListener('click', () => {
+    // Only the +/- button collapses/expands the sheet — tapping the header text
+    // (or anywhere else on it) must NOT toggle, so it can't be triggered by
+    // accident while reaching for a control.
+    $('panel').querySelector('.panel-header').addEventListener('click', (e) => {
       if (!this.#isMobile()) return;   // desktop panel doesn't collapse
+      if (!e.target.closest('#panel-toggle')) return;
       this.setPanelCollapsed(!$('panel').classList.contains('collapsed'));
     });
 
