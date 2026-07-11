@@ -118,11 +118,11 @@
 
   <!-- Real, crawlable favicon files. Google can't use a data: URI favicon
        (that is why search showed a generic globe) — use actual PNG files. -->
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?b=80" />
-  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?b=80" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=80" />
-  <link rel="manifest" href="site.webmanifest?b=80" />
-  <link rel="stylesheet" href="style.css?b=80" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?b=81" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?b=81" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?b=81" />
+  <link rel="manifest" href="site.webmanifest?b=81" />
+  <link rel="stylesheet" href="style.css?b=81" />
   <script type="importmap">
     {
       "imports": {
@@ -290,9 +290,16 @@
       </div>
     </div>
     <!-- Hide the how-to on return visits (before paint, so it never flashes).
-         Cleared by the ℹ button, which reopens it on demand. -->
+         Cleared by the ℹ button, which reopens it on demand.
+         ?intro (any value) forces it open even after it's been seen — for
+         testing the overlay on a phone without clearing site data. -->
     <script>
-      try { if (localStorage.getItem('ws_welcomeSeen')) document.getElementById('welcome-overlay').classList.add('off'); } catch (e) {}
+      try {
+        var forceIntro = new URLSearchParams(location.search).has('intro');
+        if (!forceIntro && localStorage.getItem('ws_welcomeSeen')) {
+          document.getElementById('welcome-overlay').classList.add('off');
+        }
+      } catch (e) {}
     </script>
 
     <!-- About overlay (author credit) -->
@@ -300,7 +307,7 @@
       <div id="about-card">
         <div class="w-title" data-i18n="about.title">ABOUT</div>
         <div class="about-app">
-          <img src="docs/app-icon.png?b=80" width="54" height="54" alt="" />
+          <img src="docs/app-icon.png?b=81" width="54" height="54" alt="" />
           <span class="about-app-name">Windsurf Simulator</span>
         </div>
         <p class="about-tagline" data-i18n="about.tagline">A 3D game about the real physics of windsurfing.</p>
@@ -483,9 +490,9 @@
        kills the English→localised flash. Its ?b token MUST stay in sync with
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script type="module">
-    import { applyStatic } from './src/i18n.js?b=80';
+    import { applyStatic } from './src/i18n.js?b=81';
     applyStatic();
   </script>
-  <script type="module" src="src/main.js?b=80"></script>
+  <script type="module" src="src/main.js?b=81"></script>
 </body>
 </html>
