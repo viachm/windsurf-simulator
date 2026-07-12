@@ -171,12 +171,14 @@ export class World {
 
     // Per-pixel slope (∂y/∂x, ∂y/∂z) of one wave, evaluated from the world
     // position — used to rebuild the surface normal in the fragment shader.
-    const slopeGLSL = (w) => `
+    // `wgt` scales this wave's contribution to the normal (not its geometry), so
+    // the short, sharp chop can be damped while the long swell stays gentle.
+    const slopeGLSL = (w, wgt) => `
           {
             float ph = ${w.k.toFixed(4)} * (${w.dir.x.toFixed(4)} * vWorld.x + ${w.dir.y.toFixed(4)} * vWorld.z) + uTime * ${w.speed.toFixed(3)};
             float c = cos(ph);
-            dydx += ${w.amp.toFixed(4)} * c * ${w.k.toFixed(4)} * ${w.dir.x.toFixed(4)};
-            dydz += ${w.amp.toFixed(4)} * c * ${w.k.toFixed(4)} * ${w.dir.y.toFixed(4)};
+            dydx += ${(w.amp * wgt).toFixed(5)} * c * ${w.k.toFixed(4)} * ${w.dir.x.toFixed(4)};
+            dydz += ${(w.amp * wgt).toFixed(5)} * c * ${w.k.toFixed(4)} * ${w.dir.y.toFixed(4)};
           }`;
 
     const legacyFrag = `
@@ -223,11 +225,9 @@ export class World {
           float dist = length(camPos - vWorld);
           float dydx = 0.0;
           float dydz = 0.0;
-          ${waveData.map(w => slopeGLSL(w)).join('')}
-          // soften the waves overall: scale the slope down so crests read gentle
-          // and the highlight isn't sharp
-          dydx *= 0.6;
-          dydz *= 0.6;
+          // per-wave normal strength (long swell -> short chop): keep the gentle
+          // big swell, strongly damp the short waves that looked sharp near the board
+          ${waveData.map((w, i) => slopeGLSL(w, [0.6, 0.45, 0.15][i] ?? 0.3)).join('')}
           // 0 near the rider -> 1 by mid-distance: how far to calm the surface
           float farFade = smoothstep(14.0, 82.0, dist);
           vec3 n = normalize(mix(vec3(-dydx, 1.0, -dydz), vec3(0.0, 1.0, 0.0), farFade));
