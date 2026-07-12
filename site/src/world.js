@@ -166,8 +166,9 @@ export class World {
       fogColor: { value: new THREE.Color(0xbfdcec) },
       fogDensity: { value: 0.0032 },
     };
-    // ?water=2 — experimental water look for A/B comparison (default stays 1).
-    const improved = new URLSearchParams(location.search).get('water') === '2';
+    // Improved water (per-pixel normals + flattened horizon) is the default now;
+    // ?water=1 falls back to the original look for comparison.
+    const improved = new URLSearchParams(location.search).get('water') !== '1';
 
     // Per-pixel slope (∂y/∂x, ∂y/∂z) of one wave, evaluated from the world
     // position — used to rebuild the surface normal in the fragment shader.
@@ -267,7 +268,7 @@ export class World {
         }`,
       fragmentShader: improved ? improvedFrag : legacyFrag,
     });
-    if (improved) console.log('[windsurf-sim] water mode 2 (per-pixel normals)');
+    console.log(`[windsurf-sim] water mode ${improved ? 2 : 1}`);
     this.sea = new THREE.Mesh(geo, mat);
     this.scene.add(this.sea);
   }
