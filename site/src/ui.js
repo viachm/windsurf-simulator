@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=87';
-import { DemoDirector } from './demo.js?b=87';
-import { track, trackDebounced } from './analytics.js?b=87';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=88';
+import { DemoDirector } from './demo.js?b=88';
+import { track, trackDebounced } from './analytics.js?b=88';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -81,6 +81,9 @@ export class UI {
     this.#bindKeys();
     this.#bindCrashHold();
     this.compassCtx = $('compass').getContext('2d');
+    this.track = [];          // board's path across the water, world-space {x,z}
+    this._trackScale = 0;     // smoothed px-per-metre for the mini-map trail
+    this._lastTrackT = 0;     // detect sim.reset() (clock rewinds) to clear the path
 
     // keep the framing centred if the viewport changes (rotate / URL bar)
     addEventListener('resize', () => { this.#applyFramingLift(); this.#sizeWindFader(); this.#sizeRadar(); this.#sizeWelcomeCard(); });
@@ -999,6 +1002,19 @@ export class UI {
     const S = 120, c = S / 2, R = 48;
     ctx.clearRect(0, 0, S, S);
 
+    // Record the board's path for the mini-map trail (drawn below). Sample by
+    // distance travelled so a slow/stopped board doesn't pile up points; the
+    // clock rewinding means sim.reset() fired, so drop the old track.
+    if (st.t < this._lastTrackT - 1e-3) this.track.length = 0;
+    this._lastTrackT = st.t;
+    {
+      const p = st.pos, last = this.track[this.track.length - 1];
+      if (!last || Math.hypot(p.x - last.x, p.z - last.z) > 0.5) {
+        this.track.push({ x: p.x, z: p.z });
+        if (this.track.length > 500) this.track.shift();
+      }
+    }
+
     // ring
     ctx.strokeStyle = 'rgba(143,184,212,0.5)';
     ctx.lineWidth = 1.5;
@@ -1019,6 +1035,47 @@ export class UI {
       ctx.lineTo(x, y);
     }
     ctx.closePath(); ctx.fill();
+
+    // ---- mini-map track: the board's actual path across the water ----
+    // Same world-fixed frame as the compass (+Z up, +X left), centred on the
+    // board's current position. This is the horizontal-plane picture a heading
+    // alone can't show: the zig-zag of tacking, the sideways slip of leeway,
+    // and how much ground you're really making good toward/away from the wind.
+    const P = st.pos;
+    const track = this.track;
+    if (track.length > 1) {
+      // Auto-fit: the farthest logged point sets the zoom (clamped so a short
+      // track isn't absurdly magnified), smoothed frame-to-frame to avoid jitter.
+      let dmax = 0;
+      for (const p of track) { const d = Math.hypot(p.x - P.x, p.z - P.z); if (d > dmax) dmax = d; }
+      const usable = R - 2;
+      const maxScale = usable / 16;                          // never zoom in past ~16 m radius
+      const target = dmax > 1 ? Math.min(maxScale, usable / dmax) : maxScale;
+      this._trackScale = this._trackScale ? this._trackScale + (target - this._trackScale) * 0.06 : target;
+      const sc = this._trackScale;
+
+      ctx.save();
+      ctx.beginPath(); ctx.arc(c, c, R, 0, Math.PI * 2); ctx.clip();  // never spill past the ring
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = 1.7;
+      const n = track.length;
+      for (let i = 1; i < n; i++) {
+        const a = track[i - 1], b = track[i];
+        const f = i / n;                                     // 0 = oldest (faint), 1 = newest (bright)
+        ctx.strokeStyle = `rgba(120,210,255,${0.10 + 0.62 * f})`;
+        ctx.beginPath();
+        ctx.moveTo(c - (a.x - P.x) * sc, c - (a.z - P.z) * sc);
+        ctx.lineTo(c - (b.x - P.x) * sc, c - (b.z - P.z) * sc);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // scale reference (ring radius in metres) — makes it read as a map, not a dial
+      ctx.fillStyle = 'rgba(143,184,212,0.6)';
+      ctx.font = '8px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${Math.round(usable / sc)} m`, c, c + R - 3);
+      ctx.textAlign = 'start';
+    }
 
     // wind arrow (points DOWNWIND, from the edge toward centre)
     const [wx, wy] = pt(wa, R + 8);
