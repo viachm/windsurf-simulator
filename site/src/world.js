@@ -248,9 +248,11 @@ export class World {
     const R = this.windArrowHalf;
     for (let i = 0; i < this.windArrowCount; i++) {
       this.windArrowData.push({
-        // stored RELATIVE to the board, wrapped into [-R, R) each frame
-        rx: (Math.random() * 2 - 1) * R,
-        rz: (Math.random() * 2 - 1) * R,
+        // WORLD position on the water. Wrapped into a board-centred [-R, R)
+        // window each frame so the field always surrounds the rider, yet each
+        // arrow stays put on the sea (you sail PAST it) instead of following.
+        wx: (Math.random() * 2 - 1) * R,
+        wz: (Math.random() * 2 - 1) * R,
         phase: Math.random() * Math.PI * 2,
       });
     }
@@ -1060,18 +1062,23 @@ export class World {
     const dummy = this.windArrowDummy;
     for (let i = 0; i < this.windArrowCount; i++) {
       const a = this.windArrowData[i];
-      // advect downwind in board-relative space, then wrap toroidally into
-      // [-R, R) so the field stays centred on the board — front, back, sides.
-      a.rx += wvx * speed * dt;
-      a.rz += wvz * speed * dt;
-      a.rx = ((a.rx + R) % span + span) % span - R;
-      a.rz = ((a.rz + R) % span + span) % span - R;
-      const x = bx + a.rx, z = bz + a.rz;
+      // Arrows live in WORLD space and only drift downwind — they do NOT follow
+      // the board. Each frame the arrow is wrapped into a board-centred [-R, R)
+      // window: while it sits within R it stays exactly where it is on the water,
+      // so you visibly sail PAST it and the flow rate past you matches the board's
+      // speed. Once the board pulls more than R away the arrow teleports one whole
+      // span to refill the field ahead — a jump that only ever happens out at the
+      // faded edge, so it never pops in view.
+      a.wx += wvx * speed * dt;
+      a.wz += wvz * speed * dt;
+      a.wx = bx + (((a.wx - bx + R) % span + span) % span - R);
+      a.wz = bz + (((a.wz - bz + R) % span + span) % span - R);
+      const x = a.wx, z = a.wz;
       const y = waveHeight(x, z, t) + 0.30;
       // pulsing shimmer, scaled between ~0.75 and ~1.45
       const pulse = 1.1 + 0.35 * Math.sin(t + a.phase);
-      // fade out toward the field edge so toroidal wraps never pop into view
-      const edge = Math.max(Math.abs(a.rx), Math.abs(a.rz)) / R;   // 0..1
+      // fade out toward the window edge so the wrap teleports never pop into view
+      const edge = Math.max(Math.abs(x - bx), Math.abs(z - bz)) / R;   // 0..1
       const edgeFade = 1 - Math.min(1, Math.max(0, (edge - 0.8) / 0.2));
       dummy.position.set(x, y, z);
       dummy.rotation.set(0, wa, 0);       // tip (local -Z) points downwind
