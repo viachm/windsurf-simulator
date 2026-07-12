@@ -50,9 +50,9 @@
   <link rel="alternate" hreflang="ko" href="https://windsurfsimulator.com/ko/" />
   <link rel="alternate" hreflang="x-default" href="https://windsurfsimulator.com/" />
 
-  <!-- Warm the CDN that serves three.js so the first paint isn't blocked on DNS/TLS -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+  <!-- three.js is self-hosted (same origin) so a blocked/unreachable CDN can't
+       break the app for anyone. Preload the engine so first paint isn't blocked. -->
+  <link rel="modulepreload" href="/vendor/three@0.160.0/build/three.module.js" />
 
   <!-- Open Graph (Facebook, Telegram, Discord, LinkedIn…) -->
   <meta property="og:type" content="website" />
@@ -126,8 +126,8 @@
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        "three": "/vendor/three@0.160.0/build/three.module.js",
+        "three/addons/": "/vendor/three@0.160.0/examples/jsm/"
       }
     }
   </script>
