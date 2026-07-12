@@ -3,8 +3,11 @@ name: Deploy develop to Cloudflare Pages
 # Staging deploy: every push to `develop` publishes ./site to the Cloudflare Pages
 # project `windsurf-simulator-dev`, served at https://dev.windsurfsimulator.com.
 # Production (main -> GitHub Pages -> windsurfsimulator.com) is untouched by this.
-# The develop branch also carries site/_headers (X-Robots-Tag: noindex) so staging
-# never gets indexed.
+#
+# The staging noindex (site/_headers, X-Robots-Tag: noindex) is GENERATED here at
+# deploy time — it is deliberately NOT committed, so develop and main share an
+# identical source tree and `develop -> main` merges are always clean (nothing
+# dev-only to strip out). The file exists only inside this CI run, never on prod.
 
 on:
   push:
@@ -23,6 +26,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - name: Inject staging noindex (_headers) — dev only, never committed
+        run: |
+          printf '/*\n  X-Robots-Tag: noindex, nofollow\n' > site/_headers
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
