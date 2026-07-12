@@ -224,8 +224,12 @@ export class World {
           float dydx = 0.0;
           float dydz = 0.0;
           ${waveData.map(w => slopeGLSL(w)).join('')}
+          // soften the waves overall: scale the slope down so crests read gentle
+          // and the highlight isn't sharp
+          dydx *= 0.6;
+          dydz *= 0.6;
           // 0 near the rider -> 1 by mid-distance: how far to calm the surface
-          float farFade = smoothstep(20.0, 95.0, dist);
+          float farFade = smoothstep(14.0, 82.0, dist);
           vec3 n = normalize(mix(vec3(-dydx, 1.0, -dydz), vec3(0.0, 1.0, 0.0), farFade));
           vec3 viewDir = normalize(camPos - vWorld);
           // crest colour banding near, easing to one flat mid tone far off
@@ -234,7 +238,7 @@ export class World {
           // sky sheen only where the water isn't flattened -> no horizon lines
           float fres = pow(1.0 - max(dot(viewDir, n), 0.0), 3.0) * (1.0 - farFade);
           vec3 skyRef = vec3(0.62, 0.78, 0.88);
-          col = mix(col, skyRef, fres * 0.75);
+          col = mix(col, skyRef, fres * 0.55);
           float f = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
           col = mix(col, fogColor, f);
           gl_FragColor = vec4(col, 1.0);
