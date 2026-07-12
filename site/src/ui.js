@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=96';
-import { DemoDirector } from './demo.js?b=96';
-import { track, trackDebounced } from './analytics.js?b=96';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=97';
+import { DemoDirector } from './demo.js?b=97';
+import { track, trackDebounced } from './analytics.js?b=97';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -943,6 +943,12 @@ export class UI {
     $('sheet-val').textContent = `${Math.round(st.inputs.sheetDeg)}°`;
     $('sheet-optimal').style.left = `${(st.sheetOpt / 90) * 100}%`;
     $('lean-val').textContent = `${Math.round(st.inputs.lean)}%`;
+    // lean optimal marker: the balanced lean the autopilot targets, so with the
+    // assist on the slider sits right on the green line (harness lets you hang
+    // harder for the same hold, so the target drops).
+    const leanBoost = st.inputs.harness ? 1.38 : 1.0;
+    $('lean-optimal').style.left =
+      `${Math.max(0, Math.min(100, ((st.required01 || 0) + 0.12) / leanBoost * 100))}%`;
 
     // power meter
     $('power-fill').style.width = `${Math.min(100, st.power01 * 100)}%`;

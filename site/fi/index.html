@@ -50,9 +50,9 @@
   <link rel="alternate" hreflang="ko" href="https://windsurfsimulator.com/ko/" />
   <link rel="alternate" hreflang="x-default" href="https://windsurfsimulator.com/" />
 
-  <!-- Warm the CDN that serves three.js so the first paint isn't blocked on DNS/TLS -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+  <!-- three.js is self-hosted (same origin) so a blocked/unreachable CDN can't
+       break the app for anyone. Preload the engine so first paint isn't blocked. -->
+  <link rel="modulepreload" href="/vendor/three@0.160.0/build/three.module.js" />
 
   <!-- Open Graph (Facebook, Telegram, Discord, LinkedIn…) -->
   <meta property="og:type" content="website" />
@@ -118,16 +118,16 @@
 
   <!-- Real, crawlable favicon files. Google can't use a data: URI favicon
        (that is why search showed a generic globe) — use actual PNG files. -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?b=96" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?b=96" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?b=96" />
-  <link rel="manifest" href="/site.webmanifest?b=96" />
-  <link rel="stylesheet" href="/style.css?b=96" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?b=97" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?b=97" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?b=97" />
+  <link rel="manifest" href="/site.webmanifest?b=97" />
+  <link rel="stylesheet" href="/style.css?b=97" />
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        "three": "/vendor/three@0.160.0/build/three.module.js",
+        "three/addons/": "/vendor/three@0.160.0/examples/jsm/"
       }
     }
   </script>
@@ -307,7 +307,7 @@
       <div id="about-card">
         <div class="w-title" data-i18n="about.title">ABOUT</div>
         <div class="about-app">
-          <img src="/docs/app-icon.png?b=96" width="54" height="54" alt="" />
+          <img src="/docs/app-icon.png?b=97" width="54" height="54" alt="" />
           <span class="about-app-name">Windsurf Simulator</span>
         </div>
         <p class="about-tagline" data-i18n="about.tagline">A 3D game about the real physics of windsurfing.</p>
@@ -491,9 +491,9 @@
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script>try{localStorage.setItem('ws_lang','fi')}catch(e){}</script>
   <script type="module">
-    import { applyStatic } from '/src/i18n.js?b=96';
+    import { applyStatic } from '/src/i18n.js?b=97';
     applyStatic();
   </script>
-  <script type="module" src="/src/main.js?b=96"></script>
+  <script type="module" src="/src/main.js?b=97"></script>
 </body>
 </html>
