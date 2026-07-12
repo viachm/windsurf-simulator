@@ -166,28 +166,32 @@ export class World {
       fogColor: { value: new THREE.Color(0xbfdcec) },
       fogDensity: { value: 0.0032 },
     };
-    const mat = new THREE.ShaderMaterial({
-      uniforms: this.seaUniforms,
-      vertexShader: `
-        uniform float uTime;
-        varying vec3 vWorld;
-        varying float vCrest;
-        void main() {
-          vec4 wp = modelMatrix * vec4(position, 1.0);
-          float y = 0.0;
-          float crest = 0.0;
-          ${waveData.map(w => `
+    // ?water=2 — experimental water look for A/B comparison (default stays 1).
+    const improved = new URLSearchParams(location.search).get('water') === '2';
+
+    // Fine ripples used ONLY to perturb the shading normal (never the geometry),
+    // so they add surface texture without aliasing against the coarse vertex grid.
+    const DETAIL = [
+      { dir: [0.80, 0.60], amp: 0.010, len: 2.10, speed: 2.9 },
+      { dir: [-0.50, 0.86], amp: 0.007, len: 1.35, speed: 3.6 },
+      { dir: [0.97, -0.24], amp: 0.005, len: 0.85, speed: 4.4 },
+    ];
+    const detailData = DETAIL.map(w => ({
+      dir: new THREE.Vector2(w.dir[0], w.dir[1]).normalize(),
+      amp: w.amp, k: (2 * Math.PI) / w.len, speed: w.speed,
+    }));
+    // Per-pixel slope (∂y/∂x, ∂y/∂z) of one wave, from the world position. `fade`
+    // scales it — 1.0 for macro waves, a distance fade for detail so far water
+    // stays glassy-smooth instead of sparkling.
+    const slopeGLSL = (w, fade) => `
           {
-            float ph = ${w.k.toFixed(4)} * (${w.dir.x.toFixed(4)} * wp.x + ${w.dir.y.toFixed(4)} * wp.z) + uTime * ${w.speed.toFixed(3)};
-            y += ${w.amp.toFixed(3)} * sin(ph);
-            crest += ${w.amp.toFixed(3)} * cos(ph);
-          }`).join('')}
-          wp.y += y;
-          vCrest = crest;
-          vWorld = wp.xyz;
-          gl_Position = projectionMatrix * viewMatrix * wp;
-        }`,
-      fragmentShader: `
+            float ph = ${w.k.toFixed(4)} * (${w.dir.x.toFixed(4)} * vWorld.x + ${w.dir.y.toFixed(4)} * vWorld.z) + uTime * ${w.speed.toFixed(3)};
+            float c = cos(ph) * ${fade};
+            dydx += ${w.amp.toFixed(4)} * c * ${w.k.toFixed(4)} * ${w.dir.x.toFixed(4)};
+            dydz += ${w.amp.toFixed(4)} * c * ${w.k.toFixed(4)} * ${w.dir.y.toFixed(4)};
+          }`;
+
+    const legacyFrag = `
         varying vec3 vWorld;
         varying float vCrest;
         uniform vec3 sunDir;
@@ -210,8 +214,68 @@ export class World {
           float f = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
           col = mix(col, fogColor, f);
           gl_FragColor = vec4(col, 1.0);
+        }`;
+
+    // Rebuild the surface normal PER PIXEL from the analytic wave field (macro
+    // waves + distance-faded fine ripples), so the highlight can't sparkle across
+    // the 5m vertex grid, and soften the sheen (rougher fresnel + tamed glitter).
+    const improvedFrag = `
+        varying vec3 vWorld;
+        varying float vCrest;
+        uniform vec3 sunDir;
+        uniform vec3 camPos;
+        uniform vec3 fogColor;
+        uniform float fogDensity;
+        uniform float uTime;
+        void main() {
+          vec3 deep = vec3(0.03, 0.22, 0.35);
+          vec3 shallow = vec3(0.10, 0.45, 0.55);
+          float dist = length(camPos - vWorld);
+          float dydx = 0.0;
+          float dydz = 0.0;
+          ${waveData.map(w => slopeGLSL(w, '1.0')).join('')}
+          float detailFade = 1.0 - smoothstep(25.0, 110.0, dist);
+          ${detailData.map(w => slopeGLSL(w, 'detailFade')).join('')}
+          vec3 n = normalize(vec3(-dydx, 1.0, -dydz));
+          vec3 viewDir = normalize(camPos - vWorld);
+          vec3 col = mix(deep, shallow, clamp(vWorld.y * 2.2 + 0.4, 0.0, 1.0));
+          // calmer, rougher sky sheen than the old sharp fresnel
+          float fres = pow(1.0 - max(dot(viewDir, n), 0.0), 4.0);
+          vec3 skyRef = vec3(0.62, 0.78, 0.88);
+          col = mix(col, skyRef, fres * 0.5);
+          // gentle sun glitter, faded out with distance so it never sparkles far off
+          vec3 hlf = normalize(viewDir + sunDir);
+          float spec = pow(max(dot(n, hlf), 0.0), 80.0) * 0.35 * detailFade;
+          col += spec * vec3(1.0, 0.96, 0.85);
+          float f = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
+          col = mix(col, fogColor, f);
+          gl_FragColor = vec4(col, 1.0);
+        }`;
+
+    const mat = new THREE.ShaderMaterial({
+      uniforms: this.seaUniforms,
+      vertexShader: `
+        uniform float uTime;
+        varying vec3 vWorld;
+        varying float vCrest;
+        void main() {
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          float y = 0.0;
+          float crest = 0.0;
+          ${waveData.map(w => `
+          {
+            float ph = ${w.k.toFixed(4)} * (${w.dir.x.toFixed(4)} * wp.x + ${w.dir.y.toFixed(4)} * wp.z) + uTime * ${w.speed.toFixed(3)};
+            y += ${w.amp.toFixed(3)} * sin(ph);
+            crest += ${w.amp.toFixed(3)} * cos(ph);
+          }`).join('')}
+          wp.y += y;
+          vCrest = crest;
+          vWorld = wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
         }`,
+      fragmentShader: improved ? improvedFrag : legacyFrag,
     });
+    if (improved) console.log('[windsurf-sim] water mode 2 (per-pixel normals)');
     this.sea = new THREE.Mesh(geo, mat);
     this.scene.add(this.sea);
   }
