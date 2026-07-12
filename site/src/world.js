@@ -169,24 +169,12 @@ export class World {
     // ?water=2 — experimental water look for A/B comparison (default stays 1).
     const improved = new URLSearchParams(location.search).get('water') === '2';
 
-    // Fine ripples used ONLY to perturb the shading normal (never the geometry),
-    // so they add surface texture without aliasing against the coarse vertex grid.
-    const DETAIL = [
-      { dir: [0.80, 0.60], amp: 0.010, len: 2.10, speed: 2.9 },
-      { dir: [-0.50, 0.86], amp: 0.007, len: 1.35, speed: 3.6 },
-      { dir: [0.97, -0.24], amp: 0.005, len: 0.85, speed: 4.4 },
-    ];
-    const detailData = DETAIL.map(w => ({
-      dir: new THREE.Vector2(w.dir[0], w.dir[1]).normalize(),
-      amp: w.amp, k: (2 * Math.PI) / w.len, speed: w.speed,
-    }));
-    // Per-pixel slope (∂y/∂x, ∂y/∂z) of one wave, from the world position. `fade`
-    // scales it — 1.0 for macro waves, a distance fade for detail so far water
-    // stays glassy-smooth instead of sparkling.
-    const slopeGLSL = (w, fade) => `
+    // Per-pixel slope (∂y/∂x, ∂y/∂z) of one wave, evaluated from the world
+    // position — used to rebuild the surface normal in the fragment shader.
+    const slopeGLSL = (w) => `
           {
             float ph = ${w.k.toFixed(4)} * (${w.dir.x.toFixed(4)} * vWorld.x + ${w.dir.y.toFixed(4)} * vWorld.z) + uTime * ${w.speed.toFixed(3)};
-            float c = cos(ph) * ${fade};
+            float c = cos(ph);
             dydx += ${w.amp.toFixed(4)} * c * ${w.k.toFixed(4)} * ${w.dir.x.toFixed(4)};
             dydz += ${w.amp.toFixed(4)} * c * ${w.k.toFixed(4)} * ${w.dir.y.toFixed(4)};
           }`;
@@ -216,9 +204,11 @@ export class World {
           gl_FragColor = vec4(col, 1.0);
         }`;
 
-    // Rebuild the surface normal PER PIXEL from the analytic wave field (macro
-    // waves + distance-faded fine ripples), so the highlight can't sparkle across
-    // the 5m vertex grid, and soften the sheen (rougher fresnel + tamed glitter).
+    // ?water=2 — same colours as the default, but (a) the normal is rebuilt PER
+    // PIXEL so the highlight can't sparkle across the coarse 5m grid, and (b) the
+    // surface is FLATTENED toward the horizon: the crest normal, the sky highlight
+    // and the crest colour-banding all fade to a calm uniform band with distance,
+    // so far water stops reading as a busy grid of crossing wave lines.
     const improvedFrag = `
         varying vec3 vWorld;
         varying float vCrest;
@@ -233,20 +223,18 @@ export class World {
           float dist = length(camPos - vWorld);
           float dydx = 0.0;
           float dydz = 0.0;
-          ${waveData.map(w => slopeGLSL(w, '1.0')).join('')}
-          float detailFade = 1.0 - smoothstep(25.0, 110.0, dist);
-          ${detailData.map(w => slopeGLSL(w, 'detailFade')).join('')}
-          vec3 n = normalize(vec3(-dydx, 1.0, -dydz));
+          ${waveData.map(w => slopeGLSL(w)).join('')}
+          // 0 near the rider -> 1 by mid-distance: how far to calm the surface
+          float farFade = smoothstep(20.0, 95.0, dist);
+          vec3 n = normalize(mix(vec3(-dydx, 1.0, -dydz), vec3(0.0, 1.0, 0.0), farFade));
           vec3 viewDir = normalize(camPos - vWorld);
+          // crest colour banding near, easing to one flat mid tone far off
           vec3 col = mix(deep, shallow, clamp(vWorld.y * 2.2 + 0.4, 0.0, 1.0));
-          // calmer, rougher sky sheen than the old sharp fresnel
-          float fres = pow(1.0 - max(dot(viewDir, n), 0.0), 4.0);
+          col = mix(col, mix(deep, shallow, 0.5), farFade);
+          // sky sheen only where the water isn't flattened -> no horizon lines
+          float fres = pow(1.0 - max(dot(viewDir, n), 0.0), 3.0) * (1.0 - farFade);
           vec3 skyRef = vec3(0.62, 0.78, 0.88);
-          col = mix(col, skyRef, fres * 0.5);
-          // gentle sun glitter, faded out with distance so it never sparkles far off
-          vec3 hlf = normalize(viewDir + sunDir);
-          float spec = pow(max(dot(n, hlf), 0.0), 80.0) * 0.35 * detailFade;
-          col += spec * vec3(1.0, 0.96, 0.85);
+          col = mix(col, skyRef, fres * 0.75);
           float f = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
           col = mix(col, fogColor, f);
           gl_FragColor = vec4(col, 1.0);
