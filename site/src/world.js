@@ -166,28 +166,23 @@ export class World {
       fogColor: { value: new THREE.Color(0xbfdcec) },
       fogDensity: { value: 0.0032 },
     };
-    const mat = new THREE.ShaderMaterial({
-      uniforms: this.seaUniforms,
-      vertexShader: `
-        uniform float uTime;
-        varying vec3 vWorld;
-        varying float vCrest;
-        void main() {
-          vec4 wp = modelMatrix * vec4(position, 1.0);
-          float y = 0.0;
-          float crest = 0.0;
-          ${waveData.map(w => `
+    // Improved water (per-pixel normals + flattened horizon) is the default now;
+    // ?water=1 falls back to the original look for comparison.
+    const improved = new URLSearchParams(location.search).get('water') !== '1';
+
+    // Per-pixel slope (∂y/∂x, ∂y/∂z) of one wave, evaluated from the world
+    // position — used to rebuild the surface normal in the fragment shader.
+    // `wgt` scales this wave's contribution to the normal (not its geometry), so
+    // the short, sharp chop can be damped while the long swell stays gentle.
+    const slopeGLSL = (w, wgt) => `
           {
-            float ph = ${w.k.toFixed(4)} * (${w.dir.x.toFixed(4)} * wp.x + ${w.dir.y.toFixed(4)} * wp.z) + uTime * ${w.speed.toFixed(3)};
-            y += ${w.amp.toFixed(3)} * sin(ph);
-            crest += ${w.amp.toFixed(3)} * cos(ph);
-          }`).join('')}
-          wp.y += y;
-          vCrest = crest;
-          vWorld = wp.xyz;
-          gl_Position = projectionMatrix * viewMatrix * wp;
-        }`,
-      fragmentShader: `
+            float ph = ${w.k.toFixed(4)} * (${w.dir.x.toFixed(4)} * vWorld.x + ${w.dir.y.toFixed(4)} * vWorld.z) + uTime * ${w.speed.toFixed(3)};
+            float c = cos(ph);
+            dydx += ${(w.amp * wgt).toFixed(5)} * c * ${w.k.toFixed(4)} * ${w.dir.x.toFixed(4)};
+            dydz += ${(w.amp * wgt).toFixed(5)} * c * ${w.k.toFixed(4)} * ${w.dir.y.toFixed(4)};
+          }`;
+
+    const legacyFrag = `
         varying vec3 vWorld;
         varying float vCrest;
         uniform vec3 sunDir;
@@ -210,8 +205,70 @@ export class World {
           float f = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
           col = mix(col, fogColor, f);
           gl_FragColor = vec4(col, 1.0);
+        }`;
+
+    // ?water=2 — same colours as the default, but (a) the normal is rebuilt PER
+    // PIXEL so the highlight can't sparkle across the coarse 5m grid, and (b) the
+    // surface is FLATTENED toward the horizon: the crest normal, the sky highlight
+    // and the crest colour-banding all fade to a calm uniform band with distance,
+    // so far water stops reading as a busy grid of crossing wave lines.
+    const improvedFrag = `
+        varying vec3 vWorld;
+        varying float vCrest;
+        uniform vec3 sunDir;
+        uniform vec3 camPos;
+        uniform vec3 fogColor;
+        uniform float fogDensity;
+        uniform float uTime;
+        void main() {
+          vec3 deep = vec3(0.03, 0.22, 0.35);
+          vec3 shallow = vec3(0.10, 0.45, 0.55);
+          float dist = length(camPos - vWorld);
+          float dydx = 0.0;
+          float dydz = 0.0;
+          // per-wave normal strength (long swell -> short chop): keep the gentle
+          // big swell, strongly damp the short waves that looked sharp near the board
+          ${waveData.map((w, i) => slopeGLSL(w, [0.6, 0.45, 0.15][i] ?? 0.3)).join('')}
+          // 0 near the rider -> 1 by mid-distance: how far to calm the surface
+          float farFade = smoothstep(14.0, 82.0, dist);
+          vec3 n = normalize(mix(vec3(-dydx, 1.0, -dydz), vec3(0.0, 1.0, 0.0), farFade));
+          vec3 viewDir = normalize(camPos - vWorld);
+          // crest colour banding near, easing to one flat mid tone far off
+          vec3 col = mix(deep, shallow, clamp(vWorld.y * 2.2 + 0.4, 0.0, 1.0));
+          col = mix(col, mix(deep, shallow, 0.5), farFade);
+          // sky sheen only where the water isn't flattened -> no horizon lines
+          float fres = pow(1.0 - max(dot(viewDir, n), 0.0), 3.0) * (1.0 - farFade);
+          vec3 skyRef = vec3(0.62, 0.78, 0.88);
+          col = mix(col, skyRef, fres * 0.55);
+          float f = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
+          col = mix(col, fogColor, f);
+          gl_FragColor = vec4(col, 1.0);
+        }`;
+
+    const mat = new THREE.ShaderMaterial({
+      uniforms: this.seaUniforms,
+      vertexShader: `
+        uniform float uTime;
+        varying vec3 vWorld;
+        varying float vCrest;
+        void main() {
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          float y = 0.0;
+          float crest = 0.0;
+          ${waveData.map(w => `
+          {
+            float ph = ${w.k.toFixed(4)} * (${w.dir.x.toFixed(4)} * wp.x + ${w.dir.y.toFixed(4)} * wp.z) + uTime * ${w.speed.toFixed(3)};
+            y += ${w.amp.toFixed(3)} * sin(ph);
+            crest += ${w.amp.toFixed(3)} * cos(ph);
+          }`).join('')}
+          wp.y += y;
+          vCrest = crest;
+          vWorld = wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
         }`,
+      fragmentShader: improved ? improvedFrag : legacyFrag,
     });
+    console.log(`[windsurf-sim] water mode ${improved ? 2 : 1}`);
     this.sea = new THREE.Mesh(geo, mat);
     this.scene.add(this.sea);
   }
@@ -248,9 +305,11 @@ export class World {
     const R = this.windArrowHalf;
     for (let i = 0; i < this.windArrowCount; i++) {
       this.windArrowData.push({
-        // stored RELATIVE to the board, wrapped into [-R, R) each frame
-        rx: (Math.random() * 2 - 1) * R,
-        rz: (Math.random() * 2 - 1) * R,
+        // WORLD position on the water. Wrapped into a board-centred [-R, R)
+        // window each frame so the field always surrounds the rider, yet each
+        // arrow stays put on the sea (you sail PAST it) instead of following.
+        wx: (Math.random() * 2 - 1) * R,
+        wz: (Math.random() * 2 - 1) * R,
         phase: Math.random() * Math.PI * 2,
       });
     }
@@ -1060,18 +1119,23 @@ export class World {
     const dummy = this.windArrowDummy;
     for (let i = 0; i < this.windArrowCount; i++) {
       const a = this.windArrowData[i];
-      // advect downwind in board-relative space, then wrap toroidally into
-      // [-R, R) so the field stays centred on the board — front, back, sides.
-      a.rx += wvx * speed * dt;
-      a.rz += wvz * speed * dt;
-      a.rx = ((a.rx + R) % span + span) % span - R;
-      a.rz = ((a.rz + R) % span + span) % span - R;
-      const x = bx + a.rx, z = bz + a.rz;
+      // Arrows live in WORLD space and only drift downwind — they do NOT follow
+      // the board. Each frame the arrow is wrapped into a board-centred [-R, R)
+      // window: while it sits within R it stays exactly where it is on the water,
+      // so you visibly sail PAST it and the flow rate past you matches the board's
+      // speed. Once the board pulls more than R away the arrow teleports one whole
+      // span to refill the field ahead — a jump that only ever happens out at the
+      // faded edge, so it never pops in view.
+      a.wx += wvx * speed * dt;
+      a.wz += wvz * speed * dt;
+      a.wx = bx + (((a.wx - bx + R) % span + span) % span - R);
+      a.wz = bz + (((a.wz - bz + R) % span + span) % span - R);
+      const x = a.wx, z = a.wz;
       const y = waveHeight(x, z, t) + 0.30;
       // pulsing shimmer, scaled between ~0.75 and ~1.45
       const pulse = 1.1 + 0.35 * Math.sin(t + a.phase);
-      // fade out toward the field edge so toroidal wraps never pop into view
-      const edge = Math.max(Math.abs(a.rx), Math.abs(a.rz)) / R;   // 0..1
+      // fade out toward the window edge so the wrap teleports never pop into view
+      const edge = Math.max(Math.abs(x - bx), Math.abs(z - bz)) / R;   // 0..1
       const edgeFade = 1 - Math.min(1, Math.max(0, (edge - 0.8) / 0.2));
       dummy.position.set(x, y, z);
       dummy.rotation.set(0, wa, 0);       // tip (local -Z) points downwind
