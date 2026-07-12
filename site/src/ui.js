@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=88';
-import { DemoDirector } from './demo.js?b=88';
-import { track, trackDebounced } from './analytics.js?b=88';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=89';
+import { DemoDirector } from './demo.js?b=89';
+import { track, trackDebounced } from './analytics.js?b=89';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -1056,12 +1056,12 @@ export class UI {
 
       ctx.save();
       ctx.beginPath(); ctx.arc(c, c, R, 0, Math.PI * 2); ctx.clip();  // never spill past the ring
-      ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = 1.7;
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = 1.2;
       const n = track.length;
       for (let i = 1; i < n; i++) {
         const a = track[i - 1], b = track[i];
         const f = i / n;                                     // 0 = oldest (faint), 1 = newest (bright)
-        ctx.strokeStyle = `rgba(120,210,255,${0.10 + 0.62 * f})`;
+        ctx.strokeStyle = `rgba(255,255,255,${0.10 + 0.62 * f})`;
         ctx.beginPath();
         ctx.moveTo(c - (a.x - P.x) * sc, c - (a.z - P.z) * sc);
         ctx.lineTo(c - (b.x - P.x) * sc, c - (b.z - P.z) * sc);
