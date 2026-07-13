@@ -50,6 +50,19 @@
   <link rel="alternate" hreflang="ko" href="https://windsurfsimulator.com/ko/" />
   <link rel="alternate" hreflang="x-default" href="https://windsurfsimulator.com/" />
 
+  <!-- The import map MUST come before the modulepreload/module <script> below:
+       Firefox rejects an import map once ANY module load or preload has started
+       ("Import maps are not allowed after a module load or preload has started"),
+       which breaks `import "three"` and hangs the boot loader forever. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/vendor/three@0.160.0/build/three.module.js",
+        "three/addons/": "/vendor/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
   <!-- three.js is self-hosted (same origin) so a blocked/unreachable CDN can't
        break the app for anyone. Preload the engine so first paint isn't blocked. -->
   <link rel="modulepreload" href="/vendor/three@0.160.0/build/three.module.js" />
@@ -118,19 +131,11 @@
 
   <!-- Real, crawlable favicon files. Google can't use a data: URI favicon
        (that is why search showed a generic globe) — use actual PNG files. -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?b=116" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?b=116" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?b=116" />
-  <link rel="manifest" href="/site.webmanifest?b=116" />
-  <link rel="stylesheet" href="/style.css?b=116" />
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "/vendor/three@0.160.0/build/three.module.js",
-        "three/addons/": "/vendor/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?b=117" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?b=117" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?b=117" />
+  <link rel="manifest" href="/site.webmanifest?b=117" />
+  <link rel="stylesheet" href="/style.css?b=117" />
 </head>
 <body>
   <!-- Boot loader — covers the app until the JS graph (Three.js from the CDN)
@@ -314,7 +319,7 @@
       <div id="about-card">
         <div class="w-title" data-i18n="about.title">ABOUT</div>
         <div class="about-app">
-          <img src="/docs/app-icon.png?b=116" width="54" height="54" alt="" />
+          <img src="/docs/app-icon.png?b=117" width="54" height="54" alt="" />
           <span class="about-app-name">Windsurf Simulator</span>
         </div>
         <p class="about-tagline" data-i18n="about.tagline">A 3D game about the real physics of windsurfing.</p>
@@ -501,9 +506,9 @@
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script>try{localStorage.setItem('ws_lang','ja')}catch(e){}</script>
   <script type="module">
-    import { applyStatic } from '/src/i18n.js?b=116';
+    import { applyStatic } from '/src/i18n.js?b=117';
     applyStatic();
   </script>
-  <script type="module" src="/src/main.js?b=116"></script>
+  <script type="module" src="/src/main.js?b=117"></script>
 </body>
 </html>
