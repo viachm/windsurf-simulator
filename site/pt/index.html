@@ -118,11 +118,11 @@
 
   <!-- Real, crawlable favicon files. Google can't use a data: URI favicon
        (that is why search showed a generic globe) — use actual PNG files. -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?b=115" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?b=115" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?b=115" />
-  <link rel="manifest" href="/site.webmanifest?b=115" />
-  <link rel="stylesheet" href="/style.css?b=115" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?b=116" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?b=116" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?b=116" />
+  <link rel="manifest" href="/site.webmanifest?b=116" />
+  <link rel="stylesheet" href="/style.css?b=116" />
   <script type="importmap">
     {
       "imports": {
@@ -197,6 +197,13 @@
             <button data-sailarea="6.5">6.5</button>
             <button data-sailarea="8.0">8.0</button>
             <button data-sailarea="9.5">9.5</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <div class="ctl-label" data-i18n-html="settings.foil">FOIL</div>
+          <div class="seg" id="foil-seg">
+            <button data-foil="off" data-i18n="foil.off">Off</button>
+            <button data-foil="on" data-i18n="foil.on">On</button>
           </div>
         </div>
         <div class="ctl">
@@ -307,7 +314,7 @@
       <div id="about-card">
         <div class="w-title" data-i18n="about.title">ABOUT</div>
         <div class="about-app">
-          <img src="/docs/app-icon.png?b=115" width="54" height="54" alt="" />
+          <img src="/docs/app-icon.png?b=116" width="54" height="54" alt="" />
           <span class="about-app-name">Windsurf Simulator</span>
         </div>
         <p class="about-tagline" data-i18n="about.tagline">A 3D game about the real physics of windsurfing.</p>
@@ -434,12 +441,15 @@
           <div class="ctl-label"><span data-i18n="ctl.lean">WINDWARD LEAN</span> <span class="key-hint">Q / E</span>
             <span class="ctl-value" id="lean-val">25%</span>
           </div>
-          <input type="range" id="lean" min="0" max="100" value="25" step="1" />
+          <div class="slider-wrap">
+            <input type="range" id="lean" min="0" max="100" value="25" step="1" />
+            <div id="lean-optimal" title="optimal lean"></div>
+          </div>
           <div class="ctl-sub ctl-sub-soft"><span data-i18n="ctl.lean.upright">upright</span><span data-i18n="ctl.lean.out">hiked way out</span></div>
         </div>
 
         <div class="ctl toggles-row">
-          <label class="toggle-row">
+          <label class="toggle-row" id="dagger-row">
             <input type="checkbox" id="dagger" checked />
             <span data-i18n-html="ctl.dagger">Daggerboard down <span class="key-hint">D</span></span>
           </label>
@@ -491,9 +501,9 @@
        main.js (same module instance) — the shared sed bump keeps it aligned. -->
   <script>try{localStorage.setItem('ws_lang','pt')}catch(e){}</script>
   <script type="module">
-    import { applyStatic } from '/src/i18n.js?b=115';
+    import { applyStatic } from '/src/i18n.js?b=116';
     applyStatic();
   </script>
-  <script type="module" src="/src/main.js?b=115"></script>
+  <script type="module" src="/src/main.js?b=116"></script>
 </body>
 </html>

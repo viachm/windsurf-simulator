@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=115';
+import { isKostia, applyKostiaSail } from './kostia.js?b=116';
 
 const DEG = Math.PI / 180;
 
