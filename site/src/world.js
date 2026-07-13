@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=106';
+import { isKostia, applyKostiaSail } from './kostia.js?b=107';
 
 const DEG = Math.PI / 180;
 
@@ -339,23 +339,28 @@ export class World {
   // That distance is CLAMPED at the near end, so you can approach but never reach
   // it — there's no sailing up the beach.
   #coast() {
-    const W = 1300;          // width along the horizon (m)
-    const COLS = 128;        // silhouette resolution
-    const TOP = 12;          // nominal hill height (m)
+    const W = 4200;          // full span ALONG the shore (m) — long enough to run to the horizon
+    const COLS = 240;        // silhouette resolution
+    const TOP = 13;          // hill height (m) at the nearest point (abeam the board)
+    const FALL = 820;        // along-shore distance (m) over which the coast halves in height
     const positions = [], uvs = [], indices = [];
     for (let i = 0; i <= COLS; i++) {
       const fx = i / COLS;
       const x = (fx - 0.5) * W;
       // layered sines -> rolling headlands and shallow bays
-      let h = 0.58 + 0.30 * Math.sin(fx * Math.PI * 5.0 + 0.7)
-                   + 0.17 * Math.sin(fx * Math.PI * 12.0 + 2.1)
-                   + 0.09 * Math.sin(fx * Math.PI * 26.0);
+      let h = 0.58 + 0.30 * Math.sin(fx * Math.PI * 9.0 + 0.7)
+                   + 0.17 * Math.sin(fx * Math.PI * 21.0 + 2.1)
+                   + 0.09 * Math.sin(fx * Math.PI * 46.0);
       h = Math.max(0.10, h);
-      // ease both ends down to the waterline so the coast dissolves into the fog
-      // at its tips instead of ending on a hard vertical cliff
-      const e = Math.min(fx, 1 - fx) / 0.14;
-      const taper = e >= 1 ? 1 : e * e * (3 - 2 * e);
-      const topY = TOP * h * taper;
+      // PERSPECTIVE RECESSION. The nearest point of the coast is straight
+      // downwind (x=0, abeam the board); its ends trail away along the shore.
+      // Shrink the height with along-shore distance so the coast reads as a real
+      // shoreline running off toward the horizon — tallest and closest abeam,
+      // thinner and lower the farther out it goes — not a flat uniform band.
+      // (This rides on top of perspective + fog, which already shrink the far
+      // ends; the height falloff makes the recession unmistakable.)
+      const fall = 1 / (1 + (x / FALL) * (x / FALL));
+      const topY = TOP * h * fall;
       positions.push(x, 0, 0, x, topY, 0);   // bottom then top of this column
       uvs.push(fx, 0, fx, 1);
     }
