@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=101';
+import { isKostia, applyKostiaSail } from './kostia.js?b=102';
 
 const DEG = Math.PI / 180;
 
@@ -85,6 +85,7 @@ export class World {
 
     this.#lightsAndSky();
     this.#sea();
+    this.#coast();
     this.#windArrows();
     this.#boardAndRig();
     this.#sailor();
@@ -322,6 +323,91 @@ export class World {
       this.seaBackdrop.renderOrder = -1;   // draw before the wave plane
       this.scene.add(this.seaBackdrop);
     }
+  }
+
+  // A coastline sitting on the horizon on the DOWNWIND side. The wind blows off
+  // the open sea toward the land, so the shore is downwind; at the default wind
+  // (from +Z) that bearing is -Z, which sits on the LEFT of the opening camera
+  // view — hence "land on the left" out of the box.
+  //
+  // The world is translation-invariant: the sea, backdrop and sky all recentre
+  // on the board every frame, so a coast pinned to a fixed world point would let
+  // you sail straight through it (or off its end). Instead the coast is
+  // re-anchored to the board each frame along the downwind bearing, at a DISTANCE
+  // that shrinks as you make ground downwind and grows as you claw back upwind:
+  // sail toward the shore and it gently looms closer, bear away and it recedes.
+  // That distance is CLAMPED at the near end, so you can approach but never reach
+  // it — there's no sailing up the beach.
+  #coast() {
+    const W = 1300;          // width along the horizon (m)
+    const COLS = 128;        // silhouette resolution
+    const TOP = 34;          // nominal hill height (m)
+    const positions = [], uvs = [], indices = [];
+    for (let i = 0; i <= COLS; i++) {
+      const fx = i / COLS;
+      const x = (fx - 0.5) * W;
+      // layered sines -> rolling headlands and shallow bays
+      let h = 0.58 + 0.30 * Math.sin(fx * Math.PI * 5.0 + 0.7)
+                   + 0.17 * Math.sin(fx * Math.PI * 12.0 + 2.1)
+                   + 0.09 * Math.sin(fx * Math.PI * 26.0);
+      h = Math.max(0.10, h);
+      // ease both ends down to the waterline so the coast dissolves into the fog
+      // at its tips instead of ending on a hard vertical cliff
+      const e = Math.min(fx, 1 - fx) / 0.14;
+      const taper = e >= 1 ? 1 : e * e * (3 - 2 * e);
+      const topY = TOP * h * taper;
+      positions.push(x, 0, 0, x, topY, 0);   // bottom then top of this column
+      uvs.push(fx, 0, fx, 1);
+    }
+    for (let i = 0; i < COLS; i++) {
+      const a = 2 * i;
+      indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geo.setIndex(indices);
+
+    const mat = new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,
+      uniforms: this.seaUniforms,          // shares camPos / fogColor / fogDensity
+      vertexShader: `
+        varying vec3 vWorld;
+        void main() {
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          vWorld = wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
+        }`,
+      // Colour by height (beach -> grass -> darker hills), then the SAME exp2 fog
+      // as the sea, so far off the coast is just a faint greenish band on the
+      // horizon and only resolves into land as you close on it.
+      fragmentShader: `
+        varying vec3 vWorld;
+        uniform vec3 camPos;
+        uniform vec3 fogColor;
+        uniform float fogDensity;
+        void main() {
+          float y = vWorld.y;
+          vec3 beach = vec3(0.74, 0.70, 0.57);
+          vec3 grass = vec3(0.34, 0.47, 0.31);
+          vec3 hill  = vec3(0.24, 0.35, 0.29);
+          vec3 col = mix(beach, grass, smoothstep(0.6, 6.0, y));
+          col = mix(col, hill, smoothstep(11.0, 30.0, y));
+          float dist = length(camPos - vWorld);
+          float f = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
+          col = mix(col, fogColor, f);
+          gl_FragColor = vec4(col, 1.0);
+        }`,
+    });
+    this.coast = new THREE.Mesh(geo, mat);
+    this.coast.frustumCulled = false;      // large, re-anchored every frame
+    this.scene.add(this.coast);
+
+    // distance mechanic (metres)
+    this.coastD0 = 430;      // start distance — a faint hazy shore near the fog line
+    this.coastMin = 210;     // closest approach — the "can't land" wall
+    this.coastMax = 680;     // farthest before it fades fully into the fog
+    this.coastGain = 0.5;    // how much downwind ground translates into approach
   }
 
   #windArrows() {
@@ -848,6 +934,19 @@ export class World {
     this.sea.position.set(bx, 0, bz);
     if (this.seaBackdrop) this.seaBackdrop.position.set(bx, -0.5, bz);
     this.sky.position.set(bx, 0, bz);
+
+    // ---- coastline on the downwind horizon ----
+    if (this.coast) {
+      const wa = state.windFromAngle;
+      // downwind unit vector (the air blows FROM windFromDir toward here); the
+      // shore lies this way. At the default wind (from +Z) that's -Z, on the left.
+      const sx = -Math.sin(wa), sz = -Math.cos(wa);
+      const progress = bx * sx + bz * sz;          // ground made good toward shore
+      const d = THREE.MathUtils.clamp(
+        this.coastD0 - this.coastGain * progress, this.coastMin, this.coastMax);
+      this.coast.position.set(bx + sx * d, 0, bz + sz * d);
+      this.coast.rotation.y = wa;                  // face the band back at the board
+    }
 
     // ---- camera follows ----
     const boardPos = this.board.position;
