@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=114';
+import { isKostia, applyKostiaSail } from './kostia.js?b=115';
 
 const DEG = Math.PI / 180;
 
@@ -339,27 +339,24 @@ export class World {
   // That distance is CLAMPED at the near end, so you can approach but never reach
   // it — there's no sailing up the beach.
   #coast() {
-    const W = 8000;          // full span ALONG the shore (m) — runs off both sides of the view
-    const COLS = 400;        // silhouette resolution
-    const TOP = 13;          // peak hill height (m), straight abeam
-    const HILL = 430;        // half-width of the tall central hill (m)
-    const BASE = 2.3;        // height (m) of the low coastline that carries on to the sides
+    const W = 840;           // full span ALONG the shore (m); the ends reach the waterline
+    const COLS = 240;        // silhouette resolution
+    const TOP = 13;          // hill height (m) at the nearest point, straight abeam
     const positions = [], uvs = [], indices = [];
     for (let i = 0; i <= COLS; i++) {
       const fx = i / COLS;
       const x = (fx - 0.5) * W;
-      // gentle rolling profile
-      let h = 0.80 + 0.16 * Math.sin(fx * Math.PI * 13.0 + 0.7)
-                   + 0.08 * Math.sin(fx * Math.PI * 27.0 + 2.1);
-      h = Math.min(1.0, Math.max(0.5, h));
-      // SHAPE: a tall central HILL (peaks straight abeam, x=0) sitting on a LOW
-      // coastline that carries on far out to both sides. The hill gives the
-      // "mountains in the middle"; the low strip keeps land across the whole
-      // horizon so no open sea shows beyond it (which read as an island). max()
-      // keeps the centre at TOP and never taller.
-      const hill = Math.pow(Math.max(0, 1 - (x / HILL) * (x / HILL)), 2.2);
-      const base = Math.pow(Math.max(0, 1 - (x / (W * 0.5)) * (x / (W * 0.5))), 1.2);
-      const topY = h * Math.max(TOP * hill, BASE * base);
+      // gentle rolling profile (kept subtle so the shape reads as one landmass)
+      let h = 0.80 + 0.16 * Math.sin(fx * Math.PI * 5.0 + 0.7)
+                   + 0.08 * Math.sin(fx * Math.PI * 11.0 + 2.1);
+      h = Math.min(1.0, Math.max(0.15, h));
+      // THE SHAPE the whole feature is built around: tallest straight abeam
+      // (x=0), lower toward each side, reaching exactly zero at the ends via the
+      // finite-support curve (1-u^2)^1.5 (no long tail). So the coast is high in
+      // the middle and tapers down along the shore until it meets the waterline.
+      const u = Math.abs(x) / (W * 0.5);           // 0 abeam -> 1 at the ends
+      const prom = Math.pow(Math.max(0, 1 - u * u), 2.2);
+      const topY = TOP * h * prom;
       positions.push(x, 0, 0, x, topY, 0);   // foot at the waterline, then hilltop
       uvs.push(fx, 0, fx, 1);
     }
