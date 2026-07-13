@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=98';
+import { isKostia, applyKostiaSail } from './kostia.js?b=99';
 
 const DEG = Math.PI / 180;
 
@@ -259,6 +259,17 @@ export class World {
             y += ${w.amp.toFixed(3)} * sin(ph);
             crest += ${w.amp.toFixed(3)} * cos(ph);
           }`).join('')}
+          ${improved ? `
+          // Flatten the wave GEOMETRY toward the plane edge. The sea is a finite
+          // 700m plane at 5m vertex spacing; that spacing undersamples the 3-11m
+          // waves out at the horizon, so the far vertices displace unevenly and
+          // the silhouette against the sky breaks into jagged peaks. Fading the
+          // displacement to zero by the edge gives a clean, smooth horizon line
+          // (waves are invisible at that range anyway). This is the geometry
+          // companion to the fragment shader's farFade, which only calms shading.
+          float edgeFade = 1.0 - smoothstep(140.0, 320.0, length(position.xz));
+          y *= edgeFade;
+          crest *= edgeFade;` : ''}
           wp.y += y;
           vCrest = crest;
           vWorld = wp.xyz;
