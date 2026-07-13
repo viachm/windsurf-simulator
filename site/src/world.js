@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=110';
+import { isKostia, applyKostiaSail } from './kostia.js?b=111';
 
 const DEG = Math.PI / 180;
 
@@ -411,11 +411,12 @@ export class World {
           float cap = mix(1.0, 0.72, smoothstep(0.0, 7.0, y));
           float f = min(fRaw, cap);
           col = mix(col, fogColor, f);
-          // Dissolve the far, thin reaches to TRANSPARENT before they enter the
-          // near-white haze band at the horizon — otherwise a thin sliver of
-          // coast hangs in that pale water and reads as a white stripe. The near
-          // and mid coast stay solid; only the deep-fogged tips fade out.
-          float alpha = 1.0 - smoothstep(0.90, 0.985, fRaw);
+          // Two transparency fades so the coast never leaves a hard edge:
+          //  - the far, deep-fogged tips dissolve before the pale horizon haze,
+          //    so no thin sliver hangs there as a white stripe;
+          //  - the very FOOT fades out at the waterline, so the land melts up out
+          //    of the sea with no seam (kills the faint line on the nearer end).
+          float alpha = (1.0 - smoothstep(0.90, 0.985, fRaw)) * smoothstep(0.0, 1.6, y);
           gl_FragColor = vec4(col, alpha);
         }`,
     });
