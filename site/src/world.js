@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=107';
+import { isKostia, applyKostiaSail } from './kostia.js?b=108';
 
 const DEG = Math.PI / 180;
 
@@ -343,6 +343,10 @@ export class World {
     const COLS = 240;        // silhouette resolution
     const TOP = 13;          // hill height (m) at the nearest point (abeam the board)
     const FALL = 820;        // along-shore distance (m) over which the coast halves in height
+    const BASE = -8;         // sink the foot well BELOW the waterline so the sea (which is
+                             // nearer, so it draws on top) clips the coast exactly at the
+                             // water's edge — the land always rises straight out of the sea
+                             // with no pale gap between them.
     const positions = [], uvs = [], indices = [];
     for (let i = 0; i <= COLS; i++) {
       const fx = i / COLS;
@@ -361,7 +365,7 @@ export class World {
       // ends; the height falloff makes the recession unmistakable.)
       const fall = 1 / (1 + (x / FALL) * (x / FALL));
       const topY = TOP * h * fall;
-      positions.push(x, 0, 0, x, topY, 0);   // bottom then top of this column
+      positions.push(x, BASE, 0, x, topY, 0);   // buried foot, then hilltop
       uvs.push(fx, 0, fx, 1);
     }
     for (let i = 0; i < COLS; i++) {
@@ -400,10 +404,14 @@ export class World {
           vec3 head  = vec3(0.47, 0.43, 0.39);
           vec3 col = mix(sand, brown, smoothstep(0.5, 4.5, y));
           col = mix(col, head, smoothstep(5.0, 11.0, y));
-          // cap the fog so the far shore never fully dissolves — a faint band
-          // stays legible on the horizon (it still fades a lot when it recedes)
           float dist = length(camPos - vWorld);
-          float f = min(1.0 - exp(-fogDensity * fogDensity * dist * dist), 0.78);
+          float fRaw = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
+          // Fog cap varies with height: let the shoreline FOOT fog fully so it
+          // reads as the same hazy tone as the water it rises from (no darker
+          // cut-out edge), while hilltops stay a touch more saturated so the
+          // coast is still legible on the horizon.
+          float cap = mix(1.0, 0.72, smoothstep(0.0, 7.0, y));
+          float f = min(fRaw, cap);
           col = mix(col, fogColor, f);
           gl_FragColor = vec4(col, 1.0);
         }`,
