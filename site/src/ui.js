@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=104';
-import { DemoDirector } from './demo.js?b=104';
-import { track, trackDebounced } from './analytics.js?b=104';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=105';
+import { DemoDirector } from './demo.js?b=105';
+import { track, trackDebounced } from './analytics.js?b=105';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -1005,6 +1005,28 @@ export class UI {
     const S = 120, c = S / 2, R = 48;
     ctx.clearRect(0, 0, S, S);
 
+    // ---- land / coast: a straight shoreline low in the radar square ----
+    // The shore lies downwind — in this world-oriented radar that's the bottom.
+    // Draw it as a simple horizontal LINE (not an arc), free to sit below the
+    // ring in the square's lower strip. It rides UP toward the board as the real
+    // coast nears and sinks back to the bottom edge as it recedes. Drawn first so
+    // the ring, wind arrow and board silhouette all overlay it.
+    const cd = this.world && this.world.coastDist;
+    if (cd) {
+      const f = Math.min(Math.max(
+        (cd - this.world.coastMin) / (this.world.coastMax - this.world.coastMin), 0), 1); // 0 near .. 1 far
+      const yLand = 95 + (117 - 95) * f;            // near: up toward board .. far: bottom edge
+      const g = ctx.createLinearGradient(0, yLand, 0, S);
+      g.addColorStop(0, 'rgba(150,124,92,0.55)');   // sandy brown shore
+      g.addColorStop(1, 'rgba(120,100,78,0.28)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, yLand, S, S - yLand);
+      ctx.strokeStyle = 'rgba(196,168,128,0.95)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, yLand); ctx.lineTo(S, yLand); ctx.stroke();
+      ctx.fillStyle = 'rgba(210,186,150,0.95)'; ctx.font = '9px monospace';
+      ctx.textAlign = 'center'; ctx.fillText('LAND', c, yLand - 4); ctx.textAlign = 'start';
+    }
+
     // ring
     ctx.strokeStyle = 'rgba(143,184,212,0.5)';
     ctx.lineWidth = 1.5;
@@ -1025,32 +1047,6 @@ export class UI {
       ctx.lineTo(x, y);
     }
     ctx.closePath(); ctx.fill();
-
-    // ---- land / coast (downwind edge) ----
-    // The shore lies downwind (opposite the wind-from bearing). Draw it as a
-    // green arc hugging the ring on that side; it creeps inward toward the board
-    // as the real coast nears, and back out to the rim as it recedes.
-    const cd = this.world && this.world.coastDist;
-    if (cd) {
-      const f = (cd - this.world.coastMin) / (this.world.coastMax - this.world.coastMin);
-      const rLand = (0.60 + 0.40 * Math.min(Math.max(f, 0), 1)) * R;   // near..far
-      const la = wa + Math.PI;                 // downwind bearing
-      const half = 50 * DEG, steps = 16;
-      ctx.strokeStyle = 'rgba(126,182,116,0.85)';
-      ctx.lineWidth = 4.5; ctx.lineCap = 'round';
-      ctx.beginPath();
-      for (let i = 0; i <= steps; i++) {
-        const [x, y] = pt(la - half + (2 * half * i) / steps, rLand);
-        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-      }
-      ctx.stroke();
-      ctx.lineCap = 'butt';
-      const [lx, ly] = pt(la, Math.min(rLand + 9, R - 3));   // just outside the arc, clear of the board
-      ctx.fillStyle = 'rgba(150,200,140,0.9)'; ctx.font = '9px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('LAND', lx, ly);
-      ctx.textAlign = 'start';
-    }
 
     // wind arrow (points DOWNWIND, from the edge toward centre)
     const [wx, wy] = pt(wa, R + 8);

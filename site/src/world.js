@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=104';
+import { isKostia, applyKostiaSail } from './kostia.js?b=105';
 
 const DEG = Math.PI / 180;
 
@@ -388,13 +388,17 @@ export class World {
         uniform float fogDensity;
         void main() {
           float y = vWorld.y;
-          vec3 beach = vec3(0.74, 0.70, 0.57);
-          vec3 grass = vec3(0.34, 0.47, 0.31);
-          vec3 hill  = vec3(0.24, 0.35, 0.29);
-          vec3 col = mix(beach, grass, smoothstep(0.6, 6.0, y));
-          col = mix(col, hill, smoothstep(11.0, 30.0, y));
+          // warm sandy-brown -> greyer headland, so the coast reads as a beach
+          // and stands out against the cool blue haze instead of blending in
+          vec3 sand  = vec3(0.72, 0.62, 0.47);
+          vec3 brown = vec3(0.56, 0.47, 0.37);
+          vec3 head  = vec3(0.47, 0.43, 0.39);
+          vec3 col = mix(sand, brown, smoothstep(0.5, 4.5, y));
+          col = mix(col, head, smoothstep(5.0, 11.0, y));
+          // cap the fog so the far shore never fully dissolves — a faint band
+          // stays legible on the horizon (it still fades a lot when it recedes)
           float dist = length(camPos - vWorld);
-          float f = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
+          float f = min(1.0 - exp(-fogDensity * fogDensity * dist * dist), 0.78);
           col = mix(col, fogColor, f);
           gl_FragColor = vec4(col, 1.0);
         }`,
