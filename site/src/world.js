@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=103';
+import { isKostia, applyKostiaSail } from './kostia.js?b=104';
 
 const DEG = Math.PI / 180;
 
@@ -341,7 +341,7 @@ export class World {
   #coast() {
     const W = 1300;          // width along the horizon (m)
     const COLS = 128;        // silhouette resolution
-    const TOP = 20;          // nominal hill height (m)
+    const TOP = 12;          // nominal hill height (m)
     const positions = [], uvs = [], indices = [];
     for (let i = 0; i <= COLS; i++) {
       const fx = i / COLS;
@@ -946,6 +946,7 @@ export class World {
         this.coastD0 - this.coastGain * progress, this.coastMin, this.coastMax);
       this.coast.position.set(bx + sx * d, 0, bz + sz * d);
       this.coast.rotation.y = wa;                  // face the band back at the board
+      this.coastDist = d;                          // live distance, read by the radar
     }
 
     // ---- camera follows ----

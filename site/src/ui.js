@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=103';
-import { DemoDirector } from './demo.js?b=103';
-import { track, trackDebounced } from './analytics.js?b=103';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=104';
+import { DemoDirector } from './demo.js?b=104';
+import { track, trackDebounced } from './analytics.js?b=104';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -1025,6 +1025,32 @@ export class UI {
       ctx.lineTo(x, y);
     }
     ctx.closePath(); ctx.fill();
+
+    // ---- land / coast (downwind edge) ----
+    // The shore lies downwind (opposite the wind-from bearing). Draw it as a
+    // green arc hugging the ring on that side; it creeps inward toward the board
+    // as the real coast nears, and back out to the rim as it recedes.
+    const cd = this.world && this.world.coastDist;
+    if (cd) {
+      const f = (cd - this.world.coastMin) / (this.world.coastMax - this.world.coastMin);
+      const rLand = (0.60 + 0.40 * Math.min(Math.max(f, 0), 1)) * R;   // near..far
+      const la = wa + Math.PI;                 // downwind bearing
+      const half = 50 * DEG, steps = 16;
+      ctx.strokeStyle = 'rgba(126,182,116,0.85)';
+      ctx.lineWidth = 4.5; ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let i = 0; i <= steps; i++) {
+        const [x, y] = pt(la - half + (2 * half * i) / steps, rLand);
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+      const [lx, ly] = pt(la, Math.min(rLand + 9, R - 3));   // just outside the arc, clear of the board
+      ctx.fillStyle = 'rgba(150,200,140,0.9)'; ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('LAND', lx, ly);
+      ctx.textAlign = 'start';
+    }
 
     // wind arrow (points DOWNWIND, from the edge toward centre)
     const [wx, wy] = pt(wa, R + 8);
