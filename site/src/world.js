@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=111';
+import { isKostia, applyKostiaSail } from './kostia.js?b=112';
 
 const DEG = Math.PI / 180;
 
@@ -339,11 +339,10 @@ export class World {
   // That distance is CLAMPED at the near end, so you can approach but never reach
   // it — there's no sailing up the beach.
   #coast() {
-    const W = 4200;          // full span ALONG the shore (m) — long enough to run to the horizon
+    const W = 3000;          // full span ALONG the shore (m); the ends reach the waterline
     const COLS = 240;        // silhouette resolution
     const TOP = 13;          // hill height (m) at the nearest point (abeam the board)
-    const FALL = 820;        // along-shore distance (m) over which the coast halves in height
-    const positions = [], uvs = [], indices = [];
+    const positions = [], uvs = [], falls = [], indices = [];
     for (let i = 0; i <= COLS; i++) {
       const fx = i / COLS;
       const x = (fx - 0.5) * W;
@@ -352,17 +351,18 @@ export class World {
                    + 0.17 * Math.sin(fx * Math.PI * 21.0 + 2.1)
                    + 0.09 * Math.sin(fx * Math.PI * 46.0);
       h = Math.max(0.10, h);
-      // PERSPECTIVE RECESSION. The nearest point of the coast is straight
-      // downwind (x=0, abeam the board); its ends trail away along the shore.
-      // Shrink the height with along-shore distance so the coast reads as a real
-      // shoreline running off toward the horizon — tallest and closest abeam,
-      // thinner and lower the farther out it goes — not a flat uniform band.
-      // (This rides on top of perspective + fog, which already shrink the far
-      // ends; the height falloff makes the recession unmistakable.)
-      const fall = 1 / (1 + (x / FALL) * (x / FALL));
-      const topY = TOP * h * fall;
+      // PERSPECTIVE RECESSION with a CLEAN END. The nearest point is straight
+      // downwind (x=0, abeam the board); the height falls to exactly zero at the
+      // ends (u=1) via (1-u^2)^1.5 — a finite-support curve, not a long asymptotic
+      // tail. So the coast reads as a shoreline running off toward the horizon and
+      // then genuinely ENDS at the waterline, instead of leaving a faint sliver
+      // hanging in the far haze.
+      const u = Math.abs(x) / (W * 0.5);           // 0 abeam -> 1 at the ends
+      const prom = Math.pow(Math.max(0, 1 - u * u), 1.5);
+      const topY = TOP * h * prom;
       positions.push(x, 0, 0, x, topY, 0);   // foot at the waterline, then hilltop
       uvs.push(fx, 0, fx, 1);
+      falls.push(prom, prom);                 // prominence (1 abeam -> 0 at the ends), per vertex
     }
     for (let i = 0; i < COLS; i++) {
       const a = 2 * i;
@@ -371,6 +371,7 @@ export class World {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geo.setAttribute('aFall', new THREE.Float32BufferAttribute(falls, 1));
     geo.setIndex(indices);
 
     const mat = new THREE.ShaderMaterial({
@@ -379,10 +380,13 @@ export class World {
       depthWrite: false,                   // blend over the sea without leaving a depth hole
       uniforms: this.seaUniforms,          // shares camPos / fogColor / fogDensity
       vertexShader: `
+        attribute float aFall;
         varying vec3 vWorld;
+        varying float vFall;
         void main() {
           vec4 wp = modelMatrix * vec4(position, 1.0);
           vWorld = wp.xyz;
+          vFall = aFall;
           gl_Position = projectionMatrix * viewMatrix * wp;
         }`,
       // Colour by height (beach -> grass -> darker hills), then the SAME exp2 fog
@@ -390,6 +394,7 @@ export class World {
       // horizon and only resolves into land as you close on it.
       fragmentShader: `
         varying vec3 vWorld;
+        varying float vFall;
         uniform vec3 camPos;
         uniform vec3 fogColor;
         uniform float fogDensity;
@@ -411,12 +416,16 @@ export class World {
           float cap = mix(1.0, 0.72, smoothstep(0.0, 7.0, y));
           float f = min(fRaw, cap);
           col = mix(col, fogColor, f);
-          // Two transparency fades so the coast never leaves a hard edge:
-          //  - the far, deep-fogged tips dissolve before the pale horizon haze,
-          //    so no thin sliver hangs there as a white stripe;
-          //  - the very FOOT fades out at the waterline, so the land melts up out
-          //    of the sea with no seam (kills the faint line on the nearer end).
-          float alpha = (1.0 - smoothstep(0.90, 0.985, fRaw)) * smoothstep(0.0, 1.6, y);
+          // Three transparency fades so the coast never leaves a hard edge or a
+          // lingering sliver:
+          //  - SHAPE: fade the along-shore ends out by the coast's own prominence
+          //    (vFall: 1 abeam -> 0 far off), so the tips vanish exactly where the
+          //    land goes low — low AND transparent together, no faint hanging line;
+          //  - FOOT: fade out at the waterline so the land melts up out of the sea;
+          //  - DISTANCE: a gentle overall fade when the whole shore recedes far off.
+          float alpha = smoothstep(0.10, 0.32, vFall)
+                      * smoothstep(0.0, 1.6, y)
+                      * (1.0 - smoothstep(0.95, 0.995, fRaw));
           gl_FragColor = vec4(col, alpha);
         }`,
     });
