@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=100';
+import { isKostia, applyKostiaSail } from './kostia.js?b=101';
 
 const DEG = Math.PI / 180;
 
@@ -189,8 +189,8 @@ export class World {
         uniform float fogDensity;
         uniform float uTime;
         void main() {
-          vec3 deep = vec3(0.03, 0.22, 0.35);
-          vec3 shallow = vec3(0.10, 0.45, 0.55);
+          vec3 deep = vec3(0.04, 0.24, 0.42);
+          vec3 shallow = vec3(0.11, 0.46, 0.62);
           vec3 viewDir = normalize(camPos - vWorld);
           // fake normal from analytic crest derivative
           vec3 n = normalize(vec3(-vCrest * 0.9, 1.0, -vCrest * 0.6));
@@ -219,8 +219,8 @@ export class World {
         uniform float fogDensity;
         uniform float uTime;
         void main() {
-          vec3 deep = vec3(0.03, 0.22, 0.35);
-          vec3 shallow = vec3(0.10, 0.45, 0.55);
+          vec3 deep = vec3(0.04, 0.24, 0.42);
+          vec3 shallow = vec3(0.11, 0.46, 0.62);
           float dist = length(camPos - vWorld);
           float dydx = 0.0;
           float dydz = 0.0;
@@ -309,8 +309,8 @@ export class World {
           uniform vec3 fogColor;
           uniform float fogDensity;
           void main() {
-            vec3 deep = vec3(0.03, 0.22, 0.35);
-            vec3 shallow = vec3(0.10, 0.45, 0.55);
+            vec3 deep = vec3(0.04, 0.24, 0.42);
+            vec3 shallow = vec3(0.11, 0.46, 0.62);
             vec3 col = mix(deep, shallow, 0.5);   // matches the wave shader's far tone
             float dist = length(camPos - vWorld);
             float f = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
