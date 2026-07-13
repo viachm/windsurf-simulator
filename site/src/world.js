@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=106';
+import { isKostia, applyKostiaSail } from './kostia.js?b=115';
 
 const DEG = Math.PI / 180;
 
@@ -339,24 +339,25 @@ export class World {
   // That distance is CLAMPED at the near end, so you can approach but never reach
   // it — there's no sailing up the beach.
   #coast() {
-    const W = 1300;          // width along the horizon (m)
-    const COLS = 128;        // silhouette resolution
-    const TOP = 12;          // nominal hill height (m)
+    const W = 840;           // full span ALONG the shore (m); the ends reach the waterline
+    const COLS = 240;        // silhouette resolution
+    const TOP = 13;          // hill height (m) at the nearest point, straight abeam
     const positions = [], uvs = [], indices = [];
     for (let i = 0; i <= COLS; i++) {
       const fx = i / COLS;
       const x = (fx - 0.5) * W;
-      // layered sines -> rolling headlands and shallow bays
-      let h = 0.58 + 0.30 * Math.sin(fx * Math.PI * 5.0 + 0.7)
-                   + 0.17 * Math.sin(fx * Math.PI * 12.0 + 2.1)
-                   + 0.09 * Math.sin(fx * Math.PI * 26.0);
-      h = Math.max(0.10, h);
-      // ease both ends down to the waterline so the coast dissolves into the fog
-      // at its tips instead of ending on a hard vertical cliff
-      const e = Math.min(fx, 1 - fx) / 0.14;
-      const taper = e >= 1 ? 1 : e * e * (3 - 2 * e);
-      const topY = TOP * h * taper;
-      positions.push(x, 0, 0, x, topY, 0);   // bottom then top of this column
+      // gentle rolling profile (kept subtle so the shape reads as one landmass)
+      let h = 0.80 + 0.16 * Math.sin(fx * Math.PI * 5.0 + 0.7)
+                   + 0.08 * Math.sin(fx * Math.PI * 11.0 + 2.1);
+      h = Math.min(1.0, Math.max(0.15, h));
+      // THE SHAPE the whole feature is built around: tallest straight abeam
+      // (x=0), lower toward each side, reaching exactly zero at the ends via the
+      // finite-support curve (1-u^2)^1.5 (no long tail). So the coast is high in
+      // the middle and tapers down along the shore until it meets the waterline.
+      const u = Math.abs(x) / (W * 0.5);           // 0 abeam -> 1 at the ends
+      const prom = Math.pow(Math.max(0, 1 - u * u), 2.2);
+      const topY = TOP * h * prom;
+      positions.push(x, 0, 0, x, topY, 0);   // foot at the waterline, then hilltop
       uvs.push(fx, 0, fx, 1);
     }
     for (let i = 0; i < COLS; i++) {
@@ -370,6 +371,8 @@ export class World {
 
     const mat = new THREE.ShaderMaterial({
       side: THREE.DoubleSide,
+      transparent: true,                   // only to blend the low foot into the sea
+      depthWrite: false,                   // blend over the sea without leaving a depth hole
       uniforms: this.seaUniforms,          // shares camPos / fogColor / fogDensity
       vertexShader: `
         varying vec3 vWorld;
@@ -378,9 +381,6 @@ export class World {
           vWorld = wp.xyz;
           gl_Position = projectionMatrix * viewMatrix * wp;
         }`,
-      // Colour by height (beach -> grass -> darker hills), then the SAME exp2 fog
-      // as the sea, so far off the coast is just a faint greenish band on the
-      // horizon and only resolves into land as you close on it.
       fragmentShader: `
         varying vec3 vWorld;
         uniform vec3 camPos;
@@ -388,29 +388,33 @@ export class World {
         uniform float fogDensity;
         void main() {
           float y = vWorld.y;
-          // warm sandy-brown -> greyer headland, so the coast reads as a beach
-          // and stands out against the cool blue haze instead of blending in
+          // warm sandy-brown -> greyer headland
           vec3 sand  = vec3(0.72, 0.62, 0.47);
           vec3 brown = vec3(0.56, 0.47, 0.37);
           vec3 head  = vec3(0.47, 0.43, 0.39);
           vec3 col = mix(sand, brown, smoothstep(0.5, 4.5, y));
           col = mix(col, head, smoothstep(5.0, 11.0, y));
-          // cap the fog so the far shore never fully dissolves — a faint band
-          // stays legible on the horizon (it still fades a lot when it recedes)
           float dist = length(camPos - vWorld);
-          float f = min(1.0 - exp(-fogDensity * fogDensity * dist * dist), 0.78);
-          col = mix(col, fogColor, f);
-          gl_FragColor = vec4(col, 1.0);
+          float fRaw = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
+          col = mix(col, fogColor, min(fRaw, 0.78));
+          // ONE fade, at the waterline: the bottom couple of metres go
+          // transparent so the land melts up out of the sea with no edge. The
+          // low, tapered sides are ALL within this band, so they read as thin,
+          // half-there slivers that dissolve into the horizon on their own — no
+          // separate side/tip fade needed (that was what caused the odd blobs).
+          float alpha = smoothstep(0.0, 2.4, y);
+          gl_FragColor = vec4(col, alpha);
         }`,
     });
     this.coast = new THREE.Mesh(geo, mat);
     this.coast.frustumCulled = false;      // large, re-anchored every frame
+    this.coast.renderOrder = 1;            // drawn after the sea so the tips blend over it
     this.scene.add(this.coast);
 
     // distance mechanic (metres)
-    this.coastD0 = 430;      // start distance — a faint hazy shore near the fog line
-    this.coastMin = 210;     // closest approach — the "can't land" wall
-    this.coastMax = 680;     // farthest before it fades fully into the fog
+    this.coastD0 = 320;      // start distance — a shore on the horizon, but out of the white haze
+    this.coastMin = 175;     // closest approach — the "can't land" wall
+    this.coastMax = 470;     // farthest before it fades fully into the fog
     this.coastGain = 0.5;    // how much downwind ground translates into approach
   }
 
@@ -973,10 +977,19 @@ export class World {
       off.set(ox, off.y, oz);
       this.camera.position.copy(this.prevBoardPos).add(off);
     }
-    const delta = new THREE.Vector3().subVectors(boardPos, this.prevBoardPos);
-    if (delta.lengthSq() < 100) this.camera.position.add(delta);
+    // Slide the camera with the board, but only HORIZONTALLY. The board's Y
+    // carries the fast wave bob; feeding that into the camera heaves the whole
+    // view — the horizon rises and falls with every swell. Following just X/Z
+    // keeps the horizon rock-steady while the board mesh still bobs beneath it.
+    const dx = boardPos.x - this.prevBoardPos.x;
+    const dz = boardPos.z - this.prevBoardPos.z;
+    if (dx * dx + dz * dz < 100) { this.camera.position.x += dx; this.camera.position.z += dz; }
     this.prevBoardPos.copy(boardPos);
-    this.controls.target.lerp(new THREE.Vector3(boardPos.x, boardPos.y + 1.4, boardPos.z), Math.min(dt * 6, 1));
+    // Aim at a SMOOTHED height that tracks slow lift (planing / foil takeoff) but
+    // filters out the wave bob, so the camera never pitches with the swell.
+    if (this._aimY === undefined) this._aimY = boardPos.y;
+    this._aimY += (boardPos.y - this._aimY) * Math.min(dt * 0.6, 1);
+    this.controls.target.lerp(new THREE.Vector3(boardPos.x, this._aimY + 1.4, boardPos.z), Math.min(dt * 6, 1));
     this.controls.update();
 
     // Lens-shift the rider so it stays centred in the clear band between the
