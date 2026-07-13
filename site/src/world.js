@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=109';
+import { isKostia, applyKostiaSail } from './kostia.js?b=110';
 
 const DEG = Math.PI / 180;
 
@@ -375,6 +375,8 @@ export class World {
 
     const mat = new THREE.ShaderMaterial({
       side: THREE.DoubleSide,
+      transparent: true,                   // the far tips fade out via fragment alpha
+      depthWrite: false,                   // blend over the sea without leaving a depth hole
       uniforms: this.seaUniforms,          // shares camPos / fogColor / fogDensity
       vertexShader: `
         varying vec3 vWorld;
@@ -409,17 +411,23 @@ export class World {
           float cap = mix(1.0, 0.72, smoothstep(0.0, 7.0, y));
           float f = min(fRaw, cap);
           col = mix(col, fogColor, f);
-          gl_FragColor = vec4(col, 1.0);
+          // Dissolve the far, thin reaches to TRANSPARENT before they enter the
+          // near-white haze band at the horizon — otherwise a thin sliver of
+          // coast hangs in that pale water and reads as a white stripe. The near
+          // and mid coast stay solid; only the deep-fogged tips fade out.
+          float alpha = 1.0 - smoothstep(0.90, 0.985, fRaw);
+          gl_FragColor = vec4(col, alpha);
         }`,
     });
     this.coast = new THREE.Mesh(geo, mat);
     this.coast.frustumCulled = false;      // large, re-anchored every frame
+    this.coast.renderOrder = 1;            // drawn after the sea so the tips blend over it
     this.scene.add(this.coast);
 
     // distance mechanic (metres)
-    this.coastD0 = 430;      // start distance — a faint hazy shore near the fog line
-    this.coastMin = 210;     // closest approach — the "can't land" wall
-    this.coastMax = 680;     // farthest before it fades fully into the fog
+    this.coastD0 = 320;      // start distance — a shore on the horizon, but out of the white haze
+    this.coastMin = 175;     // closest approach — the "can't land" wall
+    this.coastMax = 470;     // farthest before it fades fully into the fog
     this.coastGain = 0.5;    // how much downwind ground translates into approach
   }
 
