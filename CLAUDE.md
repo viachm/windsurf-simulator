@@ -63,12 +63,19 @@ GitHub Pages allows only one custom domain per repo, which prod already owns.
   Normal flow: land changes on `develop`, verify on the dev domain, then merge
   `develop` → `main` to ship to prod.
 - **Auto-deploy:** `.github/workflows/deploy-dev.yml` runs `wrangler pages deploy site`
-  on every push to `develop`. It lives **only on the `develop` branch** and triggers
-  only for `develop`, so it never fires on `main`. Needs repo secrets
+  on every push to `develop`. It triggers **only for `develop`** (`on: push:
+  branches: [develop]`), so even though the workflow file also exists on `main`
+  it never fires there — inert on prod. Needs repo secrets
   `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (already set).
-- **noindex:** `develop` carries `site/_headers` (`X-Robots-Tag: noindex, nofollow`)
-  so staging (and `*.pages.dev`) never gets indexed — keep it on `develop`, and do
-  NOT let it merge into `main` (prod must stay indexable).
+- **noindex (generated at deploy time, NOT committed):** `site/_headers`
+  (`X-Robots-Tag: noindex, nofollow`) keeps staging — and the `*.pages.dev`
+  preview URLs — out of search indexes. It is **written by `deploy-dev.yml`** (a
+  `printf '…' > site/_headers` step just before `wrangler pages deploy`), never
+  committed, and gitignored. This is deliberate: the `develop` and `main` source
+  trees stay **identical**, so `develop → main` merges are always clean with
+  nothing dev-only to strip out, while prod (which never runs that step) stays
+  indexable. Do NOT re-add a tracked `site/_headers` — that reintroduces the old
+  "must keep it off `main`" trap.
 - **Cloudflare:** account `27a760b02276afc8a6fc2d5a21a300c9`; Pages project
   production branch is `develop`; the `dev` DNS record is a **proxied** CNAME →
   `windsurf-simulator-dev.pages.dev` (opposite of the apex GitHub Pages records,
@@ -95,9 +102,45 @@ which the `sed` updates. Without it, iOS Safari serves the **old cached CSS** ev
 deploy, so CSS-only fixes silently don't take (this bit us: a fixed layout
 looked unchanged on the phone). Keep the token on the stylesheet link.
 
+## Google Analytics — programmatic access (no interactive login)
+
+Analytics is GA4, measurement ID `G-QZQ6CE9JLL`, **property `545037365`**
+(account `400721540`), owned by **viacheslav.mukha@gmail.com**. Gameplay events
+are instrumented in `site/src/analytics.js` (see the events catalogue there).
+
+For any GA API work (reading data, managing dimensions/audiences) authenticate
+as the **service account** `windsurf-analytics@windsurf-analytics-502208.iam.gserviceaccount.com`
+— it has **Editor** on the property. Its key lives OUTSIDE the repo at
+`~/.config/ga/windsurf-analytics.json` (chmod 600; `GOOGLE_APPLICATION_CREDENTIALS`
+in `.zshrc` points to it — never commit the key). GCP project
+`windsurf-analytics-502208` has the Analytics **Admin** + **Data** APIs enabled.
+
+Mint a short-lived token with zero interaction, then call the APIs:
+```
+TOKEN=$(~/.config/ga/ga-token.sh)
+# read data (Data API):
+curl -s -X POST "https://analyticsdata.googleapis.com/v1beta/properties/545037365:runReport" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"dateRanges":[{"startDate":"28daysAgo","endDate":"today"}],"dimensions":[{"name":"eventName"}],"metrics":[{"name":"eventCount"}]}'
+# manage config (Admin API): base https://analyticsadmin.googleapis.com/v1beta/properties/545037365
+```
+`ga-token.sh` signs a JWT with the SA key (RS256, openssl) and exchanges it — no
+OAuth Playground / browser flow needed anymore. Explorations still can't be
+created via API (GA limitation); only data + config (dimensions, key events,
+audiences, retention) are scriptable.
+
 ## Notes
 
 - `node` in a non-interactive shell needs the absolute path:
   `/Users/viachm/.nvm/versions/node/v22.15.0/bin/node`.
 - The app exposes `window.__sim`, `window.__ui`, `window.__world` for testing.
 - Localise every user-facing string in both `en` and `uk` (`src/i18n.js`).
+- **three.js is self-hosted, not from a CDN.** The engine + addons live in
+  `site/vendor/three@<ver>/` and the importmap in every page (`site/index.html`
+  + the 19 `site/<lang>/index.html`) points at those same-origin paths — NOT
+  `cdn.jsdelivr.net`. This is deliberate: a blocked/unreachable CDN (regional
+  blocks, corporate firewalls, a Fastly outage) used to leave users with a
+  200-but-dead page because `import "three"` failed. The version-pinned path is
+  immutable, so vendored files need no `?b=N` token. To bump three's version,
+  drop the new build into `site/vendor/three@<newver>/` and update the importmap
+  (+ the `modulepreload` in the `<head>`) on all 20 pages.
