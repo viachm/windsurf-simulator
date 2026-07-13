@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=108';
+import { isKostia, applyKostiaSail } from './kostia.js?b=109';
 
 const DEG = Math.PI / 180;
 
@@ -343,10 +343,6 @@ export class World {
     const COLS = 240;        // silhouette resolution
     const TOP = 13;          // hill height (m) at the nearest point (abeam the board)
     const FALL = 820;        // along-shore distance (m) over which the coast halves in height
-    const BASE = -8;         // sink the foot well BELOW the waterline so the sea (which is
-                             // nearer, so it draws on top) clips the coast exactly at the
-                             // water's edge — the land always rises straight out of the sea
-                             // with no pale gap between them.
     const positions = [], uvs = [], indices = [];
     for (let i = 0; i <= COLS; i++) {
       const fx = i / COLS;
@@ -365,7 +361,7 @@ export class World {
       // ends; the height falloff makes the recession unmistakable.)
       const fall = 1 / (1 + (x / FALL) * (x / FALL));
       const topY = TOP * h * fall;
-      positions.push(x, BASE, 0, x, topY, 0);   // buried foot, then hilltop
+      positions.push(x, 0, 0, x, topY, 0);   // foot at the waterline, then hilltop
       uvs.push(fx, 0, fx, 1);
     }
     for (let i = 0; i < COLS; i++) {
@@ -986,10 +982,19 @@ export class World {
       off.set(ox, off.y, oz);
       this.camera.position.copy(this.prevBoardPos).add(off);
     }
-    const delta = new THREE.Vector3().subVectors(boardPos, this.prevBoardPos);
-    if (delta.lengthSq() < 100) this.camera.position.add(delta);
+    // Slide the camera with the board, but only HORIZONTALLY. The board's Y
+    // carries the fast wave bob; feeding that into the camera heaves the whole
+    // view — the horizon rises and falls with every swell. Following just X/Z
+    // keeps the horizon rock-steady while the board mesh still bobs beneath it.
+    const dx = boardPos.x - this.prevBoardPos.x;
+    const dz = boardPos.z - this.prevBoardPos.z;
+    if (dx * dx + dz * dz < 100) { this.camera.position.x += dx; this.camera.position.z += dz; }
     this.prevBoardPos.copy(boardPos);
-    this.controls.target.lerp(new THREE.Vector3(boardPos.x, boardPos.y + 1.4, boardPos.z), Math.min(dt * 6, 1));
+    // Aim at a SMOOTHED height that tracks slow lift (planing / foil takeoff) but
+    // filters out the wave bob, so the camera never pitches with the swell.
+    if (this._aimY === undefined) this._aimY = boardPos.y;
+    this._aimY += (boardPos.y - this._aimY) * Math.min(dt * 0.6, 1);
+    this.controls.target.lerp(new THREE.Vector3(boardPos.x, this._aimY + 1.4, boardPos.z), Math.min(dt * 6, 1));
     this.controls.update();
 
     // Lens-shift the rider so it stays centred in the clear band between the
