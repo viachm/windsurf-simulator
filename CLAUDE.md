@@ -20,7 +20,9 @@ root, so `site/index.html` → `/`, `site/uk/index.html` → `/uk/`, `site/src/�
 `site/` via the **GitHub Actions** workflow `.github/workflows/deploy.yml` (NOT
 the legacy branch builder). The repo root holds only tooling/dev files —
 `tools/` (og-card generator), `test/`, `serve.py`, `docs/` (README assets),
-`README.md`, `CLAUDE.md`. The 19 `site/<lang>/index.html` landing pages and
+`README.md`, `CLAUDE.md`, and `assets/` (cross-platform marketing assets —
+store cover, screenshots, gifs; version-controlled but NOT deployed). The 19
+`site/<lang>/index.html` landing pages and
 `site/og/*.png` are **generated** by `tools/og-card/` (see its README) — edit the
 English template / `l10n-v.mjs` and regenerate, don't hand-edit each locale.
 
@@ -135,6 +137,13 @@ audiences, retention) are scriptable.
   `/Users/viachm/.nvm/versions/node/v22.15.0/bin/node`.
 - The app exposes `window.__sim`, `window.__ui`, `window.__world` for testing.
 - Localise every user-facing string in both `en` and `uk` (`src/i18n.js`).
+- **Dev deploy has a ~10-20s propagation lag.** Right after a push to `develop`,
+  Cloudflare Pages can briefly serve a *new* module (e.g. a just-added
+  `src/*.js`) as its 404 fallback — HTTP 200 but `Content-Type: text/html` — so
+  the browser rejects it ("Expected a JavaScript module … got text/html") and
+  the app looks broken. It clears on its own; re-check with a hard reload after
+  a beat. Real users never hit it (they never cached the bad response). Prod
+  (GitHub Pages) doesn't have this quirk.
 - **three.js is self-hosted, not from a CDN.** The engine + addons live in
   `site/vendor/three@<ver>/` and the importmap in every page (`site/index.html`
   + the 19 `site/<lang>/index.html`) points at those same-origin paths — NOT
