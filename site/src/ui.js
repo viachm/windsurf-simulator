@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=101';
-import { DemoDirector } from './demo.js?b=101';
-import { track, trackDebounced } from './analytics.js?b=101';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=106';
+import { DemoDirector } from './demo.js?b=106';
+import { track, trackDebounced } from './analytics.js?b=106';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -1004,6 +1004,35 @@ export class UI {
     const ctx = this.compassCtx;
     const S = 120, c = S / 2, R = 48;
     ctx.clearRect(0, 0, S, S);
+
+    // ---- land / coast: a wavy shoreline low in the radar square ----
+    // The shore lies downwind — in this world-oriented radar that's the bottom.
+    // Draw it as a slim WAVY band (a real coast isn't a straight edge) kept in
+    // the lower strip so it never climbs onto the ring. It rides up a touch as
+    // the coast nears and sinks to the bottom edge as it recedes. Drawn first so
+    // the ring, wind arrow and board silhouette all overlay it.
+    const cd = this.world && this.world.coastDist;
+    if (cd) {
+      const f = Math.min(Math.max(
+        (cd - this.world.coastMin) / (this.world.coastMax - this.world.coastMin), 0), 1); // 0 near .. 1 far
+      const yBase = 110 + 8 * f;                     // near..far, always below the ring
+      const wave = (x) => yBase - 1.2 * Math.sin(x * 0.13 + 0.6) - 0.6 * Math.sin(x * 0.31 + 2.0);
+      const steps = 24;
+      ctx.beginPath();
+      ctx.moveTo(0, wave(0));
+      for (let i = 1; i <= steps; i++) ctx.lineTo((S * i) / steps, wave((S * i) / steps));
+      ctx.lineTo(S, S); ctx.lineTo(0, S); ctx.closePath();
+      const g = ctx.createLinearGradient(0, yBase - 2, 0, S);
+      g.addColorStop(0, 'rgba(150,124,92,0.55)');    // sandy brown shore
+      g.addColorStop(1, 'rgba(120,100,78,0.30)');
+      ctx.fillStyle = g; ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(0, wave(0));
+      for (let i = 1; i <= steps; i++) ctx.lineTo((S * i) / steps, wave((S * i) / steps));
+      ctx.strokeStyle = 'rgba(196,168,128,0.95)'; ctx.lineWidth = 1.6; ctx.stroke();
+      ctx.fillStyle = 'rgba(210,186,150,0.95)'; ctx.font = '9px monospace';
+      ctx.textAlign = 'center'; ctx.fillText('LAND', c, yBase - 4); ctx.textAlign = 'start';
+    }
 
     // ring
     ctx.strokeStyle = 'rgba(143,184,212,0.5)';
