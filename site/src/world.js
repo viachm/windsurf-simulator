@@ -1,7 +1,7 @@
 // 3D world: sea, sky, wind visualisation, board + rig + sailor, camera.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { isKostia, applyKostiaSail } from './kostia.js?b=98';
+import { isKostia, applyKostiaSail } from './kostia.js?b=100';
 
 const DEG = Math.PI / 180;
 
@@ -121,7 +121,7 @@ export class World {
     this.scene.add(sun);
     this.sunDir = sun.position.clone().normalize();
 
-    const skyGeo = new THREE.SphereGeometry(900, 24, 12);
+    const skyGeo = new THREE.SphereGeometry(1500, 24, 12);
     const skyMat = new THREE.ShaderMaterial({
       side: THREE.BackSide,
       depthWrite: false,
@@ -259,6 +259,17 @@ export class World {
             y += ${w.amp.toFixed(3)} * sin(ph);
             crest += ${w.amp.toFixed(3)} * cos(ph);
           }`).join('')}
+          ${improved ? `
+          // Flatten the wave GEOMETRY toward the plane edge. The sea is a finite
+          // 700m plane at 5m vertex spacing; that spacing undersamples the 3-11m
+          // waves out at the horizon, so the far vertices displace unevenly and
+          // the silhouette against the sky breaks into jagged peaks. Fading the
+          // displacement to zero by the edge gives a clean, smooth horizon line
+          // (waves are invisible at that range anyway). This is the geometry
+          // companion to the fragment shader's farFade, which only calms shading.
+          float edgeFade = 1.0 - smoothstep(140.0, 320.0, length(position.xz));
+          y *= edgeFade;
+          crest *= edgeFade;` : ''}
           wp.y += y;
           vCrest = crest;
           vWorld = wp.xyz;
@@ -269,6 +280,48 @@ export class World {
     console.log(`[windsurf-sim] water mode ${improved ? 2 : 1}`);
     this.sea = new THREE.Mesh(geo, mat);
     this.scene.add(this.sea);
+
+    // Horizon backdrop: a big FLAT disc under the wave plane that carries the sea
+    // out to where fog fully saturates. Without it the horizon was the edge of
+    // the finite 700m wave plane — a square whose corner read as a hard KINK, and
+    // whose only-71%-fogged edge showed as a line. This disc reaches ~1000m, so
+    // its rim dissolves into fog long before it's seen: the horizon becomes a
+    // clean fog line, not a geometry edge (round disc => no corner to break it).
+    // It sits below the wave troughs (y=-0.5) so the detailed waves always draw
+    // on top where they overlap; far off only the disc shows. Its far-water tone
+    // (mid sea colour + exp2 fog) is identical to the wave shader's fully-faded
+    // output, so the two blend seamlessly at the ~350m seam. (improved mode only.)
+    if (improved) {
+      const backdropGeo = new THREE.CircleGeometry(1000, 48);
+      backdropGeo.rotateX(-Math.PI / 2);
+      const backdropMat = new THREE.ShaderMaterial({
+        uniforms: this.seaUniforms,
+        vertexShader: `
+          varying vec3 vWorld;
+          void main() {
+            vec4 wp = modelMatrix * vec4(position, 1.0);
+            vWorld = wp.xyz;
+            gl_Position = projectionMatrix * viewMatrix * wp;
+          }`,
+        fragmentShader: `
+          varying vec3 vWorld;
+          uniform vec3 camPos;
+          uniform vec3 fogColor;
+          uniform float fogDensity;
+          void main() {
+            vec3 deep = vec3(0.03, 0.22, 0.35);
+            vec3 shallow = vec3(0.10, 0.45, 0.55);
+            vec3 col = mix(deep, shallow, 0.5);   // matches the wave shader's far tone
+            float dist = length(camPos - vWorld);
+            float f = 1.0 - exp(-fogDensity * fogDensity * dist * dist);
+            col = mix(col, fogColor, f);
+            gl_FragColor = vec4(col, 1.0);
+          }`,
+      });
+      this.seaBackdrop = new THREE.Mesh(backdropGeo, backdropMat);
+      this.seaBackdrop.renderOrder = -1;   // draw before the wave plane
+      this.scene.add(this.seaBackdrop);
+    }
   }
 
   #windArrows() {
@@ -793,6 +846,7 @@ export class World {
 
     // ---- sea & sky follow the board ----
     this.sea.position.set(bx, 0, bz);
+    if (this.seaBackdrop) this.seaBackdrop.position.set(bx, -0.5, bz);
     this.sky.position.set(bx, 0, bz);
 
     // ---- camera follows ----
