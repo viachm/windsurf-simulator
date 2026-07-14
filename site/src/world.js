@@ -1131,7 +1131,12 @@ export class World {
   #updateWindArrows(state, dt) {
     const wa = state.windFromAngle;
     const wvx = -Math.sin(wa), wvz = -Math.cos(wa);   // downwind unit dir
-    const speed = (state.windKn / 1.94384) * 0.8;
+    // Arrows drift at the TRUE wind speed (in world/ground space), so the rate
+    // you sail past them is an honest read of board-speed-vs-wind: a board doing
+    // 1.0x the wind holds station with them, and a foiler at ~1.6x visibly
+    // overtakes them at exactly 1.6x. No fudge factor — the whole point of the
+    // markers is to make "am I beating the wind?" truthful at a glance.
+    const speed = state.windKn / 1.94384;
     const bx = state.pos.x, bz = state.pos.z;
     const t = state.t;
     const R = this.windArrowHalf, span = R * 2;
