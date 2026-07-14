@@ -1,8 +1,8 @@
 // HUD, control panel, keyboard bindings and "smart interlock" rules.
 
-import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=118';
-import { DemoDirector } from './demo.js?b=118';
-import { track, trackDebounced } from './analytics.js?b=118';
+import { t, setLang, getLang, onLangChange, LOCALES } from './i18n.js?b=119';
+import { DemoDirector } from './demo.js?b=119';
+import { track, trackDebounced } from './analytics.js?b=119';
 
 const $ = (id) => document.getElementById(id);
 const DEG = Math.PI / 180;
@@ -1041,6 +1041,43 @@ export class UI {
 
     // screen mapping: world angle a (0 = +Z = up on compass, increasing toward +X = left)
     const pt = (a, r) => [c - Math.sin(a) * r, c - Math.cos(a) * r];
+
+    // ---- camera / point-of-view cone ----
+    // Where you're looking from. The camera orbits the board (controls.target);
+    // its world azimuth is the XZ direction from the target out to the camera,
+    // which maps straight onto the radar's world angle (a = atan2(x, z)). We draw
+    // a translucent view cone fanning from the eye on the ring in toward the
+    // board, so it swings around the radar exactly as you orbit the view. Drawn
+    // before the board/rig so the silhouette stays crisp on top.
+    const cam = this.world && this.world.camera;
+    const tgt = this.world && this.world.controls && this.world.controls.target;
+    if (cam && tgt) {
+      const dx = cam.position.x - tgt.x, dz = cam.position.z - tgt.z;
+      if (dx * dx + dz * dz > 1e-4) {
+        const ca = Math.atan2(dx, dz);            // camera azimuth, radar convention
+        const [ex, ey] = pt(ca, R + 6);           // eye, just outside the ring
+        const half = 21 * DEG;                    // symbolic field-of-view spread
+        const [lx, ly] = pt(ca - half, R * 0.16); // cone base, near the board
+        const [rx, ry] = pt(ca + half, R * 0.16);
+        const g = ctx.createRadialGradient(ex, ey, 2, ex, ey, R + 6);
+        g.addColorStop(0, 'rgba(129,212,250,0.42)');
+        g.addColorStop(1, 'rgba(129,212,250,0.04)');
+        ctx.beginPath();
+        ctx.moveTo(ex, ey); ctx.lineTo(lx, ly); ctx.lineTo(rx, ry); ctx.closePath();
+        ctx.fillStyle = g; ctx.fill();
+
+        // little camera glyph at the eye, a lens dot facing the board
+        ctx.save();
+        ctx.translate(ex, ey);
+        ctx.rotate(Math.atan2(c - ex, ey - c)); // aim the body's short axis at centre
+        ctx.fillStyle = 'rgba(11,26,38,0.85)';
+        ctx.strokeStyle = '#81d4fa'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.roundRect(-4, -3, 8, 6, 1.4); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#81d4fa';
+        ctx.beginPath(); ctx.arc(0, 0, 1.7, 0, Math.PI * 2); ctx.fill(); // lens
+        ctx.restore();
+      }
+    }
 
     // no-go zone wedge around wind-from
     const wa = st.windFromAngle;
